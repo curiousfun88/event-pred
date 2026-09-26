@@ -6,7 +6,7 @@
 > any model existed. Five later documents cite this one **as the thing being
 > corrected**, which is why it is kept rather than deleted._
 >
-> **Replaced by:** `docs/INDEX.md` (chronology), `spread-artefact-finding.md` (the
+> **Replaced by:** `docs/RESEARCH_LOG.md` (chronology), `spread-artefact-finding.md` (the
 > central finding), `four-week-plan-and-reframe.md` (current status).
 >
 > **Four things in here are now known to be wrong**, marked ❌ inline where they
@@ -178,7 +178,7 @@ basket gets large enough.
 >
 > The `trades` file carries a **`taker_side`** column (`"yes"` = the taker lifted the
 > ask, `"no"` = sold YES into the bid). It was already known to exist when this was
-> written — `taker_side_investigation_notes.md`, dated 2026-08-31, five days earlier,
+> written — `taker-side-investigation-notes.md`, dated 2026-08-31, five days earlier,
 > is entirely about it, and ends by proposing exactly this use. Splitting each leg's
 > prints by that column gives a per-leg implied spread directly, and it is the whole
 > basis of the eventual finding.

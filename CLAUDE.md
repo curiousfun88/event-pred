@@ -98,10 +98,9 @@ Deadline: late Oct 2026.
 ## Layout
 
 ```
-docs/       INDEX.md (chronology), CORRECTIONS.md (retractions + self-caught errors),
+docs/       RESEARCH_LOG.md (chronology + revisions), SCRIPTS.md (script index),
             REPO-LAYOUT.md (map)   1-detection/ 2-model/ 3-economics/ 4-data/
             5-literature/ planning/   reports/ (supervisor reports)
-            RESEARCH_LOG.md, SCRIPTS.md (narrative + script index)
 stg_infra/  stg/ (graph build)  model/ (arch, run_guards)  examples/ (probes)
             train_forecast.py  score_forecast.py  evaluate_*.py  diagnose_*.py  verify_*.py
 results/    data_audit/ mece/ ladder/ baselines/ pairs_trading/   (results/README.md)

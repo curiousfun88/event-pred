@@ -1,11 +1,17 @@
 # Research log
 
-How the project got to its current state, in order, with a pointer to the code,
-results and logs behind each step. Dates are from commits, report headers and
-log timestamps. The second half lists every conclusion that was later corrected
-or withdrawn — these are part of the result, not noise to hide.
+How the project got to its current state, in order: what was done in each
+phase, the research documents written at the time, and the code, results and
+logs behind them. Document dates are creation dates, so this reads as the
+actual chronology of the investigation rather than a tidied-up narrative.
 
-For the current state and next steps, read [`CLAUDE.md`](../CLAUDE.md).
+The second half, [Revisions](#revisions), records every conclusion that was
+later refined or withdrawn, with the evidence that changed it. Several
+documents below were superseded; the tables say so where that happened.
+
+For current state and next steps, read [`CLAUDE.md`](../CLAUDE.md). For every
+script, read [`SCRIPTS.md`](SCRIPTS.md). For where each document lives, read
+[`REPO-LAYOUT.md`](REPO-LAYOUT.md).
 
 ---
 
@@ -35,7 +41,9 @@ hard structural constraints.
 - Results: [`results/pairs_trading/`](../results/pairs_trading)
 - Report: [Week 3 progress report](reports/week03_progress_report.md) (26 Aug 2026)
 
-## Phase 2 — Detection: do the constraints get violated? (Aug–Sep 2026)
+## Phase 2 — Detection: does the arbitrage exist? (Aug – 5 Sep 2026)
+
+Detection before modelling. No model is involved in any of this phase.
 
 1. **Markets file is unusable for this.** It holds one static row per ticker
    per month; 0.05% of N-way legs ever show a real quote. All checks moved to
@@ -63,6 +71,12 @@ hard structural constraints.
    file as the fixed comparison point: `examples/baselines.py` →
    `results/baselines/baseline_results_summary.parquet`.
 
+| document | what it establishes |
+|---|---|
+| [`superseded-findings-summary.md`](superseded-findings-summary.md) | The founding survey. Which no-arbitrage structures exist on Kalshi, how often they are violated, and at what magnitude. **Superseded**; kept as the audit trail (see [Revisions §6](#6-smaller-revisions)) |
+| `planning/direction-b-feasibility-report.md` *(not yet in this repository)* | Whether thin legs can be priced from their neighbours well enough to reach baskets a naive rule cannot see. Answer: estimation error was 1.49x the signal |
+| [`1-detection/taker-side-investigation-notes.md`](1-detection/taker-side-investigation-notes.md) | Early work on `taker_side` semantics. The same field later became the instrument that overturned the profitability claim |
+
 - Results: [`results/mece/`](../results/mece), [`results/ladder/`](../results/ladder),
   [`results/data_audit/`](../results/data_audit)
 - Report: [Week 5 consult](reports/week05_consult_progress_update.docx)
@@ -85,8 +99,13 @@ raw feature scales spanned 7 orders of magnitude (→ train-only standardisation
 
 Evaluation showed the constrained heads could not work: a head whose legs sum
 to $1 makes the model's basket deviation *identical* to the naive rule's, and
-98.3% of naive ladder violations were two stale prints compared with each other
-(`diagnose_staleness.py`).
+98.3% of naive ladder violations were two stale prints compared with each other.
+
+| document | what it establishes |
+|---|---|
+| [`1-detection/violation-prediction-result.md`](1-detection/violation-prediction-result.md) | Whether violations are predictable at all |
+| [`1-detection/ladder-persistence-result.md`](1-detection/ladder-persistence-result.md) | **Superseded** by `ladder-conclusion-overturned.md` |
+| [`1-detection/staleness-correction.md`](1-detection/staleness-correction.md) | Stale prices were inflating measured deviations. The same class of error recurs in Phase 5 at basket level |
 
 - Code: `run_real_training.py`, `model/train.py`, `model/output_heads.py`,
   `model/training_objective.py`, `evaluate_arbitrage*.py`, `evaluate_baselines.py`,
@@ -112,47 +131,238 @@ Results on the 5-month pilot:
   every strategy — including idealised static arbitrage — loses net of fees.
   Maker execution helps by ~$29/trade and still loses.
 
+| document | what it establishes |
+|---|---|
+| [`2-model/stgat-forecasting-redesign.md`](2-model/stgat-forecasting-redesign.md) | Why the task was reframed from classification to residual forecasting, and why the head is zero-initialised |
+| [`2-model/architecture-map.md`](2-model/architecture-map.md) | Component-by-component map of the implementation, with a "check it yourself" command per section |
+| [`1-detection/mece-test-result.md`](1-detection/mece-test-result.md) | MECE mechanism on the held-out split |
+| [`1-detection/ladder-conclusion-overturned.md`](1-detection/ladder-conclusion-overturned.md) | **FINAL on the ladder.** Overturns the random-walk reading, then closes the mechanism anyway for a different and better-identified reason. Records three of its own sub-errors |
+| [`2-model/stgat-results-and-limitations.md`](2-model/stgat-results-and-limitations.md) | Consolidated model results. Ladder sections superseded by the above |
+| [`2-model/mece-graph-ablation-result.md`](2-model/mece-graph-ablation-result.md) | The graph supplies ~92% of the margin. The strongest architectural finding in the project |
+| [`3-economics/mece-pnl-result.md`](3-economics/mece-pnl-result.md) | First round-trip PnL. Negative after costs |
+| [`3-economics/pnl-scorecard.md`](3-economics/pnl-scorecard.md) | Every strategy against every baseline, in one table |
+| [`3-economics/maker-execution-provisional.md`](3-economics/maker-execution-provisional.md) | Maker execution. **Provisional**: the fee shape is unverified against Kalshi's published schedule |
+
 - Code: `train_forecast.py`, `model/forecast_head.py`, `model/forecast_objective.py`,
   `score_forecast.py`, `evaluate_mece_forecast_pnl.py`, `evaluate_mece_maker_pnl.py`,
-  `evaluate_mece_settlement_pnl.py`, `diagnose_ladder_*.py`, `diagnose_mask_semantics.py`,
-  `diagnose_basket_coverage.py`, `diagnose_basket_composition.py`
+  `diagnose_ladder_*.py`, `diagnose_mask_semantics.py`,
+  `diagnose_basket_coverage.py`, `diagnose_basket_composition.py`, `verify_pipeline.py`
 - Runs: [`runs/v2_*`](../runs/README.md) · Logs: [`logs/v2_forecast/`](../logs/README.md)
 - Report: [Recess Week consult](reports/recess_week_consult.pdf) (24 Sep 2026)
 
-## Phase 5 — Measurement check and data window (24–26 Sep 2026)
+## Phase 5 — Settlement, measurement and data window (19–26 Sep 2026)
 
+- **Hold-to-settlement.** Legs must sum to $1 at resolution, so a held
+  position captures the deviation deterministically and pays one-way costs
+  (`evaluate_mece_settlement_pnl.py`). Its positive backtest did not survive
+  the measurement check below.
 - **Overround.** Last trade prints are 68.7% ask-side; with a 2.8¢ half-spread
   that *predicts* a +6.3¢ signed mean deviation on a 6-leg basket before any
   mispricing. Measured: +5.25¢, with 92.5% of baskets above $1. At executable
   prices, selling an "overpriced" basket nets −0.07¢ before fees.
   (`examples/mece_spread_artefact_check.py` → `results/mece/mece_spread_artefact_check.parquet`)
-- **Usable data window.** Measured fully covered basket-days per month across
-  all 54 months: proposes 2024-11..2025-11 with 7 expanding walk-forward folds;
-  2022-04..2022-11 as a labelled backcast only.
-  (`examples/mece_yield_by_month.py`, `examples/sports_categorisation_check.py`)
 - **Measured MECE spreads** replace the ones borrowed from the ladder file
   (`build_mece_leg_spreads.py` → `results/mece/mece_leg_spreads*.parquet`).
+- **Usable data window**, prompted by a supervisor's objection that the window
+  was too short. Measured fully covered basket-days per month across all 54
+  months: proposes 2024-11..2025-11 with 7 expanding walk-forward folds;
+  2022-04..2022-11 as a labelled backcast only.
+  (`examples/mece_yield_by_month.py`, `examples/sports_categorisation_check.py`)
+
+| document | what it establishes |
+|---|---|
+| [`3-economics/settlement-arbitrage-result.md`](3-economics/settlement-arbitrage-result.md) | The hold-to-settlement reframe. Wording about "measured per-leg spreads" is corrected by the two documents below |
+| [`3-economics/settlement-pnl-robustness.md`](3-economics/settlement-pnl-robustness.md) | Filter sweep, the wrong-spread-table discovery, and a retraction of "the model worsens the profitable rule" |
+| [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md) | **The central result.** 92.5% of the deviation is the overround; the executable edge is one tick; the profitability claim is withdrawn |
+| [`4-data/mece-population-composition.md`](4-data/mece-population-composition.md) | The opportunity population is ~58% weather and ~24% sports above 5c, across four structurally distinct partition types. Not the 93% weather an earlier window suggested |
+| [`4-data/data-window-liquidity-regime.md`](4-data/data-window-liquidity-regime.md) | Platform notional grew 369x across the archive. The binding constraint on the window is liquidity stationarity, not calendar availability |
+| [`4-data/mece-yield-by-month.md`](4-data/mece-yield-by-month.md) | Usable basket-days per month across all 54 months. Two dense blocks around a 23-month trough whose apparent deviations are staleness |
+| [`2-model/split-design-correction.md`](2-model/split-design-correction.md) | Corrects a proposed split that tested on data earlier than the training window |
 
 - Report: [data-window memo](reports/data_window_memo.tex) (26 Sep 2026)
 - Commit: `65a6063` "STGAT Implementation and Methodology Checks 260926"
+
+## Phase 6 — Positioning and planning (Sep 2026)
+
+| document | what it establishes |
+|---|---|
+| [`5-literature/literature-mece-positioning.md`](5-literature/literature-mece-positioning.md) | Three papers cover sum-to-one arbitrage; all are detection-only. The forecasting question appears unasked |
+| [`5-literature/literature-ladder-positioning.md`](5-literature/literature-ladder-positioning.md) | Same for the ladder mechanism |
+| [`5-literature/literature-sample-periods.md`](5-literature/literature-sample-periods.md) | Sample periods of the nearest work. Only one of three treats sum-to-one as a primary object; its window is 12 months |
+| [`5-literature/literature-architecture-positioning.md`](5-literature/literature-architecture-positioning.md) | Where the architecture sits, and the citation licensing each departure from the paper it adapts |
+| [`planning/four-week-plan-and-reframe.md`](planning/four-week-plan-and-reframe.md) | Current plan. v2; v1 was built around the withdrawn PnL headline |
 
 **Now:** awaiting supervisor response to the Recess consult and the memo.
 Open items are listed in priority order in [`CLAUDE.md`](../CLAUDE.md).
 
 ---
 
-## Corrections and retractions
+## Revisions
 
-Each entry: what was believed, what overturned it, and where the evidence is.
+Every claim this project made and later refined or withdrew, with the
+evidence that changed it. Kept because a result that was never wrong was
+probably never tested hard enough, and because the reasoning that caught each
+error is part of the method.
 
-| # | Earlier conclusion | Correction | Evidence |
-|---|---|---|---|
-| 1 | Pairs trading works (Sharpe 5.52) | Spurious pairs from multiple testing; direction abandoned | Week 3 report §2 |
-| 2 | Markets-file quotes can test the basket constraint | File is one static row per ticker; switched to trade prints | Week 3 report §4.1 |
-| 3 | Constrained output heads enforce no-arbitrage usefully | They make a predicted dislocation impossible and equal the naive rule by arithmetic | `model/forecast_head.py` docstring; `evaluate_arbitrage.py` docstring |
-| 4 | Naive ladder violations are opportunities | 98.3% are two stale last-trade prints | `diagnose_staleness.py`, `logs/v1_reconstruction/staleness.log` |
-| 5 | v1 ladder error was 0.208 against the baselines | Protocol masked both legs of a pair while giving the `partner_price` baseline the true partner price (training's own val pass: 0.026); rewritten to score identical random-subset positions | `evaluate_baselines.py` docstring; `logs/v1_reconstruction/eval_val*.log` → `baselines_*_v2.log` |
-| 6 | Ladder gap is a random walk (pooled α ≈ 0.99) | α is dominated by pairs where neither leg trades (gap identical by arithmetic); conditional on a reprice the gap collapses | `diagnose_ladder_conditional.py`, Recess consult §6.2 |
-| 7 | MECE PnL used "measured" spreads | Every lookup fell through to a global median from the ladder file; MECE spreads now measured directly | `build_mece_leg_spreads.py` docstring; Recess consult §8 item 2 |
-| 8 | `--min-ttc 24` filters markets closing within 24 h | `time_to_close` is in **seconds**; 15.9% of the population was already closed | `CLAUDE.md` gotchas |
-| 9 | Model forecasts are worth money (MECE PnL) | **Withdrawn.** 92.5% of apparent deviation is the overround; executable edge is negative before fees | Data-window memo §5; `mece_spread_artefact_check.py` |
+Ordered by significance, not by date.
+
+### 1. The profitability claim (withdrawn 2026-09-26)
+
+**Claimed:** a hold-to-settlement strategy gated on `|deviation| > cost` was
+profitable, at +$292 to +$663 depending on configuration, on 4,891
+fully-covered basket-days.
+
+**Withdrawn because:** the deviation was measured from *mixed last trade
+prints*. A last trade sits at the bid or the ask, never the mid. Kalshi
+trades carry `taker_side`, and 68.7% of prints are ask-side. With a
+half-spread near 2.8c that predicts a signed mean deviation of +6.3c on a
+six-leg basket from order-flow imbalance alone.
+
+**The prediction was recorded before the measurement. Measured: +5.25c, with
+92.5% of baskets summing above $1** — the classic betting-market overround,
+where a genuine mispricing population would be balanced either side of $1.
+
+Pricing each leg on its own side, restricted to baskets whose legs printed
+within an hour of each other:
+
+| | |
+|---|---|
+| buy every leg at the ask | $1.1334 |
+| sell every leg at the bid | $0.9993 |
+| settlement pays | $1.0000 |
+
+Selling the apparent overpricing nets −0.07c gross before fees; Kalshi's
+taker fee on a six-leg basket is 1.3c to 5.8c. Restricting to the
+large-deviation tail makes it worse, not better: the share of baskets with a
+positive executable edge falls from 84% to 54%, because a large apparent
+deviation is *produced by* a wide spread and wide-spread baskets execute
+worse.
+
+**What survives:** the forecasting results, which concern price accuracy
+rather than realised trading, and the model-versus-control comparison, which
+is a paired test on identical baskets and is provably invariant to the cost
+model.
+
+→ [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md)
+
+### 2. The ladder conclusion, overturned then closed (2026-09-19)
+
+**Claimed:** ladder violations follow a near-random walk (pooled alpha ~0.99),
+so there is little to forecast.
+
+**Overturned because:** the pooled alpha was measuring *untradedness*. A pair
+where neither leg reprices has `gap(t+h) == gap(t)` exactly — verified, max
+drift 0.000000 — and contributes alpha = 1 by arithmetic, not economics.
+With 85-90% of pair-snapshots frozen, the pooled figure is dominated by
+observations that contain no information.
+
+Conditioning on a reprice: a +18.5c violation collapses to +0.07c. Eighteen
+cells across two splits and three horizons agree.
+
+**Then closed anyway, for a different reason.** The all-pairs ratio is
+minimised at epoch 0 (1.0015) and rises monotonically under every mover
+weight tested; as the weight goes to zero it approaches 1.0 *from above*.
+There is no weight at which it crosses. Whether a pair will reprice is not
+in the features, so learned reversion is applied indiscriminately and costs
+~4 units of error on unmoved pairs per unit gained on moved ones.
+
+**Three sub-errors recorded in the same document:** a constraint-geometry
+argument the data contradicted; a "not deployable" claim that was right for
+the wrong reason; and a weighted-reporting bug that applied the mover weight
+to the reported metric as well as the loss, tripling the persistence
+baseline and making a 1.070x result read as 0.996x.
+
+→ [`1-detection/ladder-conclusion-overturned.md`](1-detection/ladder-conclusion-overturned.md)
+
+### 3. The split design was backwards for a forecasting task (2026-09-26)
+
+**Proposed:** train on 2024-11 to 2025-11, hold out 2022-04 to 2022-11 as a
+second test set, on the grounds that it is a thinner market and an earlier
+ticker generation.
+
+**Wrong because:** the held-out period is 26 months *earlier* than the
+training data. For a model whose stated task is predicting future values,
+that is a backcast presented as a test set. It breaks the thing an
+out-of-sample evaluation exists to establish.
+
+**Replaced with:** expanding-window walk-forward inside a single liquidity
+regime, seven folds, each training only on its own past. The 2022 block is
+retained only as an explicitly labelled backcast.
+
+→ [`2-model/split-design-correction.md`](2-model/split-design-correction.md)
+
+### 4. The cost model was silently the wrong one (2026-09-26)
+
+The `--spreads` argument defaulted to the *ladder* results file, whose own
+docstring states it contains only crypto and financials pairs. MECE baskets
+are ~58% weather and ~24% sports at a 5c threshold, so **not one leg was in
+that table**. Every lookup missed on ticker and on series and fell through to
+a global median borrowed from a different mechanism, while runs were
+described as using "measured per-leg spreads".
+
+The run printed `spread sources: global=27,092`, which was accurate and easy
+to read past.
+
+**Fixed, and guarded.** The sources line now carries
+`[x% measured per-leg, y% fallback]` and prints a banner below 50% measured
+that names the file and refuses the "measured spreads" wording. Once wired
+correctly, measured spreads turned out to be ~26% *wider* than the borrowed
+median, not narrower.
+
+**Consequence for an earlier finding:** a result recorded as "the model
+significantly worsens the profitable rule" (−0.27, CI excluding zero) was an
+artefact of costing weather baskets with crypto spreads. With the correct
+cost model it is a clean null at four settings, within ±0.03 of zero.
+
+→ [`3-economics/settlement-pnl-robustness.md`](3-economics/settlement-pnl-robustness.md)
+
+### 5. A filter that constrained the wrong quantity (2026-09-26)
+
+A gap limit intended to force a basket's legs to be contemporaneous in fact
+constrained each leg's *own* ask and bid prints, not the legs relative to
+*each other*. The median cross-leg span is **406 minutes**, so tightening the
+within-leg limit did nothing to clean the estimate, and a mid built from
+whole-day means stayed larger than the last-trade figure — which no unbiased
+mid can be.
+
+Two further sub-errors in the same script: a verdict branch that could not
+express "the mid estimate is worse than the last-trade one" and printed
+nonsense when it happened, and a test that read a mean-based mid no span
+limit can clean, because the span constrains print *times* while the mean
+averages the whole day.
+
+All three are fixed, and the fix carries a self-test that plants two legs
+three hours apart and proves the old limit accepts them.
+
+### 6. Smaller revisions
+
+| claim | revision |
+|---|---|
+| Pairs trading works (Sharpe 5.52, Oct 2025) | Selected pairs were economically unrelated: multiple testing over tens of thousands of candidates. Direction A abandoned (Week 3 report §2) |
+| Markets-file quotes can test the basket constraint | The file holds one static row per ticker per month; all checks moved to trade prints (Week 3 report §4.1) |
+| Constrained output heads enforce no-arbitrage usefully | A head whose MECE legs sum to $1 makes the model's basket deviation equal the naive rule's by arithmetic; replaced by the residual head (`model/forecast_head.py`) |
+| Naive ladder violations are opportunities | 98.3% are two stale last-trade prints compared with each other ([`staleness-correction.md`](1-detection/staleness-correction.md), `logs/v1_reconstruction/staleness.log`) |
+| v1 ladder error was 0.208 against the baselines | The protocol masked both legs of a pair while giving the `partner_price` baseline the true partner price (training's own val pass: 0.026); rewritten to score identical random-subset positions (`evaluate_baselines.py`) |
+| Sports markets would extend the MECE window backwards | Sports first appears 2024-12, *later* than weather, so it cannot. Kalshi could not list sporting event contracts until the regulatory position shifted in late 2024 |
+| 267 fully-covered basket snapshots on 2025-10/11 | Stale. Predates the `FAMILY_RE` fix and the `MAX_LEGS` 60→100 change. The current figure is ~618 for that window |
+| The hourly snapshot grid means ~8x more effective data than basket-days suggest | Wrong in the sense that matters. Consecutive hourly snapshots of one basket are overwhelmingly frozen; the effective independent sample is near the basket-day count |
+| `--min-ttc 24` would exclude the last 24 hours | `TIME_TO_CLOSE` is in **seconds**. It was a 24-second bar. It nonetheless revealed that 15.9% of the evaluated population sat at `ttc == 0` — markets already past their close, which cannot be traded at all |
+| Per-leg costing would improve measured PnL | It reduced it, twice. Both times the error was reasoning from a *median* spread where basket cost is a *sum* over legs, so the mean governs and the distribution is right-skewed |
+| `14+ leg families never achieve full coverage` | Holds only for the original two-month window. `KXF1RACE` (20 legs) and `KXNASCARRACE` (41 legs) achieve it on May–Sep |
+
+### 7. Still open
+
+- The primary forecasting result (0.851x against the shrinkage oracle) is on
+  the **basket aggregate** metric, which is the quantity now known to be
+  ~92.5% overround. The node-level figure is 0.991x. Re-scoring against
+  bid-side basket sums will determine whether the economic label survives.
+  Until then the result is stated as forecasting accuracy, not as arbitrage
+  detection.
+- `KXCLUBWCGAME` may not be a genuine partition: one snapshot shows sum $1.89
+  with 369 trades on the thinnest leg at a 0.02h gap, which is not credible
+  as a standing arbitrage. Knockout ties plausibly resolve "tie" and "winner"
+  on different bases. Not present in the validation split, so it has not
+  affected any reported figure, but the leg rules need checking.
+- Kalshi's maker fee shape (flat per contract versus the taker's `p(1-p)`
+  form at a quarter rate) has not been verified against the published
+  schedule. All maker results are marked provisional.

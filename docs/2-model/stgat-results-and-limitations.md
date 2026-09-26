@@ -550,4 +550,4 @@ and test them all before claiming the phenomenon.
 | Data window | `mece_yield_by_month.py`, `sports_categorisation_check.py` | `data-window-liquidity-regime.md`, `mece-yield-by-month.md` |
 | Split design | — | `split-design-correction.md` |
 | Literature positioning | — | `literature-{ladder,mece,architecture}-positioning.md`, `literature-sample-periods.md` |
-| Codebase | — | `architecture-map.md`, `code-index.md` |
+| Codebase | — | `architecture-map.md`, `SCRIPTS.md` |

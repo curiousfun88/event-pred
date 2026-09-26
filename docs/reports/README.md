@@ -2,7 +2,7 @@
 
 In chronological order. These are the documents as sent and are not edited
 afterwards; where a later finding changed a conclusion, the change is recorded
-in [`../RESEARCH_LOG.md`](../RESEARCH_LOG.md#corrections-and-retractions).
+in [`../RESEARCH_LOG.md`](../RESEARCH_LOG.md#revisions).
 Paths quoted inside them predate the 26 Sep 2026 reorganisation
 (see [`../../runs/README.md`](../../runs/README.md) for old → new names).
 

@@ -1,15 +1,15 @@
 # Documentation layout
 
 Research documents are grouped by the question they answer. For the order in
-which they were written and what superseded what, read [`INDEX.md`](INDEX.md);
-for every withdrawn claim, [`CORRECTIONS.md`](CORRECTIONS.md).
+which they were written and what superseded what, read [`RESEARCH_LOG.md`](RESEARCH_LOG.md), which also records every revised
+conclusion; for every script, [`SCRIPTS.md`](SCRIPTS.md).
 
 ✔ = in this repository  ·  = referenced by other documents, not yet added
 
 ```
 docs/
-├── INDEX.md                      ✔   chronology, what superseded what
-├── CORRECTIONS.md                ✔   retractions + self-caught errors
+├── RESEARCH_LOG.md               ✔   chronology, documents by phase, revisions
+├── SCRIPTS.md                    ✔   every script by phase + investigation notes
 ├── REPO-LAYOUT.md                ✔   this map
 ├── superseded-findings-summary.md ✔   naive-phase survey (5 Sep); kept as the audit trail, do not cite
 │
@@ -23,7 +23,6 @@ docs/
 │
 ├── 2-model/                          architecture, training, ablation
 │   ├── architecture-map.md                        ✔
-│   ├── code-index.md                              ✔
 │   ├── stgat-forecasting-redesign.md              ✔
 │   ├── stgat-results-and-limitations.md           ✔
 │   ├── mece-graph-ablation-result.md              ✔
