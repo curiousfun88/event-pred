@@ -4,7 +4,7 @@ Research documents are grouped by the question they answer. For the order in
 which they were written and what superseded what, read [`RESEARCH_LOG.md`](RESEARCH_LOG.md), which also records every revised
 conclusion; for every script, [`SCRIPTS.md`](SCRIPTS.md).
 
-✔ = in this repository  ·  = referenced by other documents, not yet added
+✔ = in this repository
 
 ```
 docs/
@@ -49,7 +49,7 @@ docs/
 │
 ├── planning/
 │   ├── four-week-plan-and-reframe.md              ✔
-│   └── direction-b-feasibility-report.md          ·
+│   └── direction-b-feasibility-report.md          ✔   same text as reports/week03_progress_report.md
 │
 └── reports/                          as sent to the supervisor (see reports/README.md)
     ├── week03_progress_report.md                  ✔   26 Aug 2026

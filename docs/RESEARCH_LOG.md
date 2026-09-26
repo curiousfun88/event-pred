@@ -74,7 +74,7 @@ Detection before modelling. No model is involved in any of this phase.
 | document | what it establishes |
 |---|---|
 | [`superseded-findings-summary.md`](superseded-findings-summary.md) | The founding survey. Which no-arbitrage structures exist on Kalshi, how often they are violated, and at what magnitude. **Superseded**; kept as the audit trail (see [Revisions §6](#6-smaller-revisions)) |
-| `planning/direction-b-feasibility-report.md` *(not yet in this repository)* | Whether thin legs can be priced from their neighbours well enough to reach baskets a naive rule cannot see. Answer: estimation error was 1.49x the signal |
+| [`planning/direction-b-feasibility-report.md`](planning/direction-b-feasibility-report.md) | The semester's original feasibility report (same text as the [Week 3 report](reports/week03_progress_report.md)): why Direction A's pairs were spurious, the MECE / K-of-N / ladder taxonomy, and the pre-correction empirical checks. Largely superseded; kept for the Direction A rejection, which still stands |
 | [`1-detection/taker-side-investigation-notes.md`](1-detection/taker-side-investigation-notes.md) | Early work on `taker_side` semantics. The same field later became the instrument that overturned the profitability claim |
 
 - Results: [`results/mece/`](../results/mece), [`results/ladder/`](../results/ladder),
