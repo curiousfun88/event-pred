@@ -277,6 +277,12 @@ def slice_bundle_chunk(bundle, chunk: TemporalChunk, validate: bool = True) -> d
         "node_ids": [bundle.node_ids[i] for i in active.tolist()] if getattr(bundle, "node_ids", None) else None,
         "validation_stats": stats,
     }
+    # Settlement data for TARGETS only (see MechanismForecastObjective's
+    # mece_rule). Present on bundles built after 2026-09-27; absent before.
+    if getattr(bundle, "node_settle", None) is not None:
+        idx = active.tolist()
+        out["node_settle"] = bundle.node_settle[active]
+        out["node_close"] = [bundle.node_close[i] for i in idx]
     return out
 
 

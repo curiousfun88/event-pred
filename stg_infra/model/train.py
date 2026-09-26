@@ -68,6 +68,16 @@ def true_prices(features: torch.Tensor) -> torch.Tensor:
     return features[..., 0] / 100.0
 
 
+def _without_edge_features(e):
+    """A shallow copy of one snapshot's sparse edges with features zeroed."""
+    import copy
+    if e is None or getattr(e, "features", None) is None:
+        return e
+    z = copy.copy(e)
+    z.features = torch.zeros_like(e.features)
+    return z
+
+
 class STGATBackbone(nn.Module):
     """projection -> two-channel spatial attention -> temporal attention.
     Both output heads sit on top of this shared backbone, not inside it,
@@ -78,7 +88,7 @@ class STGATBackbone(nn.Module):
 
     def __init__(self, padded_feature_width: int, embed_dim: int = 32, n_heads: int = 4,
                  ladder_edge_feature_dim: int = 2, max_len: int = 512,
-                 zero_input_slots: tuple = ()):
+                 zero_input_slots: tuple = (), zero_ladder_edge_features: bool = False):
         """``padded_feature_width`` is the FULL per-node feature width
         including the type-indicator slot (COMBINED_N_FEATURES = 10 in
         stg/nodes/kalshi.py) -- NOT the same thing as
@@ -98,6 +108,10 @@ class STGATBackbone(nn.Module):
             raise ValueError("zero_input_slots may not include the node-type indicator "
                              "(last slot): TypeSpecificProjection routes on it")
         self.zero_input_slots = slots
+        # Ladder edges carry each pair's WHOLE-LIFE mean gap and violation flag
+        # (pairwise_monotonicity_taker_side_check_v2.py), i.e. the pair's own
+        # future. Zeroed here, in every split, when set.
+        self.zero_ladder_edge_features = bool(zero_ladder_edge_features)
         # FEATURE STANDARDIZATION BUFFERS. Registered (not plain
         # attributes) so they travel with state_dict into the checkpoint
         # -- a model reloaded for inference MUST standardize its inputs
@@ -170,6 +184,10 @@ class STGATBackbone(nn.Module):
         snapshot entry. Returns h_final, (T, N, D)."""
         T, N, _ = features.shape
         t0 = time.time()
+        if self.zero_ladder_edge_features and "ladder_monotonic" in adjacency_by_type:
+            adjacency_by_type = dict(adjacency_by_type)
+            adjacency_by_type["ladder_monotonic"] = [_without_edge_features(e)
+                                                     for e in adjacency_by_type["ladder_monotonic"]]
         features = self.standardize(features)
         h0 = self.projection(features)
         t1 = time.time()
@@ -204,6 +222,13 @@ class TrainingConfig:
     # cache. Default () so checkpoints saved before this field existed
     # reload exactly as they were trained; train_forecast.py sets (8,).
     zero_input_slots: tuple = ()
+    # Ladder edge features are whole-life pair statistics (future information);
+    # zeroed when True. Default False keeps older checkpoints reproducible;
+    # train_forecast.py sets True.
+    zero_ladder_edge_features: bool = False
+    # MECE scoring rule (see MechanismForecastObjective). "legacy" for runs
+    # before 2026-09-27; train_forecast.py sets "whole_settle".
+    mece_rule: str = "legacy"
 
 
 @dataclass

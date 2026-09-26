@@ -611,6 +611,177 @@ def _m_verdict():
     return "two-branch verdict restored"
 
 
+_ZERO_LADDER_FEATURES = True   # train_forecast.py default; the mutation turns it off
+
+
+@check("architecture", "ladder_edge_features_have_no_influence",
+       "Ladder edge features are each pair's whole-life mean gap and violation flag -- "
+       "the pair's own future. Zeroing them is only a fix if the output is then exactly "
+       "independent of them.")
+def _c_ladder_edge_features():
+    from model.train import STGATBackbone
+    ct = synthetic_chunk(T=12)
+    with quiet():
+        m = STGATBackbone(padded_feature_width=F_WIDTH, embed_dim=8, n_heads=2, max_len=64,
+                          zero_ladder_edge_features=_ZERO_LADDER_FEATURES)
+    m.fit_standardization(torch.zeros(F_WIDTH), torch.ones(F_WIDTH))
+    m.eval()
+    f, mask, adj = ct["features"], ct["mask"], ct["adjacency_by_type"]
+    adj2 = dict(adj)
+    adj2["ladder_monotonic"] = [Edges(e.edge_index, e.weight, e.features * 0 + 7.5)
+                                for e in adj["ladder_monotonic"]]
+    with quiet(), torch.no_grad():
+        drift = float((m(f, mask, adj) - m(f, mask, adj2)).abs().max())
+    assert drift == 0.0, f"output moved by {drift:.3e} when only ladder edge features changed"
+    return f"drift {drift:.1e} when ladder edge features change (must be 0)"
+
+
+@mutation_for("ladder_edge_features_have_no_influence")
+def _m_ladder_edge_features():
+    global _ZERO_LADDER_FEATURES
+    orig, _ZERO_LADDER_FEATURES = _ZERO_LADDER_FEATURES, False
+    try:
+        _c_ladder_edge_features()
+    finally:
+        _ZERO_LADDER_FEATURES = orig
+    return "ladder edge features left in"
+
+
+_MECE_RULE = "whole_settle"    # train_forecast.py default; the mutation reverts to legacy
+
+
+def _mece_fixture(T=10):
+    """Two 4-leg baskets. Hub A (legs 0-3) is PARTIAL: leg 3 is never linked,
+    although the hub counts 4 legs. Hub B (legs 4-7) is whole and RESOLVES:
+    its legs close by the end of window 5 and leg 4 settles YES. Prices make
+    every sum 1.30 while trading."""
+    ct = synthetic_chunk(T=T)
+    f = ct["features"]
+    f[:, :8, SLOT_PRICE] = 32.5                               # 4 x 32.5c = $1.30
+    mece = [make_edges([(0, 8), (1, 8), (2, 8)] + [(i, 9) for i in range(4, 8)]) for _ in range(T)]
+    mask = ct["mask"].clone()
+    mask[6:, 4:8] = False                                     # evicted once closed
+    closed = torch.zeros(T, 10, dtype=torch.bool)
+    closed[5:, 4:8] = True
+    settle = torch.full((10,), float("nan"))
+    settle[4:8] = torch.tensor([1.0, 0.0, 0.0, 0.0])
+    ctx = {"hub_legs_total": f[..., 3], "settle": settle, "closed_by_end": closed}
+    return f, mask, mece, ctx
+
+
+def _mece_score(h):
+    from model.forecast_objective import MechanismForecastObjective
+    from model.train import true_prices
+    f, mask, mece, ctx = _mece_fixture()
+    obj = MechanismForecastObjective(horizons=(h,), mece_rule=_MECE_RULE)
+    prices = true_prices(f)
+    pred = prices.unsqueeze(-1)
+    T = f.shape[0]
+    sm, sp, n, _, _ = obj._mece_terms(pred, prices, mask, mece, 0, h, T, ctx=ctx)
+    return float(sp), n
+
+
+@check("targets", "partial_baskets_are_not_scored",
+       "A MECE deviation is only defined over the WHOLE partition. Summing the legs that "
+       "happen to be linked and subtracting $1 scores a coverage artefact (24% of scored "
+       "baskets under the old rule).")
+def _c_partial():
+    _, n = _mece_score(h=1)
+    # Only basket B can be scored: its legs are present at t = 0..5 (evicted from 6);
+    # t = 0..3 valued at price at t+1, t = 4..5 at settlement -> 6
+    assert n == 6, f"{n} basket-snapshots scored at h=1; the whole basket alone gives 6"
+    return f"n={n}: the partial basket was never scored"
+
+
+@mutation_for("partial_baskets_are_not_scored")
+def _m_partial():
+    global _MECE_RULE
+    orig, _MECE_RULE = _MECE_RULE, "legacy"
+    try:
+        _c_partial()
+    finally:
+        _MECE_RULE = orig
+    return "legacy rule (legs linked at t, not legs listed)"
+
+
+@check("targets", "resolving_baskets_are_scored_at_settlement",
+       "Dropping baskets that resolve within the horizon selects on the future. Scored "
+       "instead, a genuine partition settles at exactly $1.")
+def _c_settle():
+    sp, n = _mece_score(h=3)
+    # Basket B is present at t = 0..5. t+3 >= 5 means settled: t = 2..5 -> target dev 0,
+    # persistence error 0.30^2 each; t = 0,1 still trading at $1.30 -> error 0.
+    expected = 4 * 0.30 ** 2
+    assert n == 6, f"n={n}: resolving basket-snapshots were dropped (expected 6)"
+    assert abs(sp - expected) < 1e-5, (f"persistence error {sp:.5f}, expected {expected:.5f}: "
+                                       f"the target was not the settlement value")
+    return f"n={n}, persistence error {sp:.4f} = 4 x 0.30^2 (settled at exactly $1)"
+
+
+@mutation_for("resolving_baskets_are_scored_at_settlement")
+def _m_settle():
+    global _MECE_RULE
+    orig, _MECE_RULE = _MECE_RULE, "legacy"
+    try:
+        _c_settle()
+    finally:
+        _MECE_RULE = orig
+    return "legacy rule (resolving baskets dropped)"
+
+
+# ===========================================================================
+# 6b. MEMBERSHIP (which baskets exist at t)
+# ===========================================================================
+
+def _membership_fixture():
+    """Family qualifies at day 10; leg L2 is created on day 20."""
+    import polars as pl
+    from datetime import datetime
+    D = lambda d: datetime(2025, 7, 1) + timedelta(days=d)
+    mem = pl.DataFrame({
+        "event_ticker": ["E"] * 3, "ticker": ["E-L0", "E-L1", "E-L2"], "family": ["E"] * 3,
+        "leg_created": [D(0), D(0), D(20)], "hind_ok": [False] * 3,
+        "q_from": [D(10)] * 3, "q_to": [None] * 3,
+    }, schema={"event_ticker": pl.Utf8, "ticker": pl.Utf8, "family": pl.Utf8,
+               "leg_created": pl.Datetime("ns"), "hind_ok": pl.Boolean,
+               "q_from": pl.Datetime("ns"), "q_to": pl.Datetime("ns")})
+    trades = pl.DataFrame({"ticker": ["E-L0", "E-L1"], "yes_price": [40, 55],
+                           "created_time": [D(0), D(0)]})
+    return mem, trades, D
+
+
+@check("membership", "causal_membership_uses_only_the_past",
+       "In val/test, a basket may exist at t only if its family was KNOWN to be "
+       "single-winner by t, and its leg count -- a model input -- may only include "
+       "legs already listed by t.")
+def _c_causal_membership():
+    from stg.nodes.kalshi import KalshiMeceBasketNodes
+    mem, trades, D = _membership_fixture()
+    nodes = KalshiMeceBasketNodes(mem, mode="causal")
+    before = nodes.identify_nodes(trades, window_start=D(5), window_end=D(5) + timedelta(hours=2))
+    after = nodes.identify_nodes(trades, window_start=D(12), window_end=D(12) + timedelta(hours=2))
+    assert before == [], f"basket exists at day 5, before its family qualified on day 10: {before}"
+    assert after == ["MECE:E"], f"basket missing after qualification: {after}"
+    st = nodes.build_node_state("MECE:E", trades, window_start=D(12), window_end=D(12) + timedelta(hours=2))
+    legs_total = float(st.features[3])
+    assert legs_total == 2.0, (f"legs_total={legs_total} on day 12 counts leg E-L2, which is only "
+                               f"created on day 20")
+    return "no basket before qualification; legs_total counts only legs already listed"
+
+
+@mutation_for("causal_membership_uses_only_the_past")
+def _m_causal_membership():
+    """Membership as before 2026-09-27: every listed leg, always."""
+    from stg.nodes.kalshi import MeceMembership
+    orig = MeceMembership.legs_at
+    MeceMembership.legs_at = lambda self, evt, ws=None, we=None: [t for t, _ in self._legs.get(evt, [])]
+    try:
+        _c_causal_membership()
+    finally:
+        MeceMembership.legs_at = orig
+    return "legs_at returns the final, static leg list"
+
+
 # ===========================================================================
 # 7. SPLITS
 # ===========================================================================

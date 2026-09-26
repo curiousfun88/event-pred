@@ -42,6 +42,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from datetime import timedelta
 import json
 import random
 import sys
@@ -138,6 +139,23 @@ def _supervision_masks(features, mask, adj, mode):
     return is_ticker & member, mask & live
 
 
+WINDOW = timedelta(hours=2)   # FixedWindowTemporal(every="2h") in build_combined_stgat_graph.py
+
+
+def _mece_context(ct, features):
+    """Settlement context for MechanismForecastObjective(mece_rule="whole_settle").
+    Targets only: nothing here is passed to the model. None when the chunk's
+    bundle predates settlement data (legacy scoring then applies)."""
+    if "node_settle" not in ct:
+        return None
+    ts = ct["timestamps"]
+    ends = [t + WINDOW for t in ts]
+    closes = ct["node_close"]
+    closed = torch.tensor([[c is not None and c <= e for c in closes] for e in ends], dtype=torch.bool)
+    return {"hub_legs_total": features[..., 3], "settle": ct["node_settle"].to(features.dtype),
+            "closed_by_end": closed}
+
+
 def _chunk_loss(model, head, objective, ct, label="", supervise="active",
                 drop_edges=()):
     """One chunk: backbone -> head -> horizon loss. Shared by train and
@@ -176,7 +194,8 @@ def _chunk_loss(model, head, objective, ct, label="", supervise="active",
     return objective.compute_loss(
         pred, prices, mask_sup, eligible,
         ladder_adj=adj.get("ladder_monotonic"),
-        mece_adj=adj.get("mece_leg_to_basket"))
+        mece_adj=adj.get("mece_leg_to_basket"),
+        mece_ctx=_mece_context(ct, features))
 
 
 def _accum(dst, src, key_n="n"):
@@ -290,6 +309,12 @@ def main():
     ap.add_argument("--patience", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
+    ap.add_argument("--mece-rule", choices=["whole_settle", "legacy"], default="whole_settle",
+                    help="which MECE baskets are scored and against what (see "
+                         "MechanismForecastObjective). 'legacy' reproduces runs before 2026-09-27.")
+    ap.add_argument("--keep-ladder-edge-features", action="store_true",
+                    help="do NOT zero the ladder edge features. They are whole-life pair "
+                         "statistics (future information); only for reproducing older runs.")
     ap.add_argument("--zero-input-slots", type=int, nargs="*", default=[8],
                     help="feature slots zeroed before the model sees them, in every split. "
                          "Default 8 (time_to_close), which is computed from an after-the-fact "
@@ -310,7 +335,9 @@ def main():
     cfg = TrainingConfig(embed_dim=args.embed_dim, n_heads=args.n_heads,
                          chunk_len=args.chunk_len, lr=args.lr, epochs=args.epochs,
                          seed=args.seed, patience=args.patience,
-                         zero_input_slots=tuple(args.zero_input_slots))
+                         zero_input_slots=tuple(args.zero_input_slots),
+                         zero_ladder_edge_features=not args.keep_ladder_edge_features,
+                         mece_rule=args.mece_rule)
 
     ranges = build_split_ranges(store.timestamps)
     chunks = chunk_ranges(ranges, chunk_len=cfg.chunk_len, min_chunk_len=cfg.min_chunk_len)
@@ -337,8 +364,11 @@ def main():
 
     model = STGATBackbone(padded_feature_width=store.feature_width,
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
-                          max_len=cfg.chunk_len, zero_input_slots=cfg.zero_input_slots)
-    print(f"Input slots zeroed in every split: {list(cfg.zero_input_slots) or 'none'}", flush=True)
+                          max_len=cfg.chunk_len, zero_input_slots=cfg.zero_input_slots,
+                          zero_ladder_edge_features=cfg.zero_ladder_edge_features)
+    print(f"Input slots zeroed in every split: {list(cfg.zero_input_slots) or 'none'} | "
+          f"ladder edge features zeroed: {cfg.zero_ladder_edge_features} | "
+          f"MECE rule: {cfg.mece_rule}", flush=True)
     print("Fitting feature standardization on TRAIN chunks only ...", flush=True)
     t0 = time.time()
     feat_mean, feat_std, n_obs = _compute_train_feature_stats(
@@ -353,7 +383,8 @@ def main():
         w_node=args.w_node, w_ladder=args.w_ladder, w_mece=args.w_mece,
         monitor_unweighted=args.monitor_unweighted,
         ladder_supervise=args.ladder_supervise,
-        moved_weight=args.moved_weight)
+        moved_weight=args.moved_weight,
+        mece_rule=cfg.mece_rule)
     # VERIFY THE ABLATION ACTUALLY ABLATES, against the CACHE rather than
     # against the hand-written argparse choices list -- those are different
     # things and only the first is evidence. Same probe chunk also checks the

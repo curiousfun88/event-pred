@@ -229,8 +229,25 @@ class MechanismForecastObjective(HorizonForecastObjective):
     def __init__(self, horizons=(1, 2, 3, 6, 12), huber_beta: float = 0.0,
                  w_node: float = 1.0, w_ladder: float = 1.0, w_mece: float = 1.0,
                  monitor_unweighted: bool = False, ladder_supervise: str = "all",
-                 moved_weight: float = 9.0):
+                 moved_weight: float = 9.0, mece_rule: str = "legacy"):
         super().__init__(horizons=horizons, huber_beta=huber_beta)
+        # Which baskets are scored, and against what:
+        #   "legacy"        all legs LINKED at t present at t and t+h. Linked
+        #                   legs are only those present at t, so a partially
+        #                   covered basket's sum was scored as if it were the
+        #                   whole partition (24% of scored baskets, May-Aug),
+        #                   and baskets resolving within h were dropped -- a
+        #                   selection only knowable after the fact. Kept so
+        #                   checkpoints trained before 2026-09-27 still score
+        #                   as they were reported.
+        #   "whole_settle"  every leg LISTED at t (the hub's causal leg count)
+        #                   must be present at t; at t+h a leg is valued at its
+        #                   SETTLEMENT if its market closed by the end of window
+        #                   t+h, else at its price. Resolving baskets are scored,
+        #                   against the value they actually reached.
+        if mece_rule not in ("legacy", "whole_settle"):
+            raise ValueError(f"mece_rule must be 'legacy' or 'whole_settle', got {mece_rule!r}")
+        self.mece_rule = mece_rule
         self.w_node, self.w_ladder, self.w_mece = float(w_node), float(w_ladder), float(w_mece)
         # Score mechanisms whose weight is 0 anyway, for monitoring only.
         self.monitor_unweighted = bool(monitor_unweighted)
@@ -329,7 +346,9 @@ class MechanismForecastObjective(HorizonForecastObjective):
                 syy += float((tgt * tgt).sum())
         return sm_u, sp_u, n, (sxx, sxy, syy), (sm_w, wt)
 
-    def _mece_terms(self, pred, prices, mask, mece_adj, i, h, T):
+    def _mece_terms(self, pred, prices, mask, mece_adj, i, h, T, ctx=None):
+        if getattr(self, "mece_rule", "legacy") == "whole_settle":
+            return self._mece_terms_whole_settle(pred, prices, mask, mece_adj, i, h, T, ctx)
         sm = sp = torch.zeros((), device=pred.device)
         n = 0
         sxx = sxy = syy = 0.0
@@ -364,8 +383,53 @@ class MechanismForecastObjective(HorizonForecastObjective):
         # and its weight total is the count -- keeps the unpacking uniform.
         return sm, sp, n, (sxx, sxy, syy), (sm, float(n))
 
+    def _mece_terms_whole_settle(self, pred, prices, mask, mece_adj, i, h, T, ctx):
+        """See mece_rule in __init__. ``ctx`` carries, per chunk:
+        hub_legs_total (T, N) -- the hub's causal leg count (feature slot 3);
+        settle (N,) -- 1.0/0.0 settlement per leg, NaN if unknown; and
+        closed_by_end (T, N) -- market closed by the END of window t. None of
+        these reach the model: they only shape the target."""
+        if ctx is None:
+            raise ValueError("mece_rule='whole_settle' needs the chunk's settlement context "
+                             "(node_close/node_settle in the cached bundle)")
+        dev = pred.device
+        sm = sp = torch.zeros((), device=dev)
+        n = 0
+        sxx = sxy = syy = 0.0
+        hub_n, settle, closed = ctx["hub_legs_total"], ctx["settle"], ctx["closed_by_end"]
+        for t in range(T - h):
+            e = mece_adj[t]
+            if e.edge_index.numel() == 0:
+                continue
+            leg, hub = e.edge_index[0], e.edge_index[1]
+            hubs, inv = torch.unique(hub, return_inverse=True)
+            k = hubs.numel()
+            ones = torch.ones_like(leg, dtype=pred.dtype)
+            n_linked = torch.zeros(k, device=dev).index_add_(0, inv, ones)
+            whole = (n_linked == hub_n[t, hubs]) & (n_linked > 0)
+            settled = closed[t + h, leg] & ~torch.isnan(settle[leg])
+            priced = mask[t + h, leg] & ~closed[t + h, leg]
+            ok = (mask[t, leg] & (settled | priced)).to(pred.dtype)
+            full = whole & (torch.zeros(k, device=dev).index_add_(0, inv, ok) == n_linked)
+            if not bool(full.any()):
+                continue
+            tgt_leg = torch.where(settled, torch.nan_to_num(settle[leg]), prices[t + h, leg])
+            s_pred = torch.zeros(k, device=dev).index_add_(0, inv, pred[t, leg, i])
+            s_tgt = torch.zeros(k, device=dev).index_add_(0, inv, tgt_leg)
+            s_now = torch.zeros(k, device=dev).index_add_(0, inv, prices[t, leg])
+            sm = sm + self._elementwise(s_pred[full] - 1.0, s_tgt[full] - 1.0).sum()
+            sp = sp + self._elementwise(s_now[full] - 1.0, s_tgt[full] - 1.0).sum()
+            with torch.no_grad():
+                x = s_now[full] - 1.0
+                y = s_tgt[full] - 1.0
+                sxx += float((x * x).sum())
+                sxy += float((x * y).sum())
+                syy += float((y * y).sum())
+            n += int(full.sum())
+        return sm, sp, n, (sxx, sxy, syy), (sm, float(n))
+
     def compute_loss(self, pred, prices, mask, is_ticker,
-                     ladder_adj=None, mece_adj=None):
+                     ladder_adj=None, mece_adj=None, mece_ctx=None):
         base = super().compute_loss(pred, prices, mask, is_ticker)
         T = pred.shape[0]
         out = dict(base)
@@ -396,7 +460,7 @@ class MechanismForecastObjective(HorizonForecastObjective):
                  {"moved_weight": _mw}),
                 ("ladder_moved", ladder_adj, self._ladder_terms,
                  self.w_ladder if _moved_trained else 0.0, {"restrict_moved": True}),
-                ("mece", mece_adj, self._mece_terms, self.w_mece, {})):
+                ("mece", mece_adj, self._mece_terms, self.w_mece, {"ctx": mece_ctx})):
             if adj is None:
                 continue
             # A ZERO WEIGHT SILENCES THE LOSS, NOT THE METRIC. Skipping the

@@ -74,12 +74,15 @@ sys.path.insert(0, str(_THIS_DIR / "examples"))
 
 from build_combined_stgat_graph import build_combined_graph
 from stg.bridge import to_torch_bundle
-from examples.data_windows import MASTER_MONTHS
+from examples.data_windows import MASTER_MONTHS, split_for
 from model.month_store import MonthlyBundleStore, build_month_paths
 from model.train import TrainingConfig, run_training
 from model.run_guards import check_no_post_close_nodes
 
 MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "results/mece/mece_sum_to_one_leg_prices.parquet")
+# Time-aware basket membership (build_mece_membership.py). Training months use
+# the hindsight rule, val/test months the causal one -- see _mece_mode().
+MECE_MEMBERSHIP_PATH = str(_REPO_ROOT / "results/mece/mece_membership.parquet")
 LADDER_PAIRS_PATH = str(_REPO_ROOT / "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
 
 # Start here, not at MASTER_MONTHS -- see the memory note above. Widen
@@ -199,7 +202,7 @@ def load_ticker_meta(tickers) -> pl.DataFrame:
     if not files:
         raise FileNotFoundError(f"no markets files under {_REPO_ROOT / 'data/markets'}")
     wanted = pl.Series("ticker", list(tickers)).cast(pl.Utf8).unique()
-    cols = ["ticker", "event_ticker", "title", "status", "market_type", "close_time", "created_time"]
+    cols = ["ticker", "event_ticker", "title", "status", "market_type", "close_time", "created_time", "result"]
     frames = []
     for f in files:
         have = set(pl.read_parquet_schema(f))
@@ -255,17 +258,29 @@ def _build_one_month(month: str, cache_path: Path):
               .filter(pl.col("_close").is_null() | (pl.col("created_time") < pl.col("_close")))
               .drop("_close"))
     print(f"  dropped {n_before - trades.height:,d} trade row(s) timestamped at/after their market's close_time")
-    mece_leg_prices = pl.read_parquet(MECE_LEG_PRICES_PATH)
+    mece_mode = "hindsight" if split_for(month) == "train" else "causal"
+    mece_leg_prices = pl.read_parquet(MECE_MEMBERSHIP_PATH)
     ladder_pairs = pl.read_parquet(LADDER_PAIRS_PATH)
+    print(f"  MECE membership: {MECE_MEMBERSHIP_PATH} under the {mece_mode.upper()} rule "
+          f"({split_for(month)} month)")
 
     stg = build_combined_graph(trades, markets, mece_leg_prices, ladder_pairs,
-                               node_markets_df=node_meta)
+                               node_markets_df=node_meta, mece_mode=mece_mode)
     print(f"Built graph for {month}: {stg.summary()}")
 
     bundle = to_torch_bundle(stg)
     print(f"Bundle {month}: T={len(bundle.timestamps)}  N={len(bundle.node_ids)}  "
           f"F={bundle.features.shape[-1]}  mask_coverage={bundle.mask.float().mean().item():.1%}")
     check_no_post_close_nodes(bundle.timestamps, bundle.node_ids, bundle.mask, _close_time_map(node_meta))
+    # Settlement data for TARGETS only (MechanismForecastObjective mece_rule
+    # "whole_settle"): close time and 1/0 settlement per node, NaN/None for
+    # hubs and unresolved markets. Never passed to the model.
+    closes = _close_time_map(node_meta)
+    results = dict(zip(node_meta["ticker"].to_list(), node_meta["result"].to_list()))
+    bundle.node_close = [closes.get(str(n)) for n in bundle.node_ids]
+    bundle.node_settle = torch.tensor(
+        [1.0 if results.get(str(n)) == "yes" else 0.0 if results.get(str(n)) == "no" else float("nan")
+         for n in bundle.node_ids], dtype=torch.float32)
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(bundle, cache_path)

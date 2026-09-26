@@ -76,6 +76,9 @@ def main():
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")
     ap.add_argument("--supervise", choices=["active", "all"], default="active")
+    ap.add_argument("--mece-rule", choices=["whole_settle", "legacy"], default=None,
+                    help="default: the rule the checkpoint was trained under "
+                         "(legacy for checkpoints before 2026-09-27)")
     ap.add_argument("--w-node", type=float, default=1.0)
     ap.add_argument("--w-ladder", type=float, default=1.0)
     ap.add_argument("--w-mece", type=float, default=1.0)
@@ -123,6 +126,7 @@ def main():
 
     model = STGATBackbone(padded_feature_width=store.feature_width,
                           zero_input_slots=getattr(cfg, "zero_input_slots", ()),
+                          zero_ladder_edge_features=getattr(cfg, "zero_ladder_edge_features", False),
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
                           max_len=cfg.chunk_len)
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=horizons)
@@ -140,7 +144,9 @@ def main():
     objective = MechanismForecastObjective(
         horizons=horizons, huber_beta=getattr(cfg, "huber", 0.0),
         w_node=args.w_node, w_ladder=args.w_ladder, w_mece=args.w_mece,
-        monitor_unweighted=True)
+        monitor_unweighted=True,
+        mece_rule=args.mece_rule or getattr(cfg, "mece_rule", "legacy"))
+    print(f"  MECE scoring rule: {objective.mece_rule}")
 
     tot_l = tot_p = 0.0
     tot_n = 0
