@@ -1,0 +1,248 @@
+
+=== Building month 2025-05 ===
+2026-09-27 02:04:06,233 [INFO] stg.builders.builder: Temporal slicing produced 310 windows (2.1s)
+2026-09-27 02:04:16,662 [INFO] stg.builders.builder: [  3.2%] 10/310 windows | nodes 10.4s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 10.4s
+2026-09-27 02:04:30,507 [INFO] stg.builders.builder: [  7.1%] 22/310 windows | nodes 20.5s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 20.6s
+2026-09-27 02:04:41,136 [INFO] stg.builders.builder: [ 11.9%] 37/310 windows | nodes 31.1s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 31.2s
+2026-09-27 02:04:51,705 [INFO] stg.builders.builder: [ 16.1%] 50/310 windows | nodes 41.6s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 41.7s
+2026-09-27 02:05:05,880 [INFO] stg.builders.builder: [ 20.0%] 62/310 windows | nodes 52.1s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 52.3s
+2026-09-27 02:05:16,094 [INFO] stg.builders.builder: [ 23.9%] 74/310 windows | nodes 62.3s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 62.5s
+2026-09-27 02:05:26,988 [INFO] stg.builders.builder: [ 27.7%] 86/310 windows | nodes 73.1s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 73.4s
+2026-09-27 02:05:41,119 [INFO] stg.builders.builder: [ 31.9%] 99/310 windows | nodes 83.5s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 83.8s
+2026-09-27 02:05:51,394 [INFO] stg.builders.builder: [ 36.5%] 113/310 windows | nodes 93.7s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 94.1s
+2026-09-27 02:06:01,927 [INFO] stg.builders.builder: [ 40.3%] 125/310 windows | nodes 104.2s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 104.6s
+2026-09-27 02:06:16,286 [INFO] stg.builders.builder: [ 43.9%] 136/310 windows | nodes 114.9s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 115.3s
+2026-09-27 02:06:26,422 [INFO] stg.builders.builder: [ 47.4%] 147/310 windows | nodes 124.9s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 125.4s
+2026-09-27 02:06:36,552 [INFO] stg.builders.builder: [ 51.0%] 158/310 windows | nodes 135.0s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 135.5s
+2026-09-27 02:06:50,457 [INFO] stg.builders.builder: [ 55.5%] 172/310 windows | nodes 145.2s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 145.8s
+2026-09-27 02:07:01,125 [INFO] stg.builders.builder: [ 60.0%] 186/310 windows | nodes 155.8s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 156.5s
+2026-09-27 02:07:11,222 [INFO] stg.builders.builder: [ 63.5%] 197/310 windows | nodes 165.8s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 166.5s
+2026-09-27 02:07:25,698 [INFO] stg.builders.builder: [ 66.8%] 207/310 windows | nodes 176.7s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 177.4s
+2026-09-27 02:07:36,548 [INFO] stg.builders.builder: [ 69.7%] 216/310 windows | nodes 187.5s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 188.2s
+2026-09-27 02:07:46,984 [INFO] stg.builders.builder: [ 72.9%] 226/310 windows | nodes 197.8s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 198.7s
+2026-09-27 02:08:01,427 [INFO] stg.builders.builder: [ 76.8%] 238/310 windows | nodes 208.6s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 209.4s
+2026-09-27 02:08:12,132 [INFO] stg.builders.builder: [ 80.6%] 250/310 windows | nodes 219.2s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 220.1s
+2026-09-27 02:08:22,823 [INFO] stg.builders.builder: [ 84.2%] 261/310 windows | nodes 229.9s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 230.8s
+2026-09-27 02:08:33,304 [INFO] stg.builders.builder: [ 87.4%] 271/310 windows | nodes 240.3s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 241.2s
+2026-09-27 02:08:47,100 [INFO] stg.builders.builder: [ 90.6%] 281/310 windows | nodes 250.4s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 251.4s
+2026-09-27 02:08:57,396 [INFO] stg.builders.builder: [ 94.2%] 292/310 windows | nodes 260.7s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 261.7s
+2026-09-27 02:09:07,761 [INFO] stg.builders.builder: [ 97.4%] 302/310 windows | nodes 271.0s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 272.0s
+2026-09-27 02:09:17,858 [INFO] stg.builders.builder: [100.0%] 310/310 windows | nodes 277.5s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 278.5s
+2026-09-27 02:09:17,858 [INFO] stg.builders.builder: Build complete — 310 snapshots in 278.5s
+Loading markets/trades for ['2025-05'] ...
+  302930 market rows, 1981110 trade rows across 1 month(s)
+
+  ticker metadata: 14,785 of 14,785 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 0 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the HINDSIGHT rule (train month)
+{'num_snapshots': 310, 'time_range': (datetime.datetime(2025, 5, 1, 0, 0), datetime.datetime(2025, 5, 31, 22, 0)), 'nodes_min': 190, 'nodes_max': 653, 'edges_min': 108, 'edges_max': 472}
+Built graph for 2025-05: {'num_snapshots': 310, 'time_range': (datetime.datetime(2025, 5, 1, 0, 0), datetime.datetime(2025, 5, 31, 22, 0)), 'nodes_min': 190, 'nodes_max': 653, 'edges_min': 108, 'edges_max': 472}
+Bundle 2025-05: T=310  N=15555  F=10  mask_coverage=2.7%
+  [guard] no post-close nodes: 15,555 nodes checked, 770 without a close_time (unverifiable)
+Cached to cache_causal/bundle_month_2025-05.pt
+Freed build state for 2025-05: RSS 3626MB -> 3140MB
+
+=== Building month 2025-06 ===
+2026-09-27 02:09:44,325 [INFO] stg.builders.builder: Temporal slicing produced 300 windows (0.8s)
+2026-09-27 02:09:58,030 [INFO] stg.builders.builder: [  4.7%] 14/300 windows | nodes 10.0s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 10.1s
+2026-09-27 02:10:08,055 [INFO] stg.builders.builder: [  8.7%] 26/300 windows | nodes 20.0s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 20.1s
+2026-09-27 02:10:18,112 [INFO] stg.builders.builder: [ 12.7%] 38/300 windows | nodes 30.0s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 30.1s
+2026-09-27 02:10:31,994 [INFO] stg.builders.builder: [ 16.3%] 49/300 windows | nodes 40.2s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 40.4s
+2026-09-27 02:10:42,335 [INFO] stg.builders.builder: [ 20.3%] 61/300 windows | nodes 50.5s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 50.7s
+2026-09-27 02:10:53,040 [INFO] stg.builders.builder: [ 25.3%] 76/300 windows | nodes 61.1s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 61.3s
+2026-09-27 02:11:06,736 [INFO] stg.builders.builder: [ 30.0%] 90/300 windows | nodes 71.2s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 71.4s
+2026-09-27 02:11:17,049 [INFO] stg.builders.builder: [ 34.7%] 104/300 windows | nodes 81.4s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 81.7s
+2026-09-27 02:11:27,187 [INFO] stg.builders.builder: [ 38.7%] 116/300 windows | nodes 91.5s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 91.8s
+2026-09-27 02:11:41,057 [INFO] stg.builders.builder: [ 42.7%] 128/300 windows | nodes 101.7s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 102.1s
+2026-09-27 02:11:51,544 [INFO] stg.builders.builder: [ 47.0%] 141/300 windows | nodes 112.2s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 112.5s
+2026-09-27 02:12:01,568 [INFO] stg.builders.builder: [ 51.7%] 155/300 windows | nodes 122.1s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 122.5s
+2026-09-27 02:12:15,937 [INFO] stg.builders.builder: [ 55.7%] 167/300 windows | nodes 132.9s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 133.3s
+2026-09-27 02:12:26,518 [INFO] stg.builders.builder: [ 59.3%] 178/300 windows | nodes 143.4s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 143.8s
+2026-09-27 02:12:36,700 [INFO] stg.builders.builder: [ 63.3%] 190/300 windows | nodes 153.5s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 154.0s
+2026-09-27 02:12:50,594 [INFO] stg.builders.builder: [ 67.0%] 201/300 windows | nodes 163.8s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 164.3s
+2026-09-27 02:13:01,179 [INFO] stg.builders.builder: [ 71.7%] 215/300 windows | nodes 174.3s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 174.8s
+2026-09-27 02:13:11,398 [INFO] stg.builders.builder: [ 75.3%] 226/300 windows | nodes 184.5s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 185.0s
+2026-09-27 02:13:25,939 [INFO] stg.builders.builder: [ 79.0%] 237/300 windows | nodes 195.4s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 196.0s
+2026-09-27 02:13:36,524 [INFO] stg.builders.builder: [ 82.3%] 247/300 windows | nodes 205.9s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 206.5s
+2026-09-27 02:13:47,637 [INFO] stg.builders.builder: [ 85.7%] 257/300 windows | nodes 217.0s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 217.6s
+2026-09-27 02:14:01,467 [INFO] stg.builders.builder: [ 89.3%] 268/300 windows | nodes 227.2s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 227.8s
+2026-09-27 02:14:11,862 [INFO] stg.builders.builder: [ 93.3%] 280/300 windows | nodes 237.5s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 238.2s
+2026-09-27 02:14:22,234 [INFO] stg.builders.builder: [ 97.7%] 293/300 windows | nodes 247.8s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 248.5s
+2026-09-27 02:14:29,069 [INFO] stg.builders.builder: [100.0%] 300/300 windows | nodes 254.6s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 255.4s
+2026-09-27 02:14:29,069 [INFO] stg.builders.builder: Build complete — 300 snapshots in 255.4s
+Loading markets/trades for ['2025-06'] ...
+  294918 market rows, 1995705 trade rows across 1 month(s)
+
+  ticker metadata: 10,978 of 10,978 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 0 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the HINDSIGHT rule (train month)
+{'num_snapshots': 300, 'time_range': (datetime.datetime(2025, 6, 1, 0, 0), datetime.datetime(2025, 6, 30, 22, 0)), 'nodes_min': 160, 'nodes_max': 693, 'edges_min': 109, 'edges_max': 435}
+Built graph for 2025-06: {'num_snapshots': 300, 'time_range': (datetime.datetime(2025, 6, 1, 0, 0), datetime.datetime(2025, 6, 30, 22, 0)), 'nodes_min': 160, 'nodes_max': 693, 'edges_min': 109, 'edges_max': 435}
+Bundle 2025-06: T=300  N=11782  F=10  mask_coverage=3.5%
+  [guard] no post-close nodes: 11,782 nodes checked, 804 without a close_time (unverifiable)
+Cached to cache_causal/bundle_month_2025-06.pt
+Freed build state for 2025-06: RSS 3884MB -> 3404MB
+
+=== Building month 2025-07 ===
+2026-09-27 02:14:58,410 [INFO] stg.builders.builder: Temporal slicing produced 310 windows (1.4s)
+2026-09-27 02:15:12,681 [INFO] stg.builders.builder: [  3.2%] 10/310 windows | nodes 10.6s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 10.6s
+2026-09-27 02:15:23,047 [INFO] stg.builders.builder: [  6.1%] 19/310 windows | nodes 20.9s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 21.0s
+2026-09-27 02:15:33,719 [INFO] stg.builders.builder: [  9.0%] 28/310 windows | nodes 31.5s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 31.6s
+2026-09-27 02:15:44,113 [INFO] stg.builders.builder: [ 12.3%] 38/310 windows | nodes 41.9s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 42.0s
+2026-09-27 02:15:58,608 [INFO] stg.builders.builder: [ 15.8%] 49/310 windows | nodes 52.7s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 52.9s
+2026-09-27 02:16:08,921 [INFO] stg.builders.builder: [ 19.4%] 60/310 windows | nodes 63.0s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 63.2s
+2026-09-27 02:16:19,149 [INFO] stg.builders.builder: [ 22.9%] 71/310 windows | nodes 73.2s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 73.4s
+2026-09-27 02:16:33,519 [INFO] stg.builders.builder: [ 26.5%] 82/310 windows | nodes 83.8s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 84.1s
+2026-09-27 02:16:43,668 [INFO] stg.builders.builder: [ 29.7%] 92/310 windows | nodes 93.9s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 94.2s
+2026-09-27 02:16:53,920 [INFO] stg.builders.builder: [ 33.2%] 103/310 windows | nodes 104.1s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 104.5s
+2026-09-27 02:17:07,721 [INFO] stg.builders.builder: [ 36.5%] 113/310 windows | nodes 114.3s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 114.6s
+2026-09-27 02:17:17,817 [INFO] stg.builders.builder: [ 40.0%] 124/310 windows | nodes 124.3s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 124.7s
+2026-09-27 02:17:27,833 [INFO] stg.builders.builder: [ 43.5%] 135/310 windows | nodes 134.3s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 134.7s
+2026-09-27 02:17:42,802 [INFO] stg.builders.builder: [ 47.1%] 146/310 windows | nodes 145.6s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 146.1s
+2026-09-27 02:17:53,548 [INFO] stg.builders.builder: [ 50.3%] 156/310 windows | nodes 156.3s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 156.8s
+2026-09-27 02:18:03,988 [INFO] stg.builders.builder: [ 53.2%] 165/310 windows | nodes 166.7s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 167.2s
+2026-09-27 02:18:18,654 [INFO] stg.builders.builder: [ 56.8%] 176/310 windows | nodes 177.7s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 178.3s
+2026-09-27 02:18:29,497 [INFO] stg.builders.builder: [ 60.3%] 187/310 windows | nodes 188.5s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 189.1s
+2026-09-27 02:18:39,615 [INFO] stg.builders.builder: [ 63.9%] 198/310 windows | nodes 198.5s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 199.2s
+2026-09-27 02:18:53,319 [INFO] stg.builders.builder: [ 67.1%] 208/310 windows | nodes 208.5s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 209.2s
+2026-09-27 02:19:03,590 [INFO] stg.builders.builder: [ 70.3%] 218/310 windows | nodes 218.7s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 219.5s
+2026-09-27 02:19:14,663 [INFO] stg.builders.builder: [ 73.9%] 229/310 windows | nodes 229.8s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 230.5s
+2026-09-27 02:19:29,126 [INFO] stg.builders.builder: [ 77.4%] 240/310 windows | nodes 240.6s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 241.4s
+2026-09-27 02:19:39,303 [INFO] stg.builders.builder: [ 80.3%] 249/310 windows | nodes 250.7s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 251.6s
+2026-09-27 02:19:50,272 [INFO] stg.builders.builder: [ 83.9%] 260/310 windows | nodes 261.6s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 262.5s
+2026-09-27 02:20:04,127 [INFO] stg.builders.builder: [ 87.4%] 271/310 windows | nodes 271.8s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 272.7s
+2026-09-27 02:20:14,514 [INFO] stg.builders.builder: [ 90.6%] 281/310 windows | nodes 282.1s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 283.1s
+2026-09-27 02:20:25,000 [INFO] stg.builders.builder: [ 93.9%] 291/310 windows | nodes 292.5s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 293.6s
+2026-09-27 02:20:39,282 [INFO] stg.builders.builder: [ 97.1%] 301/310 windows | nodes 303.2s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 304.2s
+2026-09-27 02:20:49,413 [INFO] stg.builders.builder: [100.0%] 310/310 windows | nodes 313.2s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 314.3s
+2026-09-27 02:20:49,413 [INFO] stg.builders.builder: Build complete — 310 snapshots in 314.3s
+Loading markets/trades for ['2025-07'] ...
+  312526 market rows, 1911395 trade rows across 1 month(s)
+
+  ticker metadata: 12,365 of 12,365 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 7 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the CAUSAL rule (val month)
+{'num_snapshots': 310, 'time_range': (datetime.datetime(2025, 7, 1, 0, 0), datetime.datetime(2025, 7, 31, 22, 0)), 'nodes_min': 248, 'nodes_max': 733, 'edges_min': 136, 'edges_max': 475}
+Built graph for 2025-07: {'num_snapshots': 310, 'time_range': (datetime.datetime(2025, 7, 1, 0, 0), datetime.datetime(2025, 7, 31, 22, 0)), 'nodes_min': 248, 'nodes_max': 733, 'edges_min': 136, 'edges_max': 475}
+Bundle 2025-07: T=310  N=13256  F=10  mask_coverage=3.9%
+  [guard] no post-close nodes: 13,256 nodes checked, 891 without a close_time (unverifiable)
+Cached to cache_causal/bundle_month_2025-07.pt
+Freed build state for 2025-07: RSS 3990MB -> 3492MB
+
+=== Building month 2025-08 ===
+2026-09-27 02:21:18,739 [INFO] stg.builders.builder: Temporal slicing produced 360 windows (2.0s)
+2026-09-27 02:21:29,352 [INFO] stg.builders.builder: [  2.5%] 9/360 windows | nodes 10.6s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 10.6s
+2026-09-27 02:21:40,089 [INFO] stg.builders.builder: [  5.6%] 20/360 windows | nodes 21.2s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 21.3s
+2026-09-27 02:21:53,881 [INFO] stg.builders.builder: [  8.6%] 31/360 windows | nodes 31.3s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 31.5s
+2026-09-27 02:22:04,318 [INFO] stg.builders.builder: [ 11.4%] 41/360 windows | nodes 41.7s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 41.9s
+2026-09-27 02:22:14,399 [INFO] stg.builders.builder: [ 13.9%] 50/360 windows | nodes 51.7s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 52.0s
+2026-09-27 02:22:28,454 [INFO] stg.builders.builder: [ 16.7%] 60/360 windows | nodes 62.1s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 62.4s
+2026-09-27 02:22:38,861 [INFO] stg.builders.builder: [ 19.7%] 71/360 windows | nodes 72.5s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 72.8s
+2026-09-27 02:22:49,580 [INFO] stg.builders.builder: [ 22.8%] 82/360 windows | nodes 83.2s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 83.5s
+2026-09-27 02:23:03,553 [INFO] stg.builders.builder: [ 25.8%] 93/360 windows | nodes 93.5s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 93.8s
+2026-09-27 02:23:14,328 [INFO] stg.builders.builder: [ 29.2%] 105/360 windows | nodes 104.2s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 104.6s
+2026-09-27 02:23:24,933 [INFO] stg.builders.builder: [ 32.2%] 116/360 windows | nodes 114.8s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 115.2s
+2026-09-27 02:23:39,777 [INFO] stg.builders.builder: [ 35.3%] 127/360 windows | nodes 126.0s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 126.4s
+2026-09-27 02:23:49,778 [INFO] stg.builders.builder: [ 37.5%] 135/360 windows | nodes 135.9s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 136.4s
+2026-09-27 02:24:00,865 [INFO] stg.builders.builder: [ 40.3%] 145/360 windows | nodes 147.0s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 147.4s
+2026-09-27 02:24:15,054 [INFO] stg.builders.builder: [ 43.1%] 155/360 windows | nodes 157.5s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 158.0s
+2026-09-27 02:24:26,431 [INFO] stg.builders.builder: [ 46.1%] 166/360 windows | nodes 168.8s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 169.4s
+2026-09-27 02:24:36,814 [INFO] stg.builders.builder: [ 48.9%] 176/360 windows | nodes 179.2s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 179.7s
+2026-09-27 02:24:51,075 [INFO] stg.builders.builder: [ 51.9%] 187/360 windows | nodes 189.8s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 190.4s
+2026-09-27 02:25:01,133 [INFO] stg.builders.builder: [ 54.7%] 197/360 windows | nodes 199.8s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 200.4s
+2026-09-27 02:25:12,203 [INFO] stg.builders.builder: [ 57.2%] 206/360 windows | nodes 210.8s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 211.5s
+2026-09-27 02:25:26,877 [INFO] stg.builders.builder: [ 60.0%] 216/360 windows | nodes 221.9s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 222.5s
+2026-09-27 02:25:38,274 [INFO] stg.builders.builder: [ 62.8%] 226/360 windows | nodes 233.2s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 233.9s
+2026-09-27 02:25:49,367 [INFO] stg.builders.builder: [ 65.6%] 236/360 windows | nodes 244.2s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 245.0s
+2026-09-27 02:26:03,424 [INFO] stg.builders.builder: [ 67.8%] 244/360 windows | nodes 254.6s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 255.4s
+2026-09-27 02:26:13,437 [INFO] stg.builders.builder: [ 69.7%] 251/360 windows | nodes 264.6s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 265.4s
+2026-09-27 02:26:24,290 [INFO] stg.builders.builder: [ 72.2%] 260/360 windows | nodes 275.4s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 276.3s
+2026-09-27 02:26:38,350 [INFO] stg.builders.builder: [ 74.4%] 268/360 windows | nodes 285.8s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 286.7s
+2026-09-27 02:26:49,580 [INFO] stg.builders.builder: [ 76.9%] 277/360 windows | nodes 297.0s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 297.9s
+2026-09-27 02:27:00,215 [INFO] stg.builders.builder: [ 79.4%] 286/360 windows | nodes 307.6s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 308.6s
+2026-09-27 02:27:14,327 [INFO] stg.builders.builder: [ 81.9%] 295/360 windows | nodes 318.1s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 319.1s
+2026-09-27 02:27:25,643 [INFO] stg.builders.builder: [ 83.9%] 302/360 windows | nodes 329.4s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 330.4s
+2026-09-27 02:27:36,980 [INFO] stg.builders.builder: [ 86.4%] 311/360 windows | nodes 340.6s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 341.7s
+2026-09-27 02:27:51,378 [INFO] stg.builders.builder: [ 88.9%] 320/360 windows | nodes 351.4s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 352.4s
+2026-09-27 02:28:01,858 [INFO] stg.builders.builder: [ 90.8%] 327/360 windows | nodes 361.8s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 362.9s
+2026-09-27 02:28:12,722 [INFO] stg.builders.builder: [ 93.1%] 335/360 windows | nodes 372.6s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 373.8s
+2026-09-27 02:28:26,436 [INFO] stg.builders.builder: [ 95.3%] 343/360 windows | nodes 382.7s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 383.9s
+2026-09-27 02:28:37,384 [INFO] stg.builders.builder: [ 97.2%] 350/360 windows | nodes 393.6s  edges 1.2s  feats 0.0s  post 0.0s  labels 0.0s | total 394.8s
+2026-09-27 02:28:48,148 [INFO] stg.builders.builder: [100.0%] 360/360 windows | nodes 404.4s  edges 1.2s  feats 0.0s  post 0.0s  labels 0.0s | total 405.5s
+2026-09-27 02:28:48,148 [INFO] stg.builders.builder: Build complete — 360 snapshots in 405.5s
+Loading markets/trades for ['2025-08'] ...
+  303172 market rows, 2371707 trade rows across 1 month(s)
+
+  ticker metadata: 14,297 of 14,297 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 149 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the CAUSAL rule (val month)
+{'num_snapshots': 360, 'time_range': (datetime.datetime(2025, 8, 1, 0, 0), datetime.datetime(2025, 8, 31, 22, 0)), 'nodes_min': 253, 'nodes_max': 1065, 'edges_min': 135, 'edges_max': 619}
+Built graph for 2025-08: {'num_snapshots': 360, 'time_range': (datetime.datetime(2025, 8, 1, 0, 0), datetime.datetime(2025, 8, 31, 22, 0)), 'nodes_min': 253, 'nodes_max': 1065, 'edges_min': 135, 'edges_max': 619}
+Bundle 2025-08: T=360  N=15245  F=10  mask_coverage=4.1%
+  [guard] no post-close nodes: 15,245 nodes checked, 950 without a close_time (unverifiable)
+Cached to cache_causal/bundle_month_2025-08.pt
+Freed build state for 2025-08: RSS 4035MB -> 3456MB
+
+=== Building month 2025-09 ===
+2026-09-27 02:29:17,388 [INFO] stg.builders.builder: Temporal slicing produced 360 windows (1.1s)
+2026-09-27 02:29:27,795 [INFO] stg.builders.builder: [  3.1%] 11/360 windows | nodes 10.4s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 10.4s
+2026-09-27 02:29:42,725 [INFO] stg.builders.builder: [  6.1%] 22/360 windows | nodes 21.7s  edges 0.0s  feats 0.0s  post 0.0s  labels 0.0s | total 21.7s
+2026-09-27 02:29:53,771 [INFO] stg.builders.builder: [  8.9%] 32/360 windows | nodes 32.7s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 32.7s
+2026-09-27 02:30:04,166 [INFO] stg.builders.builder: [ 10.8%] 39/360 windows | nodes 43.0s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 43.1s
+2026-09-27 02:30:18,241 [INFO] stg.builders.builder: [ 13.3%] 48/360 windows | nodes 53.4s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 53.6s
+2026-09-27 02:30:29,666 [INFO] stg.builders.builder: [ 15.8%] 57/360 windows | nodes 64.8s  edges 0.1s  feats 0.0s  post 0.0s  labels 0.0s | total 65.0s
+2026-09-27 02:30:40,306 [INFO] stg.builders.builder: [ 17.8%] 64/360 windows | nodes 75.4s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 75.6s
+2026-09-27 02:30:55,181 [INFO] stg.builders.builder: [ 20.0%] 72/360 windows | nodes 86.7s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 86.8s
+2026-09-27 02:31:06,456 [INFO] stg.builders.builder: [ 22.8%] 82/360 windows | nodes 97.9s  edges 0.2s  feats 0.0s  post 0.0s  labels 0.0s | total 98.1s
+2026-09-27 02:31:17,746 [INFO] stg.builders.builder: [ 25.6%] 92/360 windows | nodes 109.1s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 109.4s
+2026-09-27 02:31:31,606 [INFO] stg.builders.builder: [ 27.5%] 99/360 windows | nodes 119.4s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 119.6s
+2026-09-27 02:31:41,675 [INFO] stg.builders.builder: [ 29.7%] 107/360 windows | nodes 129.4s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 129.7s
+2026-09-27 02:31:52,669 [INFO] stg.builders.builder: [ 32.2%] 116/360 windows | nodes 140.3s  edges 0.3s  feats 0.0s  post 0.0s  labels 0.0s | total 140.7s
+2026-09-27 02:32:06,771 [INFO] stg.builders.builder: [ 34.4%] 124/360 windows | nodes 150.8s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 151.1s
+2026-09-27 02:32:17,042 [INFO] stg.builders.builder: [ 36.7%] 132/360 windows | nodes 161.0s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 161.4s
+2026-09-27 02:32:28,288 [INFO] stg.builders.builder: [ 39.2%] 141/360 windows | nodes 172.2s  edges 0.4s  feats 0.0s  post 0.0s  labels 0.0s | total 172.6s
+2026-09-27 02:32:42,538 [INFO] stg.builders.builder: [ 41.1%] 148/360 windows | nodes 182.8s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 183.3s
+2026-09-27 02:32:52,701 [INFO] stg.builders.builder: [ 43.1%] 155/360 windows | nodes 192.9s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 193.4s
+2026-09-27 02:33:03,477 [INFO] stg.builders.builder: [ 45.6%] 164/360 windows | nodes 203.7s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 204.2s
+2026-09-27 02:33:17,125 [INFO] stg.builders.builder: [ 47.5%] 171/360 windows | nodes 213.7s  edges 0.5s  feats 0.0s  post 0.0s  labels 0.0s | total 214.2s
+2026-09-27 02:33:28,310 [INFO] stg.builders.builder: [ 50.0%] 180/360 windows | nodes 224.8s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 225.4s
+2026-09-27 02:33:39,790 [INFO] stg.builders.builder: [ 52.5%] 189/360 windows | nodes 236.2s  edges 0.6s  feats 0.0s  post 0.0s  labels 0.0s | total 236.9s
+2026-09-27 02:33:53,822 [INFO] stg.builders.builder: [ 54.4%] 196/360 windows | nodes 246.6s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 247.3s
+2026-09-27 02:34:04,393 [INFO] stg.builders.builder: [ 56.4%] 203/360 windows | nodes 257.1s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 257.8s
+2026-09-27 02:34:14,430 [INFO] stg.builders.builder: [ 58.6%] 211/360 windows | nodes 267.1s  edges 0.7s  feats 0.0s  post 0.0s  labels 0.0s | total 267.8s
+2026-09-27 02:34:28,386 [INFO] stg.builders.builder: [ 60.3%] 217/360 windows | nodes 277.4s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 278.1s
+2026-09-27 02:34:39,445 [INFO] stg.builders.builder: [ 62.5%] 225/360 windows | nodes 288.4s  edges 0.8s  feats 0.0s  post 0.0s  labels 0.0s | total 289.2s
+2026-09-27 02:34:50,483 [INFO] stg.builders.builder: [ 64.4%] 232/360 windows | nodes 299.3s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 300.2s
+2026-09-27 02:35:04,579 [INFO] stg.builders.builder: [ 66.4%] 239/360 windows | nodes 309.8s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 310.7s
+2026-09-27 02:35:15,655 [INFO] stg.builders.builder: [ 68.9%] 248/360 windows | nodes 320.8s  edges 0.9s  feats 0.0s  post 0.0s  labels 0.0s | total 321.8s
+2026-09-27 02:35:25,844 [INFO] stg.builders.builder: [ 71.4%] 257/360 windows | nodes 331.0s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 331.9s
+2026-09-27 02:35:40,665 [INFO] stg.builders.builder: [ 73.6%] 265/360 windows | nodes 342.1s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 343.1s
+2026-09-27 02:35:52,486 [INFO] stg.builders.builder: [ 76.1%] 274/360 windows | nodes 353.9s  edges 1.0s  feats 0.0s  post 0.0s  labels 0.0s | total 354.9s
+2026-09-27 02:36:03,809 [INFO] stg.builders.builder: [ 78.6%] 283/360 windows | nodes 365.2s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 366.2s
+2026-09-27 02:36:18,572 [INFO] stg.builders.builder: [ 80.6%] 290/360 windows | nodes 376.3s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 377.4s
+2026-09-27 02:36:29,455 [INFO] stg.builders.builder: [ 82.8%] 298/360 windows | nodes 387.1s  edges 1.1s  feats 0.0s  post 0.0s  labels 0.0s | total 388.3s
+2026-09-27 02:36:39,601 [INFO] stg.builders.builder: [ 85.0%] 306/360 windows | nodes 397.2s  edges 1.2s  feats 0.0s  post 0.0s  labels 0.0s | total 398.4s
+2026-09-27 02:36:53,557 [INFO] stg.builders.builder: [ 86.7%] 312/360 windows | nodes 407.5s  edges 1.2s  feats 0.0s  post 0.0s  labels 0.0s | total 408.7s
+2026-09-27 02:37:05,069 [INFO] stg.builders.builder: [ 89.2%] 321/360 windows | nodes 419.0s  edges 1.2s  feats 0.0s  post 0.0s  labels 0.0s | total 420.2s
+2026-09-27 02:37:15,685 [INFO] stg.builders.builder: [ 91.4%] 329/360 windows | nodes 429.6s  edges 1.3s  feats 0.0s  post 0.0s  labels 0.0s | total 430.8s
+2026-09-27 02:37:30,808 [INFO] stg.builders.builder: [ 93.6%] 337/360 windows | nodes 441.1s  edges 1.3s  feats 0.0s  post 0.0s  labels 0.0s | total 442.3s
+2026-09-27 02:37:41,000 [INFO] stg.builders.builder: [ 95.8%] 345/360 windows | nodes 451.2s  edges 1.3s  feats 0.0s  post 0.0s  labels 0.0s | total 452.5s
+2026-09-27 02:37:51,403 [INFO] stg.builders.builder: [ 97.5%] 351/360 windows | nodes 461.6s  edges 1.3s  feats 0.0s  post 0.0s  labels 0.0s | total 462.9s
+2026-09-27 02:38:06,208 [INFO] stg.builders.builder: [ 99.7%] 359/360 windows | nodes 472.7s  edges 1.4s  feats 0.0s  post 0.0s  labels 0.0s | total 474.1s
+2026-09-27 02:38:08,136 [INFO] stg.builders.builder: [100.0%] 360/360 windows | nodes 474.7s  edges 1.4s  feats 0.0s  post 0.0s  labels 0.0s | total 476.0s
+2026-09-27 02:38:08,138 [INFO] stg.builders.builder: Build complete — 360 snapshots in 476.0s
+Loading markets/trades for ['2025-09'] ...
+  331312 market rows, 4338862 trade rows across 1 month(s)
+
+  ticker metadata: 18,236 of 18,236 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 158 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the CAUSAL rule (test month)
+{'num_snapshots': 360, 'time_range': (datetime.datetime(2025, 9, 1, 0, 0), datetime.datetime(2025, 9, 30, 22, 0)), 'nodes_min': 202, 'nodes_max': 1240, 'edges_min': 125, 'edges_max': 665}
+Built graph for 2025-09: {'num_snapshots': 360, 'time_range': (datetime.datetime(2025, 9, 1, 0, 0), datetime.datetime(2025, 9, 30, 22, 0)), 'nodes_min': 202, 'nodes_max': 1240, 'edges_min': 125, 'edges_max': 665}
+Bundle 2025-09: T=360  N=19230  F=10  mask_coverage=3.7%
+  [guard] no post-close nodes: 19,230 nodes checked, 994 without a close_time (unverifiable)
+Cached to cache_causal/bundle_month_2025-09.pt
+Freed build state for 2025-09: RSS 4471MB -> 3862MB
+
+--build-only: bundles written, not training.
+exit: 0
