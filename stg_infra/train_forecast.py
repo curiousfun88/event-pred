@@ -290,6 +290,11 @@ def main():
     ap.add_argument("--patience", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
+    ap.add_argument("--zero-input-slots", type=int, nargs="*", default=[8],
+                    help="feature slots zeroed before the model sees them, in every split. "
+                         "Default 8 (time_to_close), which is computed from an after-the-fact "
+                         "close_time and so reveals when early-closing markets resolve. Pass the "
+                         "flag with no values to reproduce runs trained before 2026-09-27.")
     args = ap.parse_args()
 
     months = args.months or PILOT_MONTHS
@@ -304,7 +309,8 @@ def main():
 
     cfg = TrainingConfig(embed_dim=args.embed_dim, n_heads=args.n_heads,
                          chunk_len=args.chunk_len, lr=args.lr, epochs=args.epochs,
-                         seed=args.seed, patience=args.patience)
+                         seed=args.seed, patience=args.patience,
+                         zero_input_slots=tuple(args.zero_input_slots))
 
     ranges = build_split_ranges(store.timestamps)
     chunks = chunk_ranges(ranges, chunk_len=cfg.chunk_len, min_chunk_len=cfg.min_chunk_len)
@@ -331,7 +337,8 @@ def main():
 
     model = STGATBackbone(padded_feature_width=store.feature_width,
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
-                          max_len=cfg.chunk_len)
+                          max_len=cfg.chunk_len, zero_input_slots=cfg.zero_input_slots)
+    print(f"Input slots zeroed in every split: {list(cfg.zero_input_slots) or 'none'}", flush=True)
     print("Fitting feature standardization on TRAIN chunks only ...", flush=True)
     t0 = time.time()
     feat_mean, feat_std, n_obs = _compute_train_feature_stats(

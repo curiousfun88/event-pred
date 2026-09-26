@@ -272,6 +272,9 @@ def apply_filters(events, args):
         n = sum(1 for e in events if near_close(e))
         print(f"  --min-ttc {mt:g}             would drop {n:,} ({n / n0:.1%}) "
               f"-- near resolution, post-determination prints possible")
+        print(f"      NOTE: time_to_close comes from the ACTUAL close_time, recorded after "
+              f"the fact. For early-closing markets this filter uses information a trader "
+              f"would not have at entry: label any result run with it as ex-post cleaned.")
     if fams:
         n = sum(1 for e in events if excluded(e))
         by = {}
@@ -372,7 +375,10 @@ def main():
                          "snapshots, where a post-determination print can land in "
                          "the price series: KXHIGHCHI-25APR02 shows two ADJACENT "
                          "temperature brackets at $0.99 and $0.72 within 1.06h, "
-                         "which no partition can do. 0 = off.")
+                         "which no partition can do. 0 = off. EX-POST: time_to_close "
+                         "is computed from the actual (after-the-fact) close_time, so "
+                         "for early-closing markets this is a data-cleaning filter, not "
+                         "a rule a trader could apply at entry.")
     ap.add_argument("--exclude-families", nargs="*", default=[],
                     help="basket families to drop, matched on the segment before "
                          "the first hyphen of the basket ticker. Intended for "
@@ -409,6 +415,7 @@ def main():
     store = MonthlyBundleStore(build_month_paths(args.months or PILOT_MONTHS, cache),
                                verbose=False)
     model = STGATBackbone(padded_feature_width=store.feature_width,
+                          zero_input_slots=getattr(cfg, "zero_input_slots", ()),
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
                           max_len=cfg.chunk_len)
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=horizons)
@@ -588,7 +595,7 @@ def main():
               f"p90 {float(s.quantile(0.9)):.1f}")
     if ttcs:
         tt = torch.tensor(ttcs) / 86400.0
-        print(f"  CAPITAL LOCKUP -- time_to_close at entry, days: "
+        print(f"  CAPITAL LOCKUP -- time_to_close at entry (ex post, from actual close_time), days: "
               f"median {float(tt.median()):.1f}  p90 {float(tt.quantile(0.9)):.1f}  "
               f"max {float(tt.max()):.1f}")
         print("    (a position held to settlement is committed for this long; the "

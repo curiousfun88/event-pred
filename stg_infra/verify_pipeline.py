@@ -162,12 +162,13 @@ def synthetic_chunk(T=20, n_legs=8, n_hubs=2, seed=0, freeze_ladder=False):
                                   "ladder_monotonic": ladder}}
 
 
-def build_model(embed_dim=8, n_heads=2, max_len=64, horizons=(1, 2)):
+def build_model(embed_dim=8, n_heads=2, max_len=64, horizons=(1, 2), zero_input_slots=()):
     from model.train import STGATBackbone
     from model.forecast_head import ResidualForecastHead
     with quiet():
         m = STGATBackbone(padded_feature_width=F_WIDTH, embed_dim=embed_dim,
-                          n_heads=n_heads, max_len=max_len)
+                          n_heads=n_heads, max_len=max_len,
+                          zero_input_slots=zero_input_slots)
     m.fit_standardization(torch.zeros(F_WIDTH), torch.ones(F_WIDTH))
     h = ResidualForecastHead(embed_dim=embed_dim, horizons=list(horizons))
     m.eval(); h.eval()
@@ -291,6 +292,47 @@ def _c_ablation():
 # ===========================================================================
 # 3. BASELINES
 # ===========================================================================
+
+_LEAKY_SLOTS = (8,)   # what train_forecast.py zeroes by default; the mutation empties it
+
+
+@check("architecture", "zeroed_input_slot_has_no_influence",
+       "time_to_close (slot 8) is computed from an after-the-fact close_time and "
+       "reveals when early-closing markets resolve. Zeroing it is only a fix if the "
+       "model's output is then EXACTLY independent of it.")
+def _c_zeroed_slot():
+    ct = synthetic_chunk(T=12)
+    m, _ = build_model(zero_input_slots=_LEAKY_SLOTS)
+    f, mask, adj = ct["features"], ct["mask"], ct["adjacency_by_type"]
+    g = torch.Generator().manual_seed(1)
+    with quiet(), torch.no_grad():
+        h_a = m(f, mask, adj)
+        f_leak = f.clone()
+        f_leak[..., 8] = torch.rand(f.shape[:2], generator=g) * 6.3e7   # up to 2 years of seconds
+        h_b = m(f_leak, mask, adj)
+        f_ctrl = f.clone()
+        f_ctrl[..., 7] += 50.0                                            # a slot that IS used
+        h_c = m(f_ctrl, mask, adj)
+    drift_leak = float((h_a - h_b).abs().max())
+    drift_ctrl = float((h_a - h_c).abs().max())
+    assert drift_ctrl > 0.0, ("perturbing slot 7 changed nothing -- the perturbation never "
+                              "reached the model, so this check proves nothing")
+    assert drift_leak == 0.0, (f"output moved by {drift_leak:.3e} when only time_to_close "
+                               f"changed: the model can still read the leaky slot")
+    return f"slot-8 drift {drift_leak:.1e} (must be 0), control-slot drift {drift_ctrl:.3f} (must be >0)"
+
+
+@mutation_for("zeroed_input_slot_has_no_influence")
+def _m_zeroed_slot():
+    """Train as before 2026-09-27: nothing zeroed."""
+    global _LEAKY_SLOTS
+    orig, _LEAKY_SLOTS = _LEAKY_SLOTS, ()
+    try:
+        _c_zeroed_slot()
+    finally:
+        _LEAKY_SLOTS = orig
+    return "zero_input_slots emptied"
+
 
 @check("baselines", "shrinkage_oracle_is_optimal",
        "The oracle is the baseline every headline ratio is quoted against. "

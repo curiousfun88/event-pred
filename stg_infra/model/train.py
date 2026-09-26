@@ -77,7 +77,8 @@ class STGATBackbone(nn.Module):
     this project's architecture discussion settled on."""
 
     def __init__(self, padded_feature_width: int, embed_dim: int = 32, n_heads: int = 4,
-                 ladder_edge_feature_dim: int = 2, max_len: int = 512):
+                 ladder_edge_feature_dim: int = 2, max_len: int = 512,
+                 zero_input_slots: tuple = ()):
         """``padded_feature_width`` is the FULL per-node feature width
         including the type-indicator slot (COMBINED_N_FEATURES = 10 in
         stg/nodes/kalshi.py) -- NOT the same thing as
@@ -87,6 +88,16 @@ class STGATBackbone(nn.Module):
         widths, two different names, deliberately not reused for each
         other."""
         super().__init__()
+        # Feature slots the model must never see, zeroed after
+        # standardization so they carry no information in ANY split. Not a
+        # buffer: checkpoints written before this existed must still load
+        # strictly, and they correctly default to () -- see
+        # TrainingConfig.zero_input_slots for why slot 8 is zeroed.
+        slots = tuple(int(i) % padded_feature_width for i in zero_input_slots)
+        if padded_feature_width - 1 in slots:
+            raise ValueError("zero_input_slots may not include the node-type indicator "
+                             "(last slot): TypeSpecificProjection routes on it")
+        self.zero_input_slots = slots
         # FEATURE STANDARDIZATION BUFFERS. Registered (not plain
         # attributes) so they travel with state_dict into the checkpoint
         # -- a model reloaded for inference MUST standardize its inputs
@@ -133,7 +144,11 @@ class STGATBackbone(nn.Module):
         """
         mean, std = self.feat_mean.clone(), self.feat_std.clone()
         mean[-1], std[-1] = 0.0, 1.0        # leave the type indicator alone
-        return (features - mean) / std
+        out = (features - mean) / std
+        if self.zero_input_slots:
+            out = out.clone()
+            out[..., list(self.zero_input_slots)] = 0.0
+        return out
 
     def fit_standardization(self, mean: torch.Tensor, std: torch.Tensor):
         """Installs per-slot statistics. ``std`` is floored away from zero
@@ -181,6 +196,14 @@ class TrainingConfig:
     checkpoint_dir: str = "runs/v1_reconstruction"
     raw_feature_width: int = 9    # _TICKER_RAW_FEATURES in stg/nodes/kalshi.py -- what select_and_mask replaces
     patience: int = 5             # stop after this many epochs with no val improvement; 0 disables
+    # Input slots zeroed before the model sees them, in every split alike.
+    # Slot 8 (time_to_close) is computed from close_time, which the markets
+    # data records AFTER the fact: for a market that closed early (an
+    # earnings mention, a hurricane landfall) it reveals when the outcome
+    # was decided. Measured: 43% of MECE leg observations on the fixed
+    # cache. Default () so checkpoints saved before this field existed
+    # reload exactly as they were trained; train_forecast.py sets (8,).
+    zero_input_slots: tuple = ()
 
 
 @dataclass
