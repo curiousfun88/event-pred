@@ -65,8 +65,8 @@ REQUEST_DELAY_SECONDS = 0.1  # ~10 req/sec -- conservative vs. the documented ~3
 EVENT_KEY = "event"    # adjust if a live call shows a different wrapping key -- see caveats above
 MARKET_KEY = "market"  # adjust if a live call shows a different wrapping key -- see caveats above
 
-MECE_RESULTS_PATH = "mece_sum_to_one_results.parquet"
-LADDER_RESULTS_PATH = "pairwise_monotonicity_taker_side_results_corrected.parquet"
+MECE_RESULTS_PATH = "results/mece/mece_sum_to_one_results.parquet"
+LADDER_RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet"
 
 SAMPLE_SIZE = 200  # per check -- fast, and plenty for a first agreement-rate estimate
 

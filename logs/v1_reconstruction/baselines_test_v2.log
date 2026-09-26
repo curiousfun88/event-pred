@@ -1,0 +1,160 @@
+MonthlyBundleStore: 5 month(s), 1640 snapshot(s) total, F=10
+  2025-05: snapshots [0:310) (310)  N_month=14983
+  2025-06: snapshots [310:610) (300)  N_month=11301
+  2025-07: snapshots [610:920) (310)  N_month=12623
+  2025-08: snapshots [920:1280) (360)  N_month=14633
+  2025-09: snapshots [1280:1640) (360)  N_month=18617 
+
+Loaded best.pt: epoch=43 val_loss=0.030129080224368308 selected_by='val_loss'
+5 test chunk(s), 8 train chunk(s)
+mask_ratio=0.1 (targets are a random subset, as in training)
+
+train-split mean observed price: 0.4075
+
+    [backbone] projection done  T=84 N=5349  0.07s  rss=1355MB
+      [spatial] t=   0/84  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/84  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/84  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.0s
+      [spatial] t=  60/84  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.1s
+      [spatial] t=  83/84  active=  975  mece_edges=  208  ladder_edges=  246  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1137 (at t=55)  total_elapsed=0.1s
+    [backbone] spatial done     0.11s  rss=1355MB
+      [temporal] n_active=5349  node_batch_size=512  -> 11 batch(es)  T=84
+      [temporal] batch   1/11  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/11  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/11  b= 229  ckpt=False  elapsed=   0.9s
+    [backbone] temporal done    0.90s  rss=1507MB
+  chunk 1/5 done
+    [backbone] projection done  T=84 N=5794  0.06s  rss=1507MB
+      [spatial] t=   0/84  active=  953  mece_edges=  188  ladder_edges=  252  elapsed=   0.0s
+      [spatial] t=  20/84  active= 1100  mece_edges=  214  ladder_edges=  285  elapsed=   0.0s
+      [spatial] t=  40/84  active=  614  mece_edges=   88  ladder_edges=  253  elapsed=   0.0s
+      [spatial] t=  60/84  active= 1072  mece_edges=  276  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  952  mece_edges=  212  ladder_edges=  264  elapsed=   0.1s
+      [spatial] t=  83/84  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=32)  total_elapsed=0.1s
+    [backbone] spatial done     0.10s  rss=1507MB
+      [temporal] n_active=5794  node_batch_size=512  -> 12 batch(es)  T=84
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.6s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   1.0s
+      [temporal] batch  12/12  b= 162  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    1.04s  rss=1591MB
+  chunk 2/5 done
+    [backbone] projection done  T=84 N=6186  0.07s  rss=1591MB
+      [spatial] t=   0/84  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/84  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/84  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.1s
+      [spatial] t=  60/84  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/84  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t=  83/84  active=  648  mece_edges=  256  ladder_edges=   63  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.1s
+    [backbone] spatial done     0.12s  rss=1591MB
+      [temporal] n_active=6186  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b=  42  ckpt=False  elapsed=   0.9s
+    [backbone] temporal done    0.96s  rss=1622MB
+  chunk 3/5 done
+    [backbone] projection done  T=84 N=6434  0.06s  rss=1622MB
+      [spatial] t=   0/84  active=  688  mece_edges=  226  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/84  active=  879  mece_edges=  288  ladder_edges=  156  elapsed=   0.0s
+      [spatial] t=  40/84  active=  399  mece_edges=   98  ladder_edges=   95  elapsed=   0.0s
+      [spatial] t=  60/84  active=  796  mece_edges=  320  ladder_edges=   90  elapsed=   0.1s
+      [spatial] t=  80/84  active=  860  mece_edges=  236  ladder_edges=   81  elapsed=   0.1s
+      [spatial] t=  83/84  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1024 (at t=44)  total_elapsed=0.1s
+    [backbone] spatial done     0.10s  rss=1622MB
+      [temporal] n_active=6434  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b= 290  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    0.99s  rss=1626MB
+  chunk 4/5 done
+    [backbone] projection done  T=24 N=3448  0.00s  rss=1626MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.02s  rss=1626MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.03s  rss=1626MB
+  chunk 5/5 done
+
+================================================================================
+TEST SPLIT -- MSE against observed price (lower is better)
+Model and every baseline scored on IDENTICAL positions.
+================================================================================
+mechanism  predictor               MSE   RMSE(cents)          n
+--------------------------------------------------------------------------------
+mece       model                0.0147          12.1      3,618
+mece       constant_0.5         0.1129          33.6      3,618
+mece       train_mean           0.0793          28.2      3,618
+mece       basket_uniform       0.0574          24.0      3,618
+mece       last_value           0.0065           8.1      3,408  <-- BEATS THE MODEL
+--------------------------------------------------------------------------------
+ladder     model                0.0152          12.3     11,020
+ladder     constant_0.5         0.1629          40.4     11,020
+ladder     train_mean           0.1671          40.9     11,020
+ladder     partner_price        0.1100          33.2     11,020
+ladder     last_value           0.0022           4.7      9,734  <-- BEATS THE MODEL
+--------------------------------------------------------------------------------
+
+================================================================================
+MECE, MATCHED SUBSET -- only positions where the leg has a PRIOR
+observation, so `last_value` (its own previous price) is computable.
+90% of consecutive observations show no price change, so this is the
+single strongest naive predictor in this market and the one to beat.
+================================================================================
+predictor                         MSE   RMSE(cents)          n
+--------------------------------------------------------------------------------
+model@last_value               0.0110          10.5      3,408
+last_value                     0.0065           8.1      3,408  <-- BEATS THE MODEL
+--------------------------------------------------------------------------------
+  The leg's own previous price predicts it better than the model does.
+  The model's advantage over cross-sectional baselines (partner, complement)
+  does NOT extend to the temporal one, and the headline fair-value claim
+  must be restated against this baseline.
+
+================================================================================
+LADDER, MATCHED SUBSET -- only positions where the leg has a PRIOR
+observation, so `last_value` (its own previous price) is computable.
+90% of consecutive observations show no price change, so this is the
+single strongest naive predictor in this market and the one to beat.
+================================================================================
+predictor                         MSE   RMSE(cents)          n
+--------------------------------------------------------------------------------
+model@last_value               0.0096           9.8      9,734
+last_value                     0.0022           4.7      9,734  <-- BEATS THE MODEL
+partner@last_value             0.1069          32.7      9,734
+--------------------------------------------------------------------------------
+  The leg's own previous price predicts it better than the model does.
+  The model's advantage over cross-sectional baselines (partner, complement)
+  does NOT extend to the temporal one, and the headline fair-value claim
+  must be restated against this baseline.
+
+================================================================================
+MECE, MATCHED SUBSET -- only positions where every sibling is unmasked,
+so `complement` (1 - sum of observed siblings) is actually computable.
+This is the comparison that counts: same positions, same information.
+================================================================================
+predictor                         MSE   RMSE(cents)          n
+--------------------------------------------------------------------------------
+model                          0.0101          10.0      2,605
+complement                     0.0120          11.0      2,605
+basket_uniform                 0.0503          22.4      2,605
+--------------------------------------------------------------------------------
+model vs complement on identical positions: +16.1% better
+
+excluded (partner also masked, ladder):      1,292
+excluded (a sibling also masked, mece comp): 1,013
+
+VERDICT: a trivial predictor beats the model on: mece/last_value, ladder/last_value, mece/last_value, ladder/last_value
+The model has not learned to price those legs from their neighbours, so a PnL
+result built on them would not be meaningful yet.

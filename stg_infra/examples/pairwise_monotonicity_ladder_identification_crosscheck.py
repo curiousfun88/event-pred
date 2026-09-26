@@ -91,7 +91,7 @@ try:
 except ImportError:
     from .pairwise_monotonicity_pnl_backtest import classify_ticker
 
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results.parquet"
 
 # Must match whatever months pairwise_monotonicity_taker_side_results.parquet
 # was built from, otherwise you're comparing pairs from different windows.

@@ -23,7 +23,7 @@ import polars as pl
 
 pl.Config.set_tbl_rows(-1)
 
-PNL_RESULTS_PATH = "mece_sum_to_one_pnl_results.parquet"
+PNL_RESULTS_PATH = "results/mece/mece_sum_to_one_pnl_results.parquet"
 
 SERIES_RE = re.compile(r"^([^-]+)")
 

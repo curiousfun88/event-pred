@@ -263,7 +263,7 @@ def _row(m, label, base_n=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", choices=["test", "val"], default="test")
-    ap.add_argument("--checkpoint", default="checkpoints/best.pt")
+    ap.add_argument("--checkpoint", default="runs/v1_reconstruction/best.pt")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--chunk-len", type=int, default=84)
     ap.add_argument("--threshold", type=float, default=GAP_THRESHOLD)

@@ -50,7 +50,7 @@ except ImportError:
 # down further if you find markets data older than June 2021.
 START_MONTH = (2021, 6)
 END_MONTH = (2025, 11)
-CACHE_PATH = "category_month_counts.parquet"
+CACHE_PATH = "results/data_audit/category_month_counts.parquet"
 
 # Categories most relevant to the two mechanisms -- ladder monotonicity
 # leans on crypto/financials, MECE full-basket leans overwhelmingly on

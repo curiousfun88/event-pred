@@ -1,0 +1,75 @@
+================================================================================================
+MEASURED-SPREAD FILE: pairwise_monotonicity_taker_side_results_corrected.parquet   rows=2,472,029
+================================================================================================
+
+Event-date coverage: 2024-04 .. 2028-06  (23 distinct months)
+  rows per month (top 12):
+    2025-10    282,372
+    2025-07    220,241
+    2025-08    213,168
+    2025-05    213,164
+    2025-09    210,980
+    2025-06    204,288
+    2025-04    198,541
+    2025-11    191,540
+    2025-03    161,692
+    2025-02    115,056
+    2025-01     94,038
+    2024-12     69,298
+
+Rows whose event month falls inside the study period ['2025-05', '2025-06', '2025-07', '2025-08', '2025-09']: 1,061,841 (43.0%)
+
+Spread distribution (cents per leg, as stored):
+  spread_a     n=   54,327  p5=  0.447  p25=  2.386  med=  5.448  p75= 10.975  p95= 26.472  max=  96.000
+  spread_b     n=   54,186  p5=  0.448  p25=  2.391  med=  5.448  p75= 10.973  p95= 26.429  max=  96.000
+  both legs    n=  108,513  p5=  0.447  p25=  2.389  med=  5.448  p75= 10.974  p95= 26.458  max=  96.000
+  half-spread  n=  108,513  p5=  0.224  p25=  1.194  med=  2.724  p75=  5.487  p95= 13.229  max=  48.000
+
+  Ladder breakeven from the friction sweep: ~3.0c per leg.
+    legs whose full spread  exceeds breakeven:  68.9%   median 5.448c
+    legs whose half spread  exceeds breakeven:  46.2%   median 2.724c
+
+Per-series median spread (top 15 of 138 series):
+  series                rows  median spread/leg (c)
+  KXINXU             433,745                  4.609
+  KXNASDAQ100U       433,133                  7.750
+  KXETHD             385,000                  7.250
+  KXBTCD             384,319                  3.525
+  KXEURUSDH          222,849                 51.812
+  KXUSDJPYH          220,804                    nan
+  EURUSDH            119,634                    nan
+  USDJPYH            119,592                    nan
+  KXDOGED             64,621                 11.271
+  KXXRPD              57,341                    nan
+  KXSHIBAD            13,778                    nan
+  BTCD                 4,732                  6.750
+  ETHD                 4,583                    nan
+  NASDAQ100U           2,992                    nan
+  INXU                 2,989                  2.472
+
+================================================================================================
+COVERAGE AGAINST ACTUAL TEST-SPLIT LADDER PAIRS
+================================================================================================
+  ladder edges examined:            60,891
+  exact (leg_a, leg_b) match:       60,891  100.0%
+  both tickers known:               60,891  100.0%
+  both series known:                60,891  100.0%
+
+  Our ladder series (top 12), with the file's median spread if known:
+  series             our edges   file median c/leg
+  KXBTCD                28,216               3.525
+  KXETHD                 9,935               7.250
+  KXBTCMAXY              4,242               1.749
+  KXHURCAT               2,608               4.852
+  KXINXU                 2,442               4.609
+  KXNASDAQ100U           2,408               7.750
+  KXETHMAXY              2,374               1.511
+  KXINXMAXY              1,209              10.825
+  KXCARPENTERWEEKSNUM1       1,195               8.245
+  KXMCSILENTHILLF          724              20.062
+  KXMCBORDERLANDSFOUR         668              11.808
+  KXLTCMAXY                632              11.036
+
+------------------------------------------------------------------------------------------------
+  VERDICT: exact per-pair spreads exist for some trades. Use them where
+  available, series median elsewhere, and REPORT THE SPLIT.

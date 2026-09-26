@@ -1,0 +1,31 @@
+  chunk 1/5 scanned
+  chunk 2/5 scanned
+  chunk 3/5 scanned
+  chunk 4/5 scanned
+  chunk 5/5 scanned
+
+ladder pairs tracked: 6,333
+violation sightings (gap > $0.010): 11,161
+snapshot spacing: 2:00:00 (horizon h = h snapshots ahead)
+
+====================================================================================================
+VIOLATION PERSISTENCE -- TEST split
+====================================================================================================
+  h   still quoted   still violation  | of quoted   med gap t  med gap t+h  persist MAE
+----------------------------------------------------------------------------------------------------
+  1    9,662  86.6%      9,350  83.8%        96.8% $    0.0500 $     0.0500 $     0.0078
+  2    9,494  85.1%      9,104  81.6%        95.9% $    0.0500 $     0.0500 $     0.0108
+  3    9,364  83.9%      8,932  80.0%        95.4% $    0.0500 $     0.0400 $     0.0121
+  6    9,018  80.8%      8,607  77.1%        95.4% $    0.0500 $     0.0400 $     0.0120
+ 12    8,493  76.1%      8,135  72.9%        95.8% $    0.0500 $     0.0400 $     0.0111
+----------------------------------------------------------------------------------------------------
+  'still quoted'    = both legs still have a price h snapshots later
+  'still violation' = and the gap is STILL above threshold
+  '| of quoted'     = survival CONDITIONAL on the pair still being quoted,
+                      which separates mispricing decay from data dropout
+  'persist MAE'     = error of the baseline gap_{t+h} = gap_t.
+                      THIS IS THE NUMBER A TRAINED FORECASTER MUST BEAT.
+
+  VERDICT: conditional survival never drops below 50% within the horizons
+  tested. Violations are persistent -- forecasting is well posed, and a
+  resting limit order has time to fill. The maker route is open.

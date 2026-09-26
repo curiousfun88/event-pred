@@ -13,7 +13,7 @@ from stg.pairs.metrics.report import build_full_metrics_report
 # --------------------------------------------------------------------------
 TRADES_GLOB = "data/trades/trades_kalshi_even/trades_2025-10.parquet"
 MARKETS_GLOB = "data/markets/markets_kalshi_even/markets_2025-10.parquet"
-METRICS_OUT_DIR = "artifacts/event_pairs_arb_baseline"
+METRICS_OUT_DIR = "results/pairs_trading"
 
 # cost_per_pair_turn was 0.0 in the original script. A Sharpe of 5.5+ with
 # ~3% max drawdown on a first baseline run is a strong signal that zero-cost

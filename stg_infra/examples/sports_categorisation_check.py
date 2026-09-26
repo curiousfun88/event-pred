@@ -560,8 +560,8 @@ def main():
     print(f"Scanning {len(months)} months of markets files ...")
     df = scan_markets(months)
     if not df.is_empty():
-        df.write_parquet("sports_categorisation_check.parquet")
-        print("Saved per-(month, series) detail to sports_categorisation_check.parquet")
+        df.write_parquet("results/data_audit/sports_categorisation_check.parquet")
+        print("Saved per-(month, series) detail to results/data_audit/sports_categorisation_check.parquet")
 
     check_a(df)
     check_b(df)

@@ -1,0 +1,170 @@
+LADDER MECHANISM | checkpoint best.pt (epoch 43, val_loss 0.0301)
+Split: TEST  |  gap threshold $0.010  |  max model gap $0.010
+Cost model: 100 contracts/leg, 1.0c haircut/leg, 2 legs per position
+
+Loading measured spreads...
+  spreads file: 2,472,029 rows, 40,692 with BOTH legs' spreads present (1.6%)
+  distinct tickers with a spread: 50,192 across 70 series; global median 5.308c/leg
+
+    [backbone] projection done  T=84 N=5349  0.07s  rss=1719MB
+      [spatial] t=   0/84  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/84  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/84  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.0s
+      [spatial] t=  60/84  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.1s
+      [spatial] t=  83/84  active=  975  mece_edges=  208  ladder_edges=  246  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1137 (at t=55)  total_elapsed=0.1s
+    [backbone] spatial done     0.10s  rss=1719MB
+      [temporal] n_active=5349  node_batch_size=512  -> 11 batch(es)  T=84
+      [temporal] batch   1/11  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/11  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/11  b= 229  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.85s  rss=1895MB
+  chunk 1/5 done
+    [backbone] projection done  T=84 N=5794  0.05s  rss=1895MB
+      [spatial] t=   0/84  active=  953  mece_edges=  188  ladder_edges=  252  elapsed=   0.0s
+      [spatial] t=  20/84  active= 1100  mece_edges=  214  ladder_edges=  285  elapsed=   0.0s
+      [spatial] t=  40/84  active=  614  mece_edges=   88  ladder_edges=  253  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1072  mece_edges=  276  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  952  mece_edges=  212  ladder_edges=  264  elapsed=   0.1s
+      [spatial] t=  83/84  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=32)  total_elapsed=0.1s
+    [backbone] spatial done     0.12s  rss=1895MB
+      [temporal] n_active=5794  node_batch_size=512  -> 12 batch(es)  T=84
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   1.0s
+      [temporal] batch  12/12  b= 162  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    1.01s  rss=1978MB
+  chunk 2/5 done
+    [backbone] projection done  T=84 N=6186  0.07s  rss=1978MB
+      [spatial] t=   0/84  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/84  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/84  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.1s
+      [spatial] t=  60/84  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/84  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t=  83/84  active=  648  mece_edges=  256  ladder_edges=   63  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.1s
+    [backbone] spatial done     0.11s  rss=1978MB
+      [temporal] n_active=6186  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch  13/13  b=  42  ckpt=False  elapsed=   0.9s
+    [backbone] temporal done    0.89s  rss=2000MB
+  chunk 3/5 done
+    [backbone] projection done  T=84 N=6434  0.04s  rss=2000MB
+      [spatial] t=   0/84  active=  688  mece_edges=  226  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/84  active=  879  mece_edges=  288  ladder_edges=  156  elapsed=   0.0s
+      [spatial] t=  40/84  active=  399  mece_edges=   98  ladder_edges=   95  elapsed=   0.0s
+      [spatial] t=  60/84  active=  796  mece_edges=  320  ladder_edges=   90  elapsed=   0.1s
+      [spatial] t=  80/84  active=  860  mece_edges=  236  ladder_edges=   81  elapsed=   0.1s
+      [spatial] t=  83/84  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1024 (at t=44)  total_elapsed=0.1s
+    [backbone] spatial done     0.10s  rss=2000MB
+      [temporal] n_active=6434  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b= 290  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    0.99s  rss=2008MB
+  chunk 4/5 done
+    [backbone] projection done  T=24 N=3448  0.01s  rss=2008MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=2008MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.04s  rss=2008MB
+  chunk 5/5 done
+
+pairs seen: 60,891 | violations over $0.010: 11,161
+Deduplication ('first'): 11,161 sightings -> 2,489 tradeable opportunities
+mean |gap|: $0.0815
+opportunities carrying a usable model signal (exactly one leg hidden): 490 of 2,489 (19.7%)
+
+====================================================================================================
+LADDER ARBITRAGE -- TEST split. Both strategies trade BOTH legs.
+====================================================================================================
+strategy                         n   kept%     total_pnl       mean     median    win%   sharpe
+----------------------------------------------------------------------------------------------------
+naive / idealized             2489       - $   20,276.00 $     8.15 $     4.00  100.0%    0.839
+stgat / idealized              141    5.7% $    1,134.00 $     8.04 $     6.00  100.0%    1.034
+----------------------------------------------------------------------------------------------------
+naive / fees_only             2489       - $   17,596.45 $     7.07 $     3.60   95.9%    0.752
+stgat / fees_only              141    5.7% $    1,000.20 $     7.09 $     4.54   97.2%    0.957
+----------------------------------------------------------------------------------------------------
+naive / realistic             2489       - $   12,618.45 $     5.07 $     1.60   69.9%    0.539
+stgat / realistic              141    5.7% $      718.20 $     5.09 $     2.54   78.0%    0.687
+----------------------------------------------------------------------------------------------------
+
+====================================================================================================
+CONTROL: is excess doing more than selecting large gaps?  (n=141, realistic costs)
+====================================================================================================
+subset                           n   kept%     total_pnl       mean     median    win%   sharpe  mean_gap
+----------------------------------------------------------------------------------------------------
+naive (all violations)        2489       - $   12,618.45 $     5.07 $     1.60   69.9%    0.539  $0.0815
+----------------------------------------------------------------------------------------------------
+model: excess<=0.01            141    5.7% $      718.20 $     5.09 $     2.54   78.0%    0.687  $0.0804
+control: gap-top-N (signal)     141    5.7% $    1,947.77 $    13.81 $     9.32  100.0%    1.214  $0.1739
+control: gap-top-N (all)       141    5.7% $    4,907.80 $    34.81 $    32.96  100.0%    2.731  $0.3884
+----------------------------------------------------------------------------------------------------
+random subsets of the signal pool, n=141, 2000 draws -- 5th / 50th / 95th percentile:
+   mean         3.398     4.391     5.475   model=    5.094   INSIDE band (= noise)
+   median       0.859     1.598     1.805   model=    2.536   outside band
+   win%        64.539    70.213    75.177   model=   78.014   outside band
+   sharpe       0.432     0.518     0.594   model=    0.687   outside band
+----------------------------------------------------------------------------------------------------
+  A model row that beats both gap controls AND sits above the random 95th
+  percentile is a real selection edge. Anything less is not.
+
+====================================================================================================
+MEASURED SPREADS -- each leg pays its own, not a flat assumption
+====================================================================================================
+Spread source for the traded opportunities:
+  exact      2,072   83.2%   this very pair
+  ticker         0    0.0%   each leg's own median, from other pairs
+  series       417   16.8%   market-family median -- an ASSUMPTION, not a measurement
+  none           0    0.0%   no data; falls back to the flat 1.0c
+
+  spread per leg over traded legs (c): p25=2.47  med=4.67  p75=8.29  p95=19.94
+
+--- cost = 0.5 x measured spread per leg -- half spread (cross from mid) ---
+subset                           n   kept%     total_pnl       mean     median    win%   sharpe  mean_spread
+----------------------------------------------------------------------------------------------------
+naive (all violations)        2489       - $      948.28 $     0.38 $    -0.87   39.5%    0.041        6.69c
+EX-ANTE: gap > own cost        982   39.5% $    7,702.77 $     7.84 $     4.76  100.0%    0.802        5.44c
+model: excess<=0.01            141    5.7% $       27.56 $     0.20 $    -0.36   46.8%    0.024        6.90c
+control: gap-top-N (signal)     141    5.7% $      954.22 $     6.77 $     5.75   79.4%    0.629        9.05c
+control: gap-top-N (all)       141    5.7% $    3,486.39 $    24.73 $    22.99   97.9%    1.710       12.08c
+----------------------------------------------------------------------------------------------------
+
+--- cost = 1 x measured spread per leg -- full spread (pessimistic) ---
+subset                           n   kept%     total_pnl       mean     median    win%   sharpe  mean_spread
+----------------------------------------------------------------------------------------------------
+naive (all violations)        2489       - $  -15,699.89 $    -6.31 $    -5.46   20.0%   -0.526        6.69c
+EX-ANTE: gap > own cost        498   20.0% $    4,045.76 $     8.12 $     3.89  100.0%    0.806        4.58c
+model: excess<=0.01            141    5.7% $     -945.07 $    -6.70 $    -4.39   22.0%   -0.531        6.90c
+control: gap-top-N (signal)     141    5.7% $     -321.34 $    -2.28 $    -0.59   46.1%   -0.159        9.05c
+control: gap-top-N (all)       141    5.7% $    1,782.99 $    12.65 $    16.70   72.3%    0.622       12.08c
+----------------------------------------------------------------------------------------------------
+
+  READ THE EX-ANTE ROW CAREFULLY. Under this cost model realized PnL is a
+  DETERMINISTIC function of gap, prices and spread, so 'take iff gross > cost'
+  selects exactly the profitable trades and will show a 100% win rate BY
+  CONSTRUCTION. That is not a forecasting result. It is the upper bound on
+  what any selection rule can achieve GIVEN PERFECT KNOWLEDGE OF THE SPREAD,
+  and the spread here is a period aggregate, not a live quote. The gap between
+  this row and reality is exactly the error in forecasting execution cost --
+  which is the only unobservable term in the equation, and therefore the only
+  place a learned model can contribute anything at all.
+
+  If the gap-top-N rows go negative here while the model row survives,
+  the large-gap 'opportunities' were spread artifacts and selection matters.
+  If every row goes negative, the strategy does not clear real execution
+  costs and THAT is the finding -- consistent with the ~1% exploitation
+  rate reported for apparent arbitrage on zero-fee Polymarket.

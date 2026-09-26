@@ -45,8 +45,8 @@ KNOWN_MECE_EVENT = "KXHIGHLAX-25FEB03"
 MARKETS_PATH = str(_REPO_ROOT / "data/markets/markets_kalshi_even/markets_2025-02.parquet")  # Feb = even month
 TRADES_PATH = str(_REPO_ROOT / "data/trades/trades_kalshi_even/trades_2025-02.parquet")
 
-MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "mece_sum_to_one_leg_prices.parquet")
-LADDER_PAIRS_PATH = str(_REPO_ROOT / "pairwise_monotonicity_taker_side_results_corrected.parquet")
+MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "results/mece/mece_sum_to_one_leg_prices.parquet")
+LADDER_PAIRS_PATH = str(_REPO_ROOT / "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
 
 
 def load_single_day():

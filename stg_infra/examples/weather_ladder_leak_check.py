@@ -53,7 +53,7 @@ except ImportError:
 
 pl.Config.set_tbl_rows(-1)
 
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results_corrected.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet"
 
 
 def _series_prefix(ticker: str) -> str:

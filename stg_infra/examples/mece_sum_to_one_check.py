@@ -551,8 +551,8 @@ else:
 #    sum, to size per-leg taker fees correctly instead of falling back to a
 #    flat assumption for every leg.
 # --------------------------------------------------------------------------
-RESULTS_OUT_PATH = "mece_sum_to_one_results.parquet"
-LEG_PRICES_OUT_PATH = "mece_sum_to_one_leg_prices.parquet"
+RESULTS_OUT_PATH = "results/mece/mece_sum_to_one_results.parquet"
+LEG_PRICES_OUT_PATH = "results/mece/mece_sum_to_one_leg_prices.parquet"
 
 full_all.write_parquet(RESULTS_OUT_PATH)
 print(f"\nWrote {full_all.height} full-basket (event, day) snapshot(s) to {RESULTS_OUT_PATH}")

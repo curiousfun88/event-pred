@@ -185,8 +185,8 @@ def main():
         f"{results.filter(pl.col('spread_ratio') > 3).height}"
     )
 
-    results.write_parquet("pairwise_monotonicity_taker_side_results.parquet")
-    print("full results written to pairwise_monotonicity_taker_side_results.parquet")
+    results.write_parquet("results/ladder/pairwise_monotonicity_taker_side_results.parquet")
+    print("full results written to results/ladder/pairwise_monotonicity_taker_side_results.parquet")
 
 
 if __name__ == "__main__":

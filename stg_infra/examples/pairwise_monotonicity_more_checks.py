@@ -31,7 +31,7 @@ previous script:
 
 import polars as pl
 
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results.parquet"
 TRADES_PATH = "data/trades/trades_kalshi_even/trades_2025-10.parquet"        # adjust to your real path
 MARKETS_PATH = "data/markets/markets_kalshi_even/trades_2025-10.parquet"      # adjust to your real path (check 6 only)
 

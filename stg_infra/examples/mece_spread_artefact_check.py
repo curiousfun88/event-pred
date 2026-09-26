@@ -84,7 +84,7 @@ import polars as pl
 
 pl.Config.set_tbl_rows(-1)
 
-LEG_PRICES_PATH = "mece_sum_to_one_leg_prices.parquet"
+LEG_PRICES_PATH = "results/mece/mece_sum_to_one_leg_prices.parquet"
 TICKER_COL, SIDE_COL, PRICE_COL, TIME_COL = "ticker", "taker_side", "yes_price", "created_time"
 PRICE_SCALE = 100.0
 
@@ -624,8 +624,8 @@ def main():
 
     per_basket = build_basket_table(legs, sides, args.max_side_gap,
                                     args.max_basket_span)
-    per_basket.write_parquet("mece_spread_artefact_check.parquet")
-    print("saved per-basket detail to mece_spread_artefact_check.parquet")
+    per_basket.write_parquet("results/mece/mece_spread_artefact_check.parquet")
+    print("saved per-basket detail to results/mece/mece_spread_artefact_check.parquet")
     report(per_basket, args.gate_threshold)
 
 

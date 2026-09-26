@@ -47,7 +47,7 @@ import polars as pl
 import requests
 
 BASE_URL = "https://external-api.kalshi.com/trade-api/v2"
-OUT_PATH = "kalshi_series_categories.parquet"
+OUT_PATH = "results/data_audit/kalshi_series_categories.parquet"
 PAGE_LIMIT = 200
 REQUEST_PAUSE_SECONDS = 0.1  # be polite, this is someone else's public API
 

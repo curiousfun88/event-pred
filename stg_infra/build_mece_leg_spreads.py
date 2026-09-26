@@ -405,10 +405,10 @@ def main():
     ap.add_argument("--months", nargs="+", default=None,
                     help="only used when --trades is not given: falls back to the "
                          "data/trades/trades_kalshi_{even,odd}/ convention.")
-    ap.add_argument("--legs", default="mece_sum_to_one_leg_prices.parquet",
+    ap.add_argument("--legs", default="results/mece/mece_sum_to_one_leg_prices.parquet",
                     help="parquet listing the MECE basket legs; needs a "
                          "'ticker' column.")
-    ap.add_argument("--out", default="mece_leg_spreads.parquet")
+    ap.add_argument("--out", default="results/mece/mece_leg_spreads.parquet")
     ap.add_argument("--min-n", type=int, default=10,
                     help="minimum trades on EACH side before a leg's spread is "
                          "trusted. Below this the estimate is order-flow noise.")

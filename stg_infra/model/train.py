@@ -178,7 +178,7 @@ class TrainingConfig:
     lr: float = 1e-3
     epochs: int = 20
     seed: int = 0
-    checkpoint_dir: str = "checkpoints"
+    checkpoint_dir: str = "runs/v1_reconstruction"
     raw_feature_width: int = 9    # _TICKER_RAW_FEATURES in stg/nodes/kalshi.py -- what select_and_mask replaces
     patience: int = 5             # stop after this many epochs with no val improvement; 0 disables
 

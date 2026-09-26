@@ -57,7 +57,7 @@ def strike_of(ticker: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pairs",
-                    default="pairwise_monotonicity_taker_side_results_corrected.parquet")
+                    default="results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
     args = ap.parse_args()
 
     p = Path(args.pairs)

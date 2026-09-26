@@ -75,7 +75,7 @@ def main():
         sweep = pl.concat(rows).select(
             ["haircut_fraction", "category", "n_opportunities", "realistic_total_usd", "realistic_win_rate"]
         )
-        out_path = "pairwise_monotonicity_pnl_sensitivity_results.parquet"
+        out_path = "results/ladder/pairwise_monotonicity_pnl_sensitivity_results.parquet"
         sweep.write_parquet(out_path)
         print(f"Wrote full sweep detail to {out_path} -- use it to plot realistic_total_usd "
               f"vs. haircut_fraction per category and find each category's zero-crossing point.")

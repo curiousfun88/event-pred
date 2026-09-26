@@ -129,8 +129,8 @@ def run_window(trades_window: pl.DataFrame, pairs: list[tuple[str, str]], label:
     print(f"  realistic median PnL: ${summary['realistic_median_usd']}")
     print()
 
-    results.write_parquet(f"pairwise_monotonicity_weather_results_{label}.parquet")
-    pnl.write_parquet(f"pairwise_monotonicity_weather_pnl_{label}.parquet")
+    results.write_parquet(f"results/ladder/pairwise_monotonicity_weather_results_{label}.parquet")
+    pnl.write_parquet(f"results/ladder/pairwise_monotonicity_weather_pnl_{label}.parquet")
     return summary
 
 

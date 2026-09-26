@@ -38,8 +38,8 @@ except ImportError:
 
 pl.Config.set_tbl_rows(-1)
 
-RESULTS_PATH = "mece_sum_to_one_results.parquet"
-LEG_PRICES_PATH = "mece_sum_to_one_leg_prices.parquet"
+RESULTS_PATH = "results/mece/mece_sum_to_one_results.parquet"
+LEG_PRICES_PATH = "results/mece/mece_sum_to_one_leg_prices.parquet"
 TOP_N = 20  # wider than the printed top-10, to also catch borderline cases
 
 

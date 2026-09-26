@@ -1,0 +1,163 @@
+================================================================================================================
+MECE MAKER-SIDE PnL -- best.pt, TEST split, h=1 (2h)
+================================================================================================================
+  fill model = flow   partial policy = cross_remainder   maker fee = 0.0175
+  maker-fee-free series: none (charging every series)
+  spreads file: 2,472,029 rows, 40,692 with BOTH legs' spreads present (1.6%)
+  distinct tickers with a spread: 50,192 across 70 series; global median 5.308c/leg
+    [backbone] projection done  T=168 N=9048  0.25s  rss=2408MB
+      [spatial] t=   0/168  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/168  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.1s
+      [spatial] t=  40/168  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.1s
+      [spatial] t=  60/168  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/168  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.2s
+      [spatial] t= 100/168  active=  614  mece_edges=   70  ladder_edges=  241  elapsed=   0.2s
+      [spatial] t= 120/168  active=  990  mece_edges=  220  ladder_edges=  257  elapsed=   0.2s
+      [spatial] t= 140/168  active= 1145  mece_edges=  190  ladder_edges=  289  elapsed=   0.2s
+      [spatial] t= 160/168  active=  604  mece_edges=  174  ladder_edges=  251  elapsed=   0.2s
+      [spatial] t= 167/168  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=116)  total_elapsed=0.3s
+    [backbone] spatial done     0.29s  rss=2408MB
+      [temporal] n_active=9048  node_batch_size=512  -> 18 batch(es)  T=168
+      [temporal] batch   1/18  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch   6/18  b= 512  ckpt=False  elapsed=   1.9s
+      [temporal] batch  11/18  b= 512  ckpt=False  elapsed=   3.5s
+      [temporal] batch  16/18  b= 512  ckpt=False  elapsed=   5.0s
+      [temporal] batch  18/18  b= 344  ckpt=False  elapsed=   5.5s
+    [backbone] temporal done    5.50s  rss=3079MB
+  chunk 1/3 scanned (2,743 events)
+    [backbone] projection done  T=168 N=10592  0.26s  rss=3079MB
+      [spatial] t=   0/168  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/168  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.0s
+      [spatial] t=  60/168  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/168  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t= 100/168  active=  376  mece_edges=  142  ladder_edges=   73  elapsed=   0.1s
+      [spatial] t= 120/168  active=  849  mece_edges=  330  ladder_edges=   92  elapsed=   0.1s
+      [spatial] t= 140/168  active=  946  mece_edges=  272  ladder_edges=  147  elapsed=   0.1s
+      [spatial] t= 160/168  active=  393  mece_edges=  142  ladder_edges=   72  elapsed=   0.2s
+      [spatial] t= 167/168  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.2s
+    [backbone] spatial done     0.20s  rss=3079MB
+      [temporal] n_active=10592  node_batch_size=512  -> 21 batch(es)  T=168
+      [temporal] batch   1/21  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/21  b= 512  ckpt=False  elapsed=   1.8s
+      [temporal] batch  11/21  b= 512  ckpt=False  elapsed=   3.2s
+      [temporal] batch  16/21  b= 512  ckpt=False  elapsed=   4.8s
+      [temporal] batch  21/21  b= 352  ckpt=False  elapsed=   6.3s
+    [backbone] temporal done    6.34s  rss=3236MB
+  chunk 2/3 scanned (6,756 events)
+    [backbone] projection done  T=24 N=3448  0.00s  rss=3236MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.03s  rss=3236MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.05s  rss=3236MB
+  chunk 3/3 scanned (7,035 events)
+
+  7,035 complete basket-snapshots, 345 distinct baskets
+
+  spread sources: global=27,335
+
+================================================================================================================
+configuration     trades  baskets   win%     gross $     fees $    spread $        NET $  net/trade               95% CI
+--------------------------------------------------------------------------------------------------------------------------
+taker_taker        2,366      316  51.1%       6,918     15,985      63,305      -72,372     -30.59     [-31.40, -29.73]
+maker_taker        1,729      295  56.0%       6,146      9,530      28,417      -31,801     -18.39     [-19.28, -17.40]
+maker_maker        1,729      295  56.0%       6,146      8,011      10,000      -11,865      -6.86       [-7.76, -5.95]
+mk_tk[random]      1,726      273  39.0%         647      9,254      27,457      -36,063     -20.89     [-22.24, -19.49]
+mk_tk[revert]      4,509      341  38.2%       5,056     25,294      45,567      -65,805     -14.59     [-15.36, -13.78]
+--------------------------------------------------------------------------------------------------------------------------
+  a NEGATIVE 'spread $' means the spread was EARNED, not paid.
+    taker_taker     cross both sides (the published baseline)
+    maker_taker     post entry, cross exit -- the realistic one
+    maker_maker     post both -- optimistic bound, not a result
+    mk_tk[random]   CONTROL: same gate, same filter, coin-flip direction
+    mk_tk[revert]   CONTROL: same filter, no-model reversion direction
+
+================================================================================================================
+ADVERSE SELECTION
+================================================================================================================
+  entry signals            : 2,366
+  fully filled             : 99 (4.2%)
+  partially filled         : 1,630 (68.9%)
+  gross edge, ALL signals  : $    2.92 / trade  (n=2,366)
+  gross edge, FILLED only  : $    5.44 / trade  (n=99)
+  adverse selection        : $    2.52 / trade (+86.2%)
+
+  Filled orders are BETTER than the signal average. That is FAVOURABLE
+  selection, the opposite of what a maker should expect, and it is the
+  single most suspicious thing this script can print. It means the fill
+  filter is not merely thinning the sample -- it is choosing a better
+  one. The control rows are what decide whether that belongs to the
+  model or to the filter:
+    maker_taker  (model direction) : $-18.39/trade over 1,729 trades
+    mk_tk[random] (coin flip)      : $-20.89/trade over 1,726 trades
+    The coin flip loses money through the same filter, so the model
+    row is not just the filter. Report the GAP between the two as
+    the model's contribution, not the model row on its own.
+
+================================================================================================================
+THE MODEL'S CONTRIBUTION  (model minus control, same execution, same fill rule)
+================================================================================================================
+  Not the model row. The GAP. The model row includes whatever the entry
+  gate and the fill filter contribute on their own, and those need no
+  forecast; only the difference from a control that uses the same gate and
+  the same filter is attributable to the STGAT.
+
+  vs coin flip                +2.50 $/trade   95% CI [+0.72, +4.21]   excludes 0 -- a real contribution
+  vs no-model reversion       -3.80 $/trade   95% CI [-5.04, -2.58]   excludes 0 the WRONG WAY -- the model is significantly WORSE
+
+  The two rows are NOT the same kind of comparison:
+    vs coin flip  -- identical entry gate, identical fill filter, only the
+                     direction differs. This is the causal control, and it
+                     is the one that isolates the forecast.
+    vs reversion  -- a different strategy with its own entry gate and its
+                     own trade set. Losing to it says the model picks more
+                     EXPENSIVE trades, not that its signal is worse; check
+                     gross/trade against cost/trade before concluding.
+
+  Resampled over baskets drawn once per replicate and applied to BOTH
+  books, so the two means move together and the difference is a real
+  interval rather than two independent noise draws subtracted.
+
+================================================================================================================
+WHAT THE FILL FILTER SELECTED
+================================================================================================================
+  Requiring flow to oppose the position on EVERY leg is a strong condition.
+  If the surviving baskets differ systematically from the rest, the maker
+  result is about that subpopulation, not about maker execution.
+
+  population          n        legs/basket   mean leg price c  mean |delta_pred|  mean |delta_real|
+  ------------------------------------------------------------------------------------------------
+  all             2,366               5.04              22.95             0.0327             0.0458
+  filled             99               3.66              32.07             0.0349             0.0635
+  ------------------------------------------------------------------------------------------------
+  Divergence in 'legs/basket' or 'mean leg price' is a composition shift:
+  fees scale with both, so a filter that prefers cheaper or smaller baskets
+  lowers costs for reasons that have nothing to do with the forecast.
+
+================================================================================================================
+HOW TO READ THIS
+================================================================================================================
+  Quote maker_taker. Entry is patient -- an unfilled post costs nothing --
+  but the exit is not optional, so crossing it is the honest assumption.
+  maker_maker assumes you can also leave whenever you like, which is the
+  assumption that makes every maker backtest look good.
+
+  Compare against taker_taker in the SAME table rather than against the
+  earlier run: same events, same fill model, one difference.
+
+  If maker_taker is positive, check three things before believing it:
+    1. the fill rate -- a 5% fill rate on 2,366 signals is ~120 trades, and
+       a positive mean over 120 trades needs its CI, not its point estimate;
+    2. that --fill-model optimistic gives a MATERIALLY better number, which
+       is what proves the fill rule was actually binding;
+    3. that the win rate did not collapse relative to the taker row -- if it
+       did, you are being filled on the wrong side and the profit is coming
+       from the spread alone, which a real counterparty would not hand over.

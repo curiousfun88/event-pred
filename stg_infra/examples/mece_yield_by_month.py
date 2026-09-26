@@ -513,8 +513,8 @@ def main():
           f"({tmonths[0]}..{tmonths[-1]}) ...")
     df = coverage_by_month(cands, legs, tmonths)
     if not df.is_empty():
-        df.write_parquet("mece_yield_by_month.parquet")
-        print("\nSaved to mece_yield_by_month.parquet")
+        df.write_parquet("results/data_audit/mece_yield_by_month.parquet")
+        print("\nSaved to results/data_audit/mece_yield_by_month.parquet")
     report(df)
 
 

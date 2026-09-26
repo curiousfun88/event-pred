@@ -223,7 +223,7 @@ def warn_spread_coverage(legspread, args, floor: float = 0.50) -> None:
               "weather or")
         print("  !! sports legs. Build the right one with build_mece_leg_spreads.py "
               "and pass")
-        print("  !! --spreads mece_leg_spreads.parquet.")
+        print("  !! --spreads results/mece/mece_leg_spreads.parquet.")
     print("  !! Do NOT describe these results as using measured per-leg spreads.")
     print("  " + "!" * 86)
     print()
@@ -305,7 +305,7 @@ def apply_filters(events, args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--checkpoint", default="checkpoints_mece/best.pt")
+    ap.add_argument("--checkpoint", default="runs/v2_mece/best.pt")
     ap.add_argument("--split", choices=["train", "val", "test"], default="val",
                     help="DEFAULTS TO VAL. Tune here; spend test once.")
     ap.add_argument("--months", nargs="+", default=None)
@@ -324,7 +324,7 @@ def main():
     # reported "measured spreads". build_mece_leg_spreads.py exists
     # precisely to fix this; it was never passed. See the coverage guard at
     # the end of main().
-    ap.add_argument("--spreads", default="mece_leg_spreads.parquet",
+    ap.add_argument("--spreads", default="results/mece/mece_leg_spreads.parquet",
                     help="per-leg measured spreads for the MECE population, as "
                          "written by build_mece_leg_spreads.py (leg_a == leg_b == "
                          "ticker). 'none' to assume a flat spread instead. Do NOT "

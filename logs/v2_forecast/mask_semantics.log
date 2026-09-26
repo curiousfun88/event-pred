@@ -1,0 +1,45 @@
+split=val  chunks=2  masked ticker positions=186,809  of which price-unchanged vs previous snapshot=100,620 (53.9%)
+
+============================================================================================
+FEATURE VALUES ON MASKED TICKER POSITIONS
+============================================================================================
+slot  name                zero%          p25       median          p75          max
+--------------------------------------------------------------------------------------------
+0     last_yes_price       0.0%       4.0000      23.0000      58.0000      99.0000
+1     yes_vwap             0.0%       7.3810      26.9714      56.7956      99.0000
+2     price_return        53.1%       0.0000       0.0000       0.0000      98.0000
+3     price_std           47.7%       0.0000       0.4702       2.4727      69.2965
+4     window_volume        0.0%      30.0000     183.0000     935.0000 3002222.0000
+5     net_flow             0.4%      -0.6888       0.8196       1.0000       1.0000
+6     buy_ratio           20.3%       0.1556       0.9098       1.0000       1.0000
+7     trade_intensity     33.0%       0.0000       0.0021       0.0123      33.0000
+8     time_to_close       66.2%       0.0000       0.0000   43140.0000 63072000.0000
+
+============================================================================================
+SAME, RESTRICTED TO POSITIONS WHOSE PRICE DID NOT CHANGE
+(the population behind the '90% unchanged' staleness result)
+============================================================================================
+slot  name                zero%          p25       median          p75          max
+--------------------------------------------------------------------------------------------
+0     last_yes_price       0.0%       1.0000      15.0000      56.0000      99.0000
+1     yes_vwap             0.0%       4.0000      23.0000      56.0703      99.0000
+2     price_return        58.0%       0.0000       0.0000       0.0000      89.0000
+3     price_std           52.6%       0.0000       0.0000       3.5355      67.8822
+4     window_volume        0.0%      31.0000     204.0000    1003.0000 1221664.0000
+5     net_flow             0.4%      -0.4443       0.8773       1.0000       1.0000
+6     buy_ratio           18.4%       0.2779       0.9387       1.0000       1.0000
+7     trade_intensity     35.0%       0.0000       0.0020       0.0123      20.0000
+8     time_to_close       75.3%       0.0000       0.0000       0.0000 63072000.0000
+
+--------------------------------------------------------------------------------------------
+  window_volume == 0 on all masked positions : 0.0%
+  window_volume == 0 on unchanged-price ones : 0.0%
+
+  VERDICT: mask IMPLIES a trade. Every observed leg traded in its window,
+  so a liveness filter is vacuous -- and the '90% unchanged' result does
+  NOT mean stale prints. It means legs trade repeatedly at the SAME price:
+  a sticky price under active trading. The staleness sections of
+  claude/stgat-results-and-limitations.md need rewriting, and the
+  limits-to-arbitrage story changes from 'the data is stale' to 'the
+  market genuinely quotes through these violations'.
+--------------------------------------------------------------------------------------------

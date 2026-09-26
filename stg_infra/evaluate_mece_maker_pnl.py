@@ -139,12 +139,12 @@ def fills(flow: float, side: int, volume: float, contracts: float, model: str) -
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--checkpoint", default="checkpoints_mece/best.pt")
+    ap.add_argument("--checkpoint", default="runs/v2_mece/best.pt")
     ap.add_argument("--split", choices=["train", "val", "test"], default="test")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")
     ap.add_argument("--spreads",
-                    default="pairwise_monotonicity_taker_side_results_corrected.parquet")
+                    default="results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
     ap.add_argument("--horizon", type=int, default=1)
     ap.add_argument("--entry-threshold", type=float, default=0.01)
     ap.add_argument("--contracts", type=float, default=100.0)

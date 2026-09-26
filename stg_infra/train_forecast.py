@@ -289,7 +289,7 @@ def main():
                          "happened once and survived three runs.")
     ap.add_argument("--patience", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--checkpoint-dir", default="checkpoints_forecast")
+    ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
     args = ap.parse_args()
 
     months = args.months or PILOT_MONTHS

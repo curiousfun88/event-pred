@@ -87,7 +87,7 @@ import polars as pl
 # original regex-ticker-suffix results. The corrected file only contains
 # crypto/financials (+ a handful of mentions/entertainment/politics) pairs,
 # since weather/economics/exotics correctly produce zero valid pairs now.
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results_corrected.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet"
 
 try:
     from data_windows import LADDER_MONTHS as TARGET_MONTHS
@@ -127,7 +127,7 @@ MIN_N_PER_SIDE = 20                     # restrict to the well-sampled subset by
 # lookup file not yet fetched, or a series created after the fetch) -- and
 # unmapped tickers are labeled "other (unmapped)", not silently "other", so
 # it stays visible which ones still aren't backed by a real Kalshi category.
-SERIES_CATEGORIES_PATH = "kalshi_series_categories.parquet"  # from fetch_kalshi_series_categories.py
+SERIES_CATEGORIES_PATH = "results/data_audit/kalshi_series_categories.parquet"  # from fetch_kalshi_series_categories.py
 
 CRYPTO_KEYS = ["BTC", "ETH", "SHIBA", "XRP", "SOL", "DOGE"]
 SPORTS_KEYS = ["NBA", "MLB", "NFL", "NHL", "WINS", "NCAAF", "NCAAB", "SOCCER", "EPL"]
@@ -455,7 +455,7 @@ def main():
     summarize_by_category(pnl)
     sensitivity_fees_only(pnl)
 
-    out_path = "pairwise_monotonicity_pnl_results.parquet"
+    out_path = "results/ladder/pairwise_monotonicity_pnl_results.parquet"
     pnl.write_parquet(out_path)
     print(f"Wrote per-opportunity PnL detail to {out_path}")
 

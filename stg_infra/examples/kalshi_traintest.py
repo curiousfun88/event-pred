@@ -19,10 +19,10 @@ from stg.strategies.features import LogTransformFeatures, StandardScaleFeatures,
 
 from scripts.data_split_odd_even_months import SplitByOddEvenMonths
 
-+# NOTE: no sys.path manipulation needed here -- `stg` resolves via the
-+# editable install (`pip install -e ./stg_infra`), same as every other
-+# module in this codebase. `scripts` still needs to be run from the repo
-+# root (or with the repo root on PYTHONPATH) for the import above to resolve.
+# NOTE: no sys.path manipulation needed here -- `stg` resolves via the
+# editable install (`pip install -e ./stg_infra`), same as every other
+# module in this codebase. `scripts` still needs to be run from the repo
+# root (or with the repo root on PYTHONPATH) for the import above to resolve.
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 

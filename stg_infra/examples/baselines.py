@@ -57,10 +57,10 @@ import os
 
 import polars as pl
 
-LADDER_PNL_PATH = "pairwise_monotonicity_pnl_results.parquet"
-MECE_PNL_PATH = "mece_sum_to_one_pnl_results.parquet"
+LADDER_PNL_PATH = "results/ladder/pairwise_monotonicity_pnl_results.parquet"
+MECE_PNL_PATH = "results/mece/mece_sum_to_one_pnl_results.parquet"
 
-OUT_PATH = "baseline_results_summary.parquet"
+OUT_PATH = "results/baselines/baseline_results_summary.parquet"
 
 # --- universe sizes, for the coverage_pct column -----------------------
 # Ladder: 464,709 valid pairs identified by

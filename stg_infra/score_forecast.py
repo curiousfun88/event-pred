@@ -71,7 +71,7 @@ from train_forecast import PILOT_MONTHS, _accum, _chunk_loss, _finish  # noqa: E
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--checkpoint", default="checkpoints_mece/best.pt")
+    ap.add_argument("--checkpoint", default="runs/v2_mece/best.pt")
     ap.add_argument("--split", choices=["train", "val", "test"], default="test")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")

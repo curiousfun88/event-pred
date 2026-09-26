@@ -1,0 +1,646 @@
+% ---------------------------------------------------------------------------
+% Data window memo for supervisor consultation.
+% Compiles with pdflatex (2 passes for the table of contents / references).
+%
+% LATEX NOTES, learned the hard way on the earlier progress-report conversion:
+%
+%   1. \textcent is a TEXT-mode command. Used bare inside $...$ it emits only
+%      a WARNING (not an error) and silently drops the glyph, so "$4.3\cent$"
+%      renders as "4.3". Wrapping it in \text{} (amsmath) makes it valid in
+%      both modes. Never use \textcent directly in maths.
+%   2. Maths inside \textbf{} is NOT bolded. Use \bm{} from the bm package for
+%      bold symbols and numbers inside maths.
+%   3. When checking the build, count WARNINGS as well as errors. A clean
+%      "0 errors" hid a dropped-glyph bug once already.
+% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{siunitx}
+\usepackage[table]{xcolor}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{enumitem}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue!60!black}
+
+% Cent sign valid in BOTH text and math mode. See note 1 above.
+\newcommand{\cent}{\text{\textcent}}
+
+\setlist[itemize]{itemsep=2pt, topsep=4pt}
+\setlist[enumerate]{itemsep=3pt, topsep=4pt}
+\sisetup{group-separator={,}, group-minimum-digits=4, detect-weight=true}
+
+\title{\vspace{-1.6cm}\textbf{Data window for the MECE STGAT experiment}\\[2pt]
+\large What 54 months of Kalshi data actually contains}
+\author{}
+\date{\vspace{-0.9cm}26 September 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.2cm}
+
+\section*{Summary and the ask}
+
+You raised that twelve months is not enough data. The archive does span
+2021-06 to 2025-11, which is 54 months, but the usable portion is much
+smaller and I have now measured it rather than assumed it. This memo sets out
+the measurement, the three constraints it reveals, and the split design I
+propose instead of a longer calendar. Four questions where your view would
+change what I do are at the end (Section~\ref{sec:questions}).
+
+\begin{itemize}
+  \item Ten of the 54 months contain \emph{zero} trades on any candidate
+        basket leg. This is a hard floor.
+  \item A 23-month middle period averages 37 usable basket-days per month at
+        a 5.5-hour median gap between legs, which is stale pricing rather
+        than mispricing.
+  \item Platform traded notional grew by a factor of 369 over the archive, so
+        pooling across it estimates a parameter that exists in neither
+        regime.
+  \item I propose 13 months (2024-11 to 2025-11) with seven expanding-window
+        walk-forward folds, giving seven forward test evaluations instead of
+        one.
+  \item Separately, and since we last spoke: a measurement check has shown
+        that 92.5\% of the apparent basket deviation is the bid/ask spread
+        rather than mispricing, so I have withdrawn the profitability claim.
+        Section~\ref{sec:lit} sets out the test. The forecasting results are
+        unaffected. This lowers what the data window has to support, and I
+        would value your view on the reframe (question~6).
+\end{itemize}
+
+\section{Why months are the wrong unit}
+
+The mechanism under test is the sum-to-one constraint on a mutually exclusive,
+collectively exhaustive basket: if exactly one leg of a partition resolves
+\textsc{yes}, the legs' prices must sum to \$1 at resolution. Measuring a
+deviation therefore requires a price for \emph{every} leg. If two of six legs
+have not traded, there is no basket sum, no deviation, and nothing to trade or
+forecast, however long the calendar is.
+
+The unit of available data is therefore the \textbf{fully covered
+basket-day}: one (event, day) observation where every declared leg traded. A
+month with 12 such observations is not a month of data.
+
+\section{Measured availability}
+
+Identification follows the resolved-outcome test already used in the project
+(fully resolved, exactly one \textsc{yes} leg, not a threshold ladder, not a
+combination proposition, and family-consistent across at least three
+historical instances). Coverage is then counted per month. Of 54 months, 44
+have at least one fully covered basket, 41 have at least ten, and 21 have at
+least one hundred. Grouped:
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrrrrr}
+\toprule
+Period & Months & Basket-days & Per mth & Median $|\mathrm{dev}|$ & Median gap \\
+\midrule
+2021-06 to 2022-03 & 10 & 0 & 0 & --- & --- \\
+2022-04 to 2022-11 & 8 & 914 & 114 & $3.1\cent$ & 3.15\,h \\
+2022-12 to 2024-10 & 23 & 861 & 37 & $8.1\cent$ & 5.49\,h \\
+\textbf{2024-11 to 2025-11} & \textbf{13} & \textbf{5,806} & \textbf{447} & $\bm{4.3\cent}$ & \textbf{3.95\,h} \\
+\midrule
+\emph{current pilot} 2025-05 to 09 & \emph{5} & \emph{3,242} & \emph{648} & $3.8\cent$ & 3.09\,h \\
+\bottomrule
+\end{tabular}
+\caption{Fully covered MECE basket-days per period. ``Median leg gap'' is the
+span between the earliest and latest last-trade time among a basket's legs on
+the day it was counted as covered.}
+\end{table}
+
+\section{Three constraints, each measured}
+
+\subsection{The first ten months have no coverage at all}
+
+2021-06 to 2022-03 contain no trades on any leg of any candidate basket. Not
+thin coverage: none. This is a property of Kalshi's early catalogue, not a
+methodological choice, and no reanalysis recovers those months.
+
+\subsection{The middle 23 months are stale, not mispriced}
+\label{sec:stale}
+
+The 2022-12 to 2024-10 period averages 37 basket-days per month, against 447
+in the proposed window. More importantly the median gap between the first and
+last leg trade on a ``covered'' day rises to 5.49 hours, and the apparent
+deviation rises with it:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Period & Median $|\mathrm{dev}|$ & Median leg gap \\
+\midrule
+2022-04 to 2022-11 & $3.1\cent$ & 3.15\,h \\
+2023-07 to 2023-12 & $5.9\cent$ & 5.4\,h \\
+2024-01 to 2024-06 & $13.2\cent$ & 5.6\,h \\
+2024-11 to 2025-11 & $4.3\cent$ & 3.95\,h \\
+\bottomrule
+\end{tabular}
+\caption{Apparent deviation scales with the leg gap, not with market
+inefficiency. The 2024-01 to 2024-06 rows peak at $15.5\cent$ at gaps of 5 to
+6.6 hours.}
+\end{table}
+
+When a basket's legs last traded a median of 5.6 hours apart, most of a
+$13\cent$ ``deviation'' is the market having moved between the legs. Training
+on that period would teach staleness as signal and would inflate the
+reported opportunity count with artefacts. I propose to exclude it from
+fitting and to cite it only as a data-availability figure.
+
+\subsection{A 369-fold liquidity regime change}
+
+Monthly traded notional across the archive:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{lrr}
+\toprule
+Month & Total notional & Weather/climate notional \\
+\midrule
+2024-06 & \$3.2M & \$0.31M \\
+2024-09 & \$3.7M & \$0.54M \\
+2024-12 & \$24.4M & \$10.3M \\
+2025-05 & \$211.0M & \$2.95M \\
+2025-09 & \$490.9M & \$4.42M \\
+2025-11 & \$1{,}193M & \$4.77M \\
+\bottomrule
+\end{tabular}
+\caption{From 2024-06 to 2025-11 total notional grows by a factor of 369. The
+current five-month pilot averages \$264M per month; 2024-06 to
+2024-09 averages \$3.75M, a factor of 70.}
+\end{table}
+
+Every quantity the experiment measures, namely the implied per-leg spread,
+basket completeness, deviation persistence and executable participation size,
+is a function of market depth. Pooling observations across a 70-fold depth
+change estimates a parameter that does not exist in either regime. The window
+is therefore bounded by \textbf{liquidity stationarity} rather than by
+calendar availability. Within the proposed 13 months the growth is still a
+factor of roughly 24, which I will report as a stated limitation.
+
+\section{A composition break as well as a thinning}
+
+Sports accounts for 51.9\% of the current basket population (24.4\% of
+opportunities above $5\cent$) and did not exist before 2025-01. Kalshi could
+not list sporting event contracts until the regulatory position shifted in
+late 2024; the first sports markets appear in 2024-12 and scale through Q1
+2025. An independent ticker-pattern sweep that does not consult the category
+field confirms only eight sports-pattern markets before 2024-12, and all eight
+are news-about-sports contracts (NFL viewership, the MLB collective
+bargaining agreement, the Oakland relocation) rather than wagers on outcomes.
+
+Consequently the 2022 baskets are 81\% to 94\% weather. Adding them would not
+merely add thinner data, it would mix a different population into the same
+estimate.
+
+\section{Proposed design}
+
+\subsection{Primary: expanding-window walk-forward, strictly forward in time}
+
+Use 2024-11 to 2025-11 (13 months, one liquidity regime, 1.8 times the
+basket-days of the current pilot) and replace the single fixed split with
+seven expanding-window folds:
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{clll}
+\toprule
+Fold & Train & Validate & Test \\
+\midrule
+1 & 2024-11 to 2025-03 & 2025-04 & 2025-05 \\
+2 & 2024-11 to 2025-04 & 2025-05 & 2025-06 \\
+3 & 2024-11 to 2025-05 & 2025-06 & 2025-07 \\
+4 & 2024-11 to 2025-06 & 2025-07 & 2025-08 \\
+5 & 2024-11 to 2025-07 & 2025-08 & 2025-09 \\
+6 & 2024-11 to 2025-08 & 2025-09 & 2025-10 \\
+7 & 2024-11 to 2025-09 & 2025-10 & 2025-11 \\
+\bottomrule
+\end{tabular}
+\caption{Every fold trains only on its own past, so the evaluation remains a
+forecast throughout.}
+\end{table}
+
+This yields seven forward test evaluations rather than one, so the PnL and the
+model-versus-control gap become distributions with reportable dispersion
+instead of single point estimates. It also covers a full winter (2024-11 to
+2025-03), which the summer-only pilot could not; since weather is 58\% of the
+opportunity population above $5\cent$, that is what separates ``the model does
+not generalise'' from ``a different season is a different market''.
+
+\subsection{Secondary: 2022 as a clearly labelled backcast}
+
+The 2022-04 to 2022-11 block retains value as a structural transfer check,
+reported separately and never merged into the headline metric:
+
+\begin{quote}
+The model trained on 2024-11 to 2025-11 was additionally applied to 2022-04 to
+2022-11, a period 26 months before the training window, on a venue roughly 60
+times thinner and under the previous ticker convention. This is a
+\emph{backcast} and is not evidence of forecasting performance; it tests only
+whether the learned basket structure holds in an earlier liquidity regime.
+\end{quote}
+
+I want to be explicit that using 2022 as a \emph{test set} would be wrong,
+because the training data would postdate it. That is why it appears here as a
+labelled backcast rather than as the held-out split.
+
+\section{Effective sample size: two different questions}
+
+\begin{itemize}
+  \item \textbf{For fitting, the data is not scarce.} The model trains on
+        hourly graph snapshots across 500 to 1,100 active nodes per timestep,
+        roughly 9,000 snapshots in the proposed window. The forecast head is
+        zero-initialised, so the model begins at persistence rather than at
+        noise.
+  \item \textbf{For inference, the effective unit is the basket-day and it is
+        modest.} Confidence intervals are cluster-bootstrapped by basket, so
+        the effective $n$ is the number of distinct baskets (5,806 in the
+        proposed window), not the roughly 46,000 basket-hours. Consecutive
+        hourly snapshots of one basket are largely frozen and are not
+        independent observations.
+\end{itemize}
+
+On current evidence the primary comparison is adequately powered on the
+five-month pilot alone: the model beats its randomised-timing control by
+\$0.170 per trade with a cluster-bootstrapped 95\% interval of
+$[+0.107, +0.247]$. Extending to 13 months and seven folds is therefore not
+required for statistical significance. It is required for
+\emph{generalisation}, which I take to be the substance of your concern.
+
+\section{Comparison with the published literature}
+\label{sec:lit}
+
+Since the question is how much data this phenomenon requires, I checked the
+sample periods of the three papers nearest to it. An important qualification
+first: \textbf{only one of the three treats the sum-to-one constraint as a
+primary object of study}. In the other two it appears as a minor category
+alongside a different mechanism, and in both it turns out to be nearly empty.
+None of the three trains a forecasting model, so none has a train/test split.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lllll}
+\toprule
+Study & Window & Length & Sum-to-one component & Model \\
+\midrule
+Unravelling the Probabilistic & 1 Apr 2024 to & 12 months & \textbf{co-equal primary} & none \\
+\quad Forest (AFT 2025) & 1 Apr 2025 & & type (``market & \\
+ & & & rebalancing'') & \\[3pt]
+Arbitrage Analysis in Poly- & 4 Feb 2026 to & 1 month & marginal: 7 episodes & none \\
+\quad market NBA Markets & 4 Mar 2026 & & across 3,042 markets, & \\
+ & & & vs 290 combinatorial & \\[3pt]
+Executable Arbitrage and & 14 Apr 2026 to & 5 weeks & marginal: $\sim$3\% of & none \\
+\quad Market Efficiency & 19 May 2026 & & value; 97\% from a & \\
+ & & & converter primitive & \\
+\midrule
+\textbf{This project (proposed)} & \textbf{2024-11 to} & \textbf{13 months} & \textbf{sole mechanism} & STGAT, \\
+ & \textbf{2025-11} & & & 7 folds \\
+\bottomrule
+\end{tabular}
+\caption{The three nearest studies, all on Polymarket. The third study's
+window is its level-2 order book panel, hour-stratified; its transaction
+panel covers events listed through 31 December 2025.}
+\end{table}
+
+Three observations:
+
+\begin{enumerate}
+  \item \textbf{The only study that treats sum-to-one as a primary type uses
+        12 months}, which the proposed window slightly exceeds. Its other
+        type, combinatorial arbitrage, spans semantically dependent markets
+        and is a different mechanism from this project's.
+  \item \textbf{The two short-window studies are not evidence about how long
+        a sum-to-one study needs to be.} Their sum-to-one components are
+        incidental and nearly empty: 7 episodes across 3,042 markets in one,
+        roughly 3\% of measured value in the other. Their windows were chosen
+        for the mechanisms that dominate their results, not for this one.
+  \item \textbf{None of the three trains a model}, so none faces the
+        train/test ordering constraint. The NBA paper states explicitly that
+        ``there is no train/test split because the analysis doesn't involve
+        machine learning or out-of-sample validation''.
+\end{enumerate}
+
+I want to be careful not to over-claim. A detection study needs enough
+observations to characterise a distribution; a forecasting study needs enough
+to fit a model \emph{and} evaluate it out of sample, which is strictly
+harder. So ``12 months is the published maximum'' does not establish that 13
+months suffices for training. What it establishes is that there is no
+precedent in this literature for requiring multi-year windows, and that the
+one genuinely comparable study used slightly less than the proposed window.
+
+\paragraph{A comparison I am deliberately not making.} It is tempting to set
+this project's 7,581 fully covered basket-days against the NBA paper's 7
+arbitrage episodes and conclude the mechanism is more present on Kalshi.
+That comparison is not valid, and I would rather say so than have it
+challenged.
+
+The two quantities are different objects. The NBA paper detects instants at
+which posted \emph{asks} satisfied $\mathrm{Ask}_A + \mathrm{Ask}_B < \$1$,
+polling every 3.6 to 5.5 seconds: a strictly executable condition at a single
+moment. This project counts basket-days on which every leg traded and the
+\emph{last trade prices} did not sum to \$1, with those prints separated by a
+median of 2.3 to 6 hours. A last trade is struck at the bid or the ask, never
+the mid, so for a six-leg basket with a per-leg spread near $5.6\cent$ the sum
+of mixed last prints has a standard deviation of roughly
+$\sqrt{6}\times2.8\cent \approx 6.9\cent$ around \$1 with no mispricing at all,
+whose median absolute value is about $4.6\cent$. The measured median is
+$4\cent$.
+
+The bulk of the deviation population is therefore consistent with bid/ask
+mixing rather than mispricing, and I have now tested that directly rather
+than leaving it as a caveat.
+
+Kalshi trades carry \texttt{taker\_side}: a taker buying \textsc{yes} lifts
+the ask, one buying \textsc{no} sells \textsc{yes} into the bid. Across one
+month, 68.7\% of prints are ask-side. With a half-spread of $2.8\cent$ that
+predicts a signed mean deviation of $+6.3\cent$ on a six-leg basket from
+order-flow imbalance alone. \textbf{The prediction was recorded before the
+measurement. Measured: $\bm{+5.25\cent}$, with 92.5\% of 4{,}891 baskets
+summing above \$1} --- the classic betting-market overround, where a genuine
+mispricing population would be roughly balanced either side of \$1.
+
+Pricing each leg on its own side, restricted to baskets whose legs all
+printed within an hour of each other:
+
+\begin{center}\small
+\begin{tabular}{lr}
+\toprule
+buy every leg at the \textbf{ask} & \$1.1334 \\
+sell every leg at the \textbf{bid} & \$0.9993 \\
+a basket settles at & \$1.0000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent Selling the apparently overpriced basket at executable prices nets
+$-0.07\cent$ gross, before any fee; Kalshi's taker fee on a six-leg basket is
+$1.3\cent$ to $5.8\cent$ depending on the leg prices. Restricting to the
+large-deviation tail does not help: the share of baskets with a positive
+executable edge \emph{falls} from 84\% to 54\%, because a large apparent
+deviation is produced by a wide spread, and wide-spread baskets execute
+worse.
+
+\textbf{I am therefore withdrawing the profitability claim} and reporting
+this as the finding in its own right: a backtest on prediction-market
+partitions that prices legs from trade prints without regard to execution
+side manufactures profit that does not exist at executable prices. The
+forecasting results are unaffected, since they concern price accuracy rather
+than realised trading, and the model-versus-control comparison is a paired
+test on identical baskets that is provably invariant to the cost model.
+
+It is also worth noting that the AFT window (April 2024 to April 2025) spans
+Polymarket's election-driven liquidity expansion, a regime change comparable
+in kind to the one in Section~3.3, and that the paper reports results pooled
+across it rather than segmented by regime.
+
+\section{Questions}
+\label{sec:questions}
+
+\begin{enumerate}
+  \item Does seven-fold expanding walk-forward within a single liquidity
+        regime address your concern, or is the concern specifically calendar
+        span? These have different remedies and I would rather solve the one
+        you mean.
+  \item Would you accept 2022-04 to 2022-11 as a clearly labelled backcast
+        for structural transfer, reported separately from the headline?
+  \item Would you prefer I include the thin 2022-12 to 2024-10 period with an
+        explicit staleness filter, accepting noisier labels, rather than
+        excluding it? Section~\ref{sec:stale} is my argument against, but I
+        would rather it were your decision than my omission.
+  \item Is the basket-day the right unit to report as effective sample size,
+        given that the hourly snapshots within a basket are largely frozen?
+
+  \item Section~\ref{sec:lit} finds that the only comparable study of
+        sum-to-one arbitrage uses 12 months, and that none of the three
+        nearest studies trains a model or uses a train/test split. Is there a
+        departmental expectation on window length that I should be matching
+        instead of the literature's, and if so what is it? I would rather
+        know the target than infer it.
+
+  \item Given the withdrawn profitability claim, the project's contribution
+        becomes (a) the measurement finding that last-trade deviations on
+        these partitions are dominated by the overround, (b) forecasting
+        accuracy against persistence and an optimal shrinkage oracle, with an
+        ablation attributing roughly 92\% of the margin to the graph, and (c)
+        the ladder mechanism as a diagnosed negative control. Is that an
+        acceptable shape for the dissertation, or would you want the emphasis
+        elsewhere? The data window matters less under this framing, since it
+        now has to support forecasting folds rather than a trading sample.
+\end{enumerate}
+
+\section*{Reproduction}
+
+All figures above come from two scripts, both with built-in self-tests:
+
+\begin{itemize}
+  \item \path{stg_infra/examples/mece_yield_by_month.py}, which pools
+        basket identification across all 54 months (the family-consistency
+        test needs three instances, which may span a year) and then counts
+        full-basket coverage per trades month. Output is saved to
+        \path{mece_yield_by_month.parquet}.
+  \item \path{stg_infra/examples/sports_categorisation_check.py}, which
+        verifies the sports timeline three ways: a ticker-pattern sweep
+        independent of the category field, a check that the category lookup
+        is not time-bounded, and a trading-volume breakdown.
+\end{itemize}
+
+The full per-month counts are in Appendix~\ref{app:permonth} and the sports
+timeline checks in Appendix~\ref{app:sports}.
+
+\appendix
+
+\section{Per-month MECE basket coverage}
+\label{app:permonth}
+
+Every month in 2021-06 to 2022-03 is absent because it contained no trades on
+any candidate basket leg. ``Partial'' counts (event, day) rows with at least
+one leg trading but not all of them, so the ratio of the first two columns is
+the coverage rate. ``Top category'' is the share of that month's fully covered
+baskets in the single most common category.
+
+{\footnotesize
+\begin{longtable}{lrrrlrr}
+\toprule
+Month & Full & Partial & Fam. & Top category & Med. $|\mathrm{dev}|$ & Med. gap \\
+\midrule
+\endfirsthead
+\toprule
+Month & Full & Partial & Fam. & Top category & Med. $|\mathrm{dev}|$ & Med. gap \\
+\midrule
+\endhead
+\midrule \multicolumn{7}{r}{\emph{continued on next page}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+2022-04 & 21 & 26 & 5 & weather 81\% & $3.0\cent$ & 3.11 \\
+2022-05 & 137 & 227 & 5 & weather 81\% & $3.0\cent$ & 3.03 \\
+2022-06 & 120 & 220 & 4 & weather 93\% & $2.0\cent$ & 2.75 \\
+2022-07 & 119 & 247 & 4 & weather 93\% & $3.0\cent$ & 2.99 \\
+2022-08 & 125 & 259 & 3 & weather 94\% & $3.0\cent$ & 3.10 \\
+2022-09 & 133 & 264 & 4 & weather 83\% & $3.0\cent$ & 3.47 \\
+2022-10 & 129 & 257 & 5 & weather 88\% & $4.0\cent$ & 3.12 \\
+2022-11 & 130 & 247 & 3 & weather 92\% & $4.0\cent$ & 3.60 \\
+\midrule
+2022-12 & 60 & 261 & 3 & weather 92\% & $3.0\cent$ & 4.88 \\
+2023-01 & 58 & 259 & 3 & weather 76\% & $5.0\cent$ & 5.93 \\
+2023-02 & 37 & 223 & 3 & weather 76\% & $5.0\cent$ & 6.06 \\
+2023-03 & 39 & 251 & 4 & weather 72\% & $5.0\cent$ & 6.22 \\
+2023-04 & 49 & 248 & 4 & weather 67\% & $8.0\cent$ & 6.70 \\
+2023-05 & 28 & 303 & 4 & weather 71\% & $7.5\cent$ & 5.41 \\
+2023-06 & 54 & 367 & 6 & weather 52\% & $6.0\cent$ & 5.97 \\
+2023-07 & 18 & 367 & 6 & weather 61\% & $13.5\cent$ & 5.99 \\
+2023-08 & 15 & 390 & 3 & weather 100\% & $10.0\cent$ & 4.82 \\
+2023-09 & 7 & 341 & 2 & weather 100\% & $2.0\cent$ & 5.92 \\
+2023-10 & 19 & 333 & 4 & weather 95\% & $5.0\cent$ & 2.36 \\
+2023-11 & 8 & 332 & 3 & weather 62\% & $4.5\cent$ & 7.05 \\
+2023-12 & 8 & 329 & 3 & weather 62\% & $5.5\cent$ & 6.29 \\
+2024-01 & 17 & 318 & 3 & weather 88\% & $11.0\cent$ & 2.78 \\
+2024-02 & 16 & 347 & 4 & weather 94\% & $13.5\cent$ & 6.20 \\
+2024-03 & 34 & 384 & 5 & weather 76\% & $15.5\cent$ & 5.21 \\
+2024-04 & 58 & 391 & 5 & weather 84\% & $11.5\cent$ & 5.15 \\
+2024-05 & 49 & 406 & 6 & weather 96\% & $14.0\cent$ & 6.63 \\
+2024-06 & 58 & 441 & 7 & weather 83\% & $13.5\cent$ & 6.43 \\
+2024-07 & 100 & 492 & 7 & weather 91\% & $7.0\cent$ & 5.86 \\
+2024-08 & 64 & 450 & 5 & weather 97\% & $8.0\cent$ & 5.67 \\
+2024-09 & 28 & 423 & 4 & weather 100\% & $6.5\cent$ & 6.13 \\
+2024-10 & 37 & 454 & 8 & weather 100\% & $5.0\cent$ & 2.62 \\
+\midrule
+\textbf{2024-11} & \textbf{332} & 704 & 9 & weather 97\% & $4.5\cent$ & 4.20 \\
+\textbf{2024-12} & \textbf{274} & 1{,}139 & 8 & weather 97\% & $4.0\cent$ & 4.21 \\
+\textbf{2025-01} & \textbf{241} & 1{,}354 & 11 & weather 94\% & $5.0\cent$ & 5.08 \\
+\textbf{2025-02} & \textbf{312} & 1{,}207 & 12 & weather 91\% & $6.0\cent$ & 4.99 \\
+\textbf{2025-03} & \textbf{346} & 1{,}647 & 14 & weather 73\% & $5.0\cent$ & 5.87 \\
+\textbf{2025-04} & \textbf{256} & 1{,}293 & 12 & weather 82\% & $5.0\cent$ & 5.13 \\
+\textbf{2025-05} & \textbf{331} & 1{,}491 & 16 & weather 66\% & $5.0\cent$ & 4.29 \\
+\textbf{2025-06} & \textbf{590} & 1{,}710 & 13 & sports 49\% & $4.0\cent$ & 2.80 \\
+\textbf{2025-07} & \textbf{649} & 1{,}979 & 15 & sports 53\% & $4.0\cent$ & 3.44 \\
+\textbf{2025-08} & \textbf{803} & 2{,}522 & 16 & sports 63\% & $3.0\cent$ & 2.63 \\
+\textbf{2025-09} & \textbf{869} & 2{,}565 & 15 & sports 73\% & $3.0\cent$ & 2.28 \\
+\textbf{2025-10} & \textbf{530} & 1{,}596 & 17 & weather 58\% & $4.0\cent$ & 2.65 \\
+\textbf{2025-11} & \textbf{273} & 870 & 10 & weather 85\% & $4.0\cent$ & 3.81 \\
+\midrule
+\multicolumn{2}{l}{\textbf{Total, 44 months}} & \multicolumn{5}{l}{7,581 fully covered basket-days} \\
+\end{longtable}}
+
+\noindent Bold rows are the proposed window. The horizontal rules separate the
+three periods of Table~1. Note how the median leg gap tracks the coverage
+count: the thin 2023--2024 rows sit at 5 to 7 hours while both dense periods
+sit near 3 to 4, which is the evidence for Section~\ref{sec:stale}.
+
+\section{Sports timeline checks}
+\label{app:sports}
+
+The claim that sports did not exist before 2025-01 was checked three ways,
+because a categorisation artefact would have undermined the window argument.
+The published figure that sports is over 90\% of Kalshi activity in 2025
+initially appeared to contradict a 2024-12 first-seen month.
+
+\subsection*{B.1 Ticker-pattern sweep, independent of the category field}
+
+Series prefixes were matched against sports patterns without consulting
+Kalshi's category field or the category lookup file. Patterns were split into
+\emph{strong} (unambiguous: NFL, NBA, NASCAR, LALIGA, \ldots) and \emph{weak}
+(ambiguous: GAME, WINS, CHAMPION, \ldots), because election series such as
+\path{KXTRUMPWINS} match the latter and would otherwise fabricate a
+pre-2024-12 sports population.
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrr@{\hskip 1.2cm}lrr}
+\toprule
+Month & Strong & Weak & Month & Strong & Weak \\
+\midrule
+2021-09 & 1 & --- & 2025-03 & 1,362 & 143 \\
+2021-10 & 3 & 1 & 2025-04 & 1,154 & 312 \\
+2021-11 & 2 & --- & 2025-05 & 2,969 & 170 \\
+2023-06 & 1 & --- & 2025-06 & 2,896 & 842 \\
+2023-07 & 1 & --- & 2025-07 & 3,430 & 1,125 \\
+2024-04 & --- & 11 & 2025-08 & 8,770 & 1,210 \\
+2024-06 & --- & 1 & 2025-09 & 11,425 & 17,574 \\
+2024-11 & --- & 50 & 2025-10 & 9,165 & 120,311 \\
+2024-12 & 1 & 5 & 2025-11 & 7,023 & 81,791 \\
+2025-01 & 116 & --- & & & \\
+2025-02 & 585 & 160 & & & \\
+\bottomrule
+\end{tabular}
+\caption{Sports-pattern market counts by month. Months absent from the table
+matched nothing. The weak column explodes from 2025-09 with the
+\texttt{exotics} NFL and NBA parlay products.}
+\end{table}
+
+Eight markets across three series match before 2024-12, and none is a wager on
+a sporting outcome:
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{llrl}
+\toprule
+Series & First month & Markets & Kalshi category \\
+\midrule
+\texttt{NFLVIEW} & 2021-09 & 4 & entertainment \\
+\texttt{MLBOAK} & 2021-11 & 3 & entertainment \\
+\texttt{MLBCBA} & 2021-11 & 1 & entertainment \\
+\bottomrule
+\end{tabular}
+\caption{NFL viewership, the Oakland relocation and the MLB collective
+bargaining agreement: news about sports, not outcome contracts.}
+\end{table}
+
+\subsection*{B.2 The category lookup is not time-bounded}
+
+The suspected artefact was that \path{kalshi_series_categories.parquet} might
+map only currently listed series, sending retired ones to a nine-word keyword
+fallback and under-categorising early months by construction. It does not: the
+lookup maps 13,738 series, and the share of each month's series that it
+resolves is $1.00$ for every month of 2021, with a minimum of $0.86$
+(2022-09) across all 54 months. Only 16 series in the entire archive are
+unmapped, of which one is sports (\texttt{KXMLBWINS}, 150 markets, first seen
+2025-05).
+
+\subsection*{B.3 Share of trading activity, not of listings}
+
+The apparent contradiction dissolves once the two quantities are separated.
+The audit that produced the 2024-12 first-seen month counts \emph{distinct
+markets listed}; the published figure is a claim about \emph{traded volume}.
+Both hold simultaneously, because crypto and financials mint hundreds of
+thousands of hourly strike markets that barely trade, while one game market
+absorbs enormous size. Sports is roughly 2\% of listed markets (60,243 of
+about 4.2 million) and the following share of traded notional:
+
+\begin{table}[ht]
+\centering\small
+\begin{tabular}{lrr@{\hskip 1.2cm}lrr}
+\toprule
+Month & Total notional & Sports & Month & Total notional & Sports \\
+\midrule
+2024-06 & \$3.2M & --- & 2025-04 & \$136.9M & 69.8\% \\
+2024-09 & \$3.7M & --- & 2025-05 & \$211.0M & 78.5\% \\
+2024-11 & \$49.6M & --- & 2025-06 & \$230.2M & 83.4\% \\
+2024-12 & \$24.4M & --- & 2025-07 & \$163.4M & 75.2\% \\
+2025-01 & \$31.1M & 4.1\% & 2025-08 & \$226.4M & 80.0\% \\
+2025-02 & \$26.0M & 3.8\% & 2025-09 & \$490.9M & 82.3\% \\
+2025-03 & \$187.3M & \textbf{86.9\%} & 2025-10 & \$1{,}073.0M & 86.5\% \\
+ & & & 2025-11 & \$1{,}193.0M & \textbf{87.2\%} \\
+\bottomrule
+\end{tabular}
+\caption{Sports is absent from the trades files before 2025-01, then takes
+over in 2025-03. The 87.2\% in 2025-11 reproduces the published revenue-share
+figure from this project's own data.}
+\end{table}
+
+\paragraph{A limitation of the sweep.} In 2025-03 the category field puts
+sports at 86.9\% of notional while the keyword sweep of B.1 sees 0.7\%. The
+sweep under-detects sports by two orders of magnitude in that month, which is
+the characteristic failure of keyword heuristics and the reason B.2 matters:
+the audit never depended on keywords. B.1 should be read as corroboration, not
+as the primary evidence.
+
+\end{document}

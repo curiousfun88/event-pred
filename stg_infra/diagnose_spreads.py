@@ -85,7 +85,7 @@ def _dist(name, s: pd.Series):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--parquet",
-                    default="pairwise_monotonicity_taker_side_results_corrected.parquet")
+                    default="results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--split", choices=["test", "val", "train"], default="test")
     ap.add_argument("--chunk-len", type=int, default=84)

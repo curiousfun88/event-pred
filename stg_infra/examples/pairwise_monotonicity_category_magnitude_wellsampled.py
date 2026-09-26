@@ -25,7 +25,7 @@ try:
 except ImportError:
     from .pairwise_monotonicity_pnl_backtest import classify_ticker
 
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results_corrected.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet"
 
 
 def composition(results: pl.DataFrame, label: str):

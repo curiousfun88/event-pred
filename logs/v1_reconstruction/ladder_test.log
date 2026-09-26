@@ -1,0 +1,117 @@
+LADDER MECHANISM | checkpoint best.pt (epoch 43, val_loss 0.0301)
+Split: TEST  |  gap threshold $0.010  |  max model gap $0.050
+Cost model: 100 contracts/leg, 1.0c haircut/leg, 2 legs per position
+
+    [backbone] projection done  T=84 N=5349  0.11s  rss=1331MB
+      [spatial] t=   0/84  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/84  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/84  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.2s
+      [spatial] t=  83/84  active=  975  mece_edges=  208  ladder_edges=  246  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1137 (at t=55)  total_elapsed=0.2s
+    [backbone] spatial done     0.21s  rss=1331MB
+      [temporal] n_active=5349  node_batch_size=512  -> 11 batch(es)  T=84
+      [temporal] batch   1/11  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/11  b= 512  ckpt=False  elapsed=   0.6s
+      [temporal] batch  11/11  b= 229  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    1.04s  rss=1525MB
+  chunk 1/5 done
+    [backbone] projection done  T=84 N=5794  0.04s  rss=1525MB
+      [spatial] t=   0/84  active=  953  mece_edges=  188  ladder_edges=  252  elapsed=   0.0s
+      [spatial] t=  20/84  active= 1100  mece_edges=  214  ladder_edges=  285  elapsed=   0.0s
+      [spatial] t=  40/84  active=  614  mece_edges=   88  ladder_edges=  253  elapsed=   0.0s
+      [spatial] t=  60/84  active= 1072  mece_edges=  276  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  952  mece_edges=  212  ladder_edges=  264  elapsed=   0.1s
+      [spatial] t=  83/84  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=32)  total_elapsed=0.1s
+    [backbone] spatial done     0.11s  rss=1525MB
+      [temporal] n_active=5794  node_batch_size=512  -> 12 batch(es)  T=84
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   1.0s
+      [temporal] batch  12/12  b= 162  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    0.98s  rss=1600MB
+  chunk 2/5 done
+    [backbone] projection done  T=84 N=6186  0.05s  rss=1600MB
+      [spatial] t=   0/84  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/84  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/84  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.0s
+      [spatial] t=  60/84  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/84  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t=  83/84  active=  648  mece_edges=  256  ladder_edges=   63  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.1s
+    [backbone] spatial done     0.11s  rss=1600MB
+      [temporal] n_active=6186  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch  13/13  b=  42  ckpt=False  elapsed=   0.9s
+    [backbone] temporal done    0.92s  rss=1622MB
+  chunk 3/5 done
+    [backbone] projection done  T=84 N=6434  0.06s  rss=1622MB
+      [spatial] t=   0/84  active=  688  mece_edges=  226  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/84  active=  879  mece_edges=  288  ladder_edges=  156  elapsed=   0.0s
+      [spatial] t=  40/84  active=  399  mece_edges=   98  ladder_edges=   95  elapsed=   0.0s
+      [spatial] t=  60/84  active=  796  mece_edges=  320  ladder_edges=   90  elapsed=   0.1s
+      [spatial] t=  80/84  active=  860  mece_edges=  236  ladder_edges=   81  elapsed=   0.1s
+      [spatial] t=  83/84  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1024 (at t=44)  total_elapsed=0.1s
+    [backbone] spatial done     0.11s  rss=1622MB
+      [temporal] n_active=6434  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch  13/13  b= 290  ckpt=False  elapsed=   0.9s
+    [backbone] temporal done    0.87s  rss=1631MB
+  chunk 4/5 done
+    [backbone] projection done  T=24 N=3448  0.01s  rss=1631MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.02s  rss=1631MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.03s  rss=1631MB
+  chunk 5/5 done
+
+pairs seen: 60,891 | violations over $0.010: 11,161
+Deduplication ('first'): 11,161 sightings -> 2,489 tradeable opportunities
+mean |gap|: $0.0815
+
+====================================================================================================
+LADDER ARBITRAGE -- TEST split. Both strategies trade BOTH legs.
+====================================================================================================
+strategy                         n   kept%     total_pnl       mean     median    win%   sharpe
+----------------------------------------------------------------------------------------------------
+naive / idealized             2489       - $   20,276.00 $     8.15 $     4.00  100.0%    0.839
+stgat / idealized          (no opportunities)
+----------------------------------------------------------------------------------------------------
+naive / fees_only             2489       - $   17,596.45 $     7.07 $     3.60   95.9%    0.752
+stgat / fees_only          (no opportunities)
+----------------------------------------------------------------------------------------------------
+naive / realistic             2489       - $   12,618.45 $     5.07 $     1.60   69.9%    0.539
+stgat / realistic          (no opportunities)
+----------------------------------------------------------------------------------------------------
+
+====================================================================================================
+EXECUTION-FRICTION SENSITIVITY -- the haircut is an ASSUMPTION; breakeven is the result
+====================================================================================================
+ haircut(c)     naive_total     stgat_total   naive_median   stgat_median
+----------------------------------------------------------------------------------------------------
+       0.00 $     17,596.45 $          0.00 $         3.60 $         0.00
+       0.25 $     16,351.95 $          0.00 $         3.10 $         0.00
+       0.50 $     15,107.45 $          0.00 $         2.60 $         0.00
+       0.75 $     13,862.95 $          0.00 $         2.10 $         0.00
+       1.00 $     12,618.45 $          0.00 $         1.60 $         0.00
+       1.50 $     10,129.45 $          0.00 $         0.60 $         0.00
+       2.00 $      7,640.45 $          0.00 $        -0.40 $         0.00
+       3.00 $      2,662.45 $          0.00 $        -2.40 $         0.00
+----------------------------------------------------------------------------------------------------
+  naive turns negative at roughly >3c per leg
+  STGAT turns negative at roughly >3c per leg
+  Kalshi's minimum tick is 1c. A breakeven above 1c means the strategy survives
+  paying a full tick of slippage on every leg; below it, it does not.

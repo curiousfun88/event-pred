@@ -1,0 +1,227 @@
+Checkpoint: best.pt (epoch 43, val_loss 0.0301)
+Split: TEST  |  flag threshold: $0.010  |  basket gap-concentration max: 0.60
+Cost model: fee_rate=0.07, 100 contracts/leg, 1.0c haircut/leg
+
+5 test chunk(s)
+
+    [backbone] projection done  T=84 N=5349  0.09s  rss=1332MB
+      [spatial] t=   0/84  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/84  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/84  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.1s
+      [spatial] t=  83/84  active=  975  mece_edges=  208  ladder_edges=  246  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1137 (at t=55)  total_elapsed=0.2s
+    [backbone] spatial done     0.16s  rss=1332MB
+      [temporal] n_active=5349  node_batch_size=512  -> 11 batch(es)  T=84
+      [temporal] batch   1/11  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/11  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/11  b= 229  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.81s  rss=1526MB
+  chunk 1/5 done
+    [backbone] projection done  T=84 N=5794  0.04s  rss=1526MB
+      [spatial] t=   0/84  active=  953  mece_edges=  188  ladder_edges=  252  elapsed=   0.0s
+      [spatial] t=  20/84  active= 1100  mece_edges=  214  ladder_edges=  285  elapsed=   0.0s
+      [spatial] t=  40/84  active=  614  mece_edges=   88  ladder_edges=  253  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1072  mece_edges=  276  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  952  mece_edges=  212  ladder_edges=  264  elapsed=   0.1s
+      [spatial] t=  83/84  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=32)  total_elapsed=0.1s
+    [backbone] spatial done     0.14s  rss=1526MB
+      [temporal] n_active=5794  node_batch_size=512  -> 12 batch(es)  T=84
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch  12/12  b= 162  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.77s  rss=1601MB
+  chunk 2/5 done
+    [backbone] projection done  T=84 N=6186  0.04s  rss=1601MB
+      [spatial] t=   0/84  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/84  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/84  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.1s
+      [spatial] t=  60/84  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/84  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t=  83/84  active=  648  mece_edges=  256  ladder_edges=   63  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.1s
+    [backbone] spatial done     0.13s  rss=1601MB
+      [temporal] n_active=6186  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.7s
+      [temporal] batch  13/13  b=  42  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.76s  rss=1622MB
+  chunk 3/5 done
+    [backbone] projection done  T=84 N=6434  0.05s  rss=1622MB
+      [spatial] t=   0/84  active=  688  mece_edges=  226  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/84  active=  879  mece_edges=  288  ladder_edges=  156  elapsed=   0.0s
+      [spatial] t=  40/84  active=  399  mece_edges=   98  ladder_edges=   95  elapsed=   0.1s
+      [spatial] t=  60/84  active=  796  mece_edges=  320  ladder_edges=   90  elapsed=   0.1s
+      [spatial] t=  80/84  active=  860  mece_edges=  236  ladder_edges=   81  elapsed=   0.1s
+      [spatial] t=  83/84  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1024 (at t=44)  total_elapsed=0.1s
+    [backbone] spatial done     0.14s  rss=1622MB
+      [temporal] n_active=6434  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b= 290  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    0.98s  rss=1648MB
+  chunk 4/5 done
+    [backbone] projection done  T=24 N=3448  0.00s  rss=1648MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=1648MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.04s  rss=1648MB
+  chunk 5/5 done
+
+Deduplication ('first'): 5,670 per-snapshot sightings -> 1,075 tradeable opportunities (5.3x over-counting removed)
+  mean |deviation| after dedup: $0.0598
+
+
+basket snapshots seen: 10,114 (7,385 fully covered, 2,729 partial)
+flagged by the naive rule (|deviation| > $0.010): 5,670
+
+================================================================================================
+RISKLESS ARBITRAGE -- fully covered baskets only, TEST split
+Both strategies: identical opportunities, identical cost model.
+================================================================================================
+strategy               scenario         n   legs    total_pnl       mean     median    win%   sharpe
+------------------------------------------------------------------------------------------------
+naive_all_baskets      idealized     1075    4.1 $   6,430.00 $     5.98 $     3.00  100.0%    0.835
+stgat_selected_baskets idealized     1015    4.1 $   5,773.00 $     5.69 $     3.00  100.0%    0.828
+------------------------------------------------------------------------------------------------
+naive_all_baskets      fees_only     1075    4.1 $   2,383.09 $     2.22 $    -0.40   45.2%    0.318
+stgat_selected_baskets fees_only     1015    4.1 $   1,995.64 $     1.97 $    -0.42   44.7%    0.294
+------------------------------------------------------------------------------------------------
+naive_all_baskets      realistic     1075    4.1 $  -1,978.91 $    -1.84 $    -3.67   16.8%   -0.278
+stgat_selected_baskets realistic     1015    4.1 $  -2,186.36 $    -2.15 $    -3.74   15.0%   -0.345
+------------------------------------------------------------------------------------------------
+
+================================================================================================
+COVERAGE EXTENSION -- partially covered baskets the naive rule cannot trade.
+NOT riskless: the basket sum uses MODEL ESTIMATES for unobserved legs, so this
+carries model risk and is deliberately NOT added to the totals above.
+================================================================================================
+strategy               scenario         n   legs    total_pnl       mean     median    win%   sharpe
+------------------------------------------------------------------------------------------------
+stgat_coverage_extension idealized     2580    2.8 $  60,437.00 $    23.43 $    20.00  100.0%    1.187
+stgat_coverage_extension fees_only     2580    2.8 $  52,707.31 $    20.43 $    17.45   89.9%    1.000
+stgat_coverage_extension realistic     2580    2.8 $  45,467.31 $    17.62 $    15.32   74.2%    0.821
+------------------------------------------------------------------------------------------------
+
+naive coverage:  10.63% of basket snapshots
+with extension:  36.14% (+2,580 opportunities the naive rule has no way to reach)
+
+================================================================================================
+EXECUTION-FRICTION SENSITIVITY -- total realistic PnL vs per-leg haircut
+The haircut is an ASSUMPTION, not a measurement. Breakeven is the real result.
+================================================================================================
+ haircut(c)     naive_total     stgat_total   naive_median   stgat_median
+------------------------------------------------------------------------------------------------
+       0.00 $      2,383.09 $      1,995.64 $        -0.40 $        -0.42
+       0.25 $      1,292.59 $        950.14 $        -1.23 $        -1.23
+       0.50 $        202.09 $        -95.36 $        -2.04 $        -2.04
+       0.75 $       -888.41 $     -1,140.86 $        -2.82 $        -2.84
+       1.00 $     -1,978.91 $     -2,186.36 $        -3.67 $        -3.74
+       1.50 $     -4,159.91 $     -4,277.36 $        -5.49 $        -5.53
+       2.00 $     -6,340.91 $     -6,368.36 $        -7.49 $        -7.50
+       3.00 $    -10,702.91 $    -10,550.36 $       -10.67 $       -10.67
+------------------------------------------------------------------------------------------------
+  naive rule turns negative at roughly 0.75c per leg
+  STGAT      turns negative at roughly 0.5c per leg
+    [backbone] projection done  T=84 N=5349  0.05s  rss=1648MB
+      [spatial] t=   0/84  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/84  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/84  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.1s
+      [spatial] t=  83/84  active=  975  mece_edges=  208  ladder_edges=  246  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1137 (at t=55)  total_elapsed=0.1s
+    [backbone] spatial done     0.14s  rss=1648MB
+      [temporal] n_active=5349  node_batch_size=512  -> 11 batch(es)  T=84
+      [temporal] batch   1/11  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/11  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch  11/11  b= 229  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.77s  rss=1648MB
+    [backbone] projection done  T=84 N=5794  0.04s  rss=1648MB
+      [spatial] t=   0/84  active=  953  mece_edges=  188  ladder_edges=  252  elapsed=   0.0s
+      [spatial] t=  20/84  active= 1100  mece_edges=  214  ladder_edges=  285  elapsed=   0.1s
+      [spatial] t=  40/84  active=  614  mece_edges=   88  ladder_edges=  253  elapsed=   0.1s
+      [spatial] t=  60/84  active= 1072  mece_edges=  276  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/84  active=  952  mece_edges=  212  ladder_edges=  264  elapsed=   0.2s
+      [spatial] t=  83/84  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=32)  total_elapsed=0.2s
+    [backbone] spatial done     0.17s  rss=1648MB
+      [temporal] n_active=5794  node_batch_size=512  -> 12 batch(es)  T=84
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch  12/12  b= 162  ckpt=False  elapsed=   0.8s
+    [backbone] temporal done    0.85s  rss=1648MB
+    [backbone] projection done  T=84 N=6186  0.06s  rss=1648MB
+      [spatial] t=   0/84  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/84  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/84  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.1s
+      [spatial] t=  60/84  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/84  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t=  83/84  active=  648  mece_edges=  256  ladder_edges=   63  elapsed=   0.1s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.1s
+    [backbone] spatial done     0.13s  rss=1648MB
+      [temporal] n_active=6186  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.5s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b=  42  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    0.99s  rss=1648MB
+    [backbone] projection done  T=84 N=6434  0.05s  rss=1648MB
+      [spatial] t=   0/84  active=  688  mece_edges=  226  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/84  active=  879  mece_edges=  288  ladder_edges=  156  elapsed=   0.1s
+      [spatial] t=  40/84  active=  399  mece_edges=   98  ladder_edges=   95  elapsed=   0.1s
+      [spatial] t=  60/84  active=  796  mece_edges=  320  ladder_edges=   90  elapsed=   0.1s
+      [spatial] t=  80/84  active=  860  mece_edges=  236  ladder_edges=   81  elapsed=   0.2s
+      [spatial] t=  83/84  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1024 (at t=44)  total_elapsed=0.2s
+    [backbone] spatial done     0.17s  rss=1648MB
+      [temporal] n_active=6434  node_batch_size=512  -> 13 batch(es)  T=84
+      [temporal] batch   1/13  b= 512  ckpt=False  elapsed=   0.2s
+      [temporal] batch   6/13  b= 512  ckpt=False  elapsed=   0.6s
+      [temporal] batch  11/13  b= 512  ckpt=False  elapsed=   0.9s
+      [temporal] batch  13/13  b= 290  ckpt=False  elapsed=   1.0s
+    [backbone] temporal done    1.02s  rss=1659MB
+    [backbone] projection done  T=24 N=3448  0.01s  rss=1659MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=1659MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.04s  rss=1659MB
+
+================================================================================================
+COVERAGE VALIDATION -- is the extension finding mispricing, or its own error?
+Fully covered baskets with 35% of legs hidden and model-estimated,
+so the TRUE deviation is known and the estimate can be scored against it.
+================================================================================================
+  baskets tested:                     5,753
+  mean |true deviation|:              $0.0481
+  mean |estimated deviation|:         $0.0718
+  bias (est - true):                  $-0.0157
+  MAE of the estimate:                $0.0658
+  INFLATION mean|est| / mean|true|:   1.49x
+  flagged as opportunities: 4,989 by truth, 5,034 by estimate (101% of truth)
+------------------------------------------------------------------------------------------------
+  VERDICT: estimates are somewhat inflated. Coverage PnL is optimistic; report it
+  with this inflation factor stated alongside, never as a clean arbitrage number.
+
+COMPARE AGAINST: baselines.py's 'realistic' rows, which are the actual bar.
+Note this script recomputes the naive rule on THIS split rather than reading the
+stored parquets, so both columns come from the same data and the same cost model.

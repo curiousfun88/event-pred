@@ -77,8 +77,8 @@ from examples.data_windows import MASTER_MONTHS
 from model.month_store import MonthlyBundleStore, build_month_paths
 from model.train import TrainingConfig, run_training
 
-MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "mece_sum_to_one_leg_prices.parquet")
-LADDER_PAIRS_PATH = str(_REPO_ROOT / "pairwise_monotonicity_taker_side_results_corrected.parquet")
+MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "results/mece/mece_sum_to_one_leg_prices.parquet")
+LADDER_PAIRS_PATH = str(_REPO_ROOT / "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
 
 # Start here, not at MASTER_MONTHS -- see the memory note above. Widen
 # once a pilot run has confirmed the pipeline actually completes and
@@ -259,7 +259,7 @@ def main(months=None, chunk_len=168, use_cache=True, epochs=20):
 
     config = TrainingConfig(
         embed_dim=32, n_heads=4, chunk_len=chunk_len, min_chunk_len=24,
-        mask_ratio=0.15, lr=1e-3, epochs=epochs, checkpoint_dir=str(_REPO_ROOT / "checkpoints"),
+        mask_ratio=0.15, lr=1e-3, epochs=epochs, checkpoint_dir=str(_REPO_ROOT / "runs/v1_reconstruction"),
     )
     history = run_training(store, config)
 

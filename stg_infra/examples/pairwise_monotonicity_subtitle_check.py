@@ -47,7 +47,7 @@ try:
 except ImportError:
     from .pairwise_monotonicity_pnl_backtest import classify_ticker
 
-RESULTS_PATH = "pairwise_monotonicity_taker_side_results.parquet"
+RESULTS_PATH = "results/ladder/pairwise_monotonicity_taker_side_results.parquet"
 try:
     from data_windows import MECE_MONTHS as TARGET_MONTHS  # this script is weather-specific
 except ImportError:

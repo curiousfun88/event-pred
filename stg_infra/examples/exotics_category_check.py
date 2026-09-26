@@ -65,7 +65,7 @@ def series_kalshi_tags_as_exotics() -> list[str]:
 def find_exotics_months() -> list[str]:
     """Reuse the already-saved audit output instead of rescanning all 54 months."""
     try:
-        counts = pl.read_parquet("category_month_counts.parquet")
+        counts = pl.read_parquet("results/data_audit/category_month_counts.parquet")
         months = (
             counts.filter((pl.col("category") == "exotics") & (pl.col("n_markets") > 0))
             .get_column("month")

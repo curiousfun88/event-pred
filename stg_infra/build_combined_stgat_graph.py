@@ -87,8 +87,8 @@ if __name__ == "__main__":
     #
     # trades_df = load_trades_for(MASTER_MONTHS)
     # markets_df = load_markets_for(MASTER_MONTHS)
-    # mece_leg_prices_df = pl.read_parquet("mece_sum_to_one_leg_prices.parquet")
-    # ladder_pairs_df = pl.read_parquet("pairwise_monotonicity_taker_side_results_corrected.parquet")
+    # mece_leg_prices_df = pl.read_parquet("results/mece/mece_sum_to_one_leg_prices.parquet")
+    # ladder_pairs_df = pl.read_parquet("results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
     # stg = build_combined_graph(trades_df, markets_df, mece_leg_prices_df, ladder_pairs_df)
     #
     # feature_tensor, mask = stg.feature_tensor_padded()   # (T, N, F), (T, N)

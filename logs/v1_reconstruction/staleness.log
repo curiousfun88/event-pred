@@ -1,0 +1,43 @@
+  chunk 1/5 scanned
+  chunk 2/5 scanned
+  chunk 3/5 scanned
+  chunk 4/5 scanned
+  chunk 5/5 scanned
+
+ladder pairs: 6,333 | violation sightings: 11,161
+
+====================================================================================================
+PRICE UPDATE RATE -- the question the gap cannot answer
+====================================================================================================
+  consecutive-snapshot observations: 68,343
+  price CHANGED:                         6,808  10.0%
+  price UNCHANGED:                      61,535  90.0%
+  median run of unchanged price:           1.0 snapshots (2 hours)
+
+====================================================================================================
+DOES THE VIOLATION SURVIVE WHEN THE PRICES ACTUALLY MOVE?
+====================================================================================================
+  h                    both legs frozen                    >=1 leg repriced
+            n   survived     rate         n   survived     rate
+----------------------------------------------------------------------------------------------------
+  1     9,193      9,193   100.0%       469        157    33.5%
+  2     8,932      8,932   100.0%       562        172    30.6%
+  3     8,764      8,764   100.0%       600        168    28.0%
+  6     8,451      8,451   100.0%       567        156    27.5%
+ 12     8,015      8,015   100.0%       478        120    25.1%
+----------------------------------------------------------------------------------------------------
+
+Of violations surviving one snapshot: 9,350
+  with ZERO price movement on BOTH legs: 9,193 (98.3%)
+----------------------------------------------------------------------------------------------------
+  VERDICT: the persistence is STALENESS. The violations survive because
+  the prints do not update, not because a mispricing is going uncorrected.
+  These are not tradeable at the quoted numbers: a resting order does not
+  fill against a price nobody is posting. The violation COUNT in the
+  results document should be qualified, and the tradeable subset
+  restricted to pairs where both legs repriced recently.
+
+  NOTE: whichever way this lands, the tradeable universe should be defined
+  by RECENT REPRICING, not by the existence of a gap between two last
+  prints. That filter belongs upstream of every PnL number in the results
+  document.

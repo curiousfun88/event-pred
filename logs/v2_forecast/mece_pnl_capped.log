@@ -1,0 +1,157 @@
+============================================================================================================
+MECE FORECAST PnL -- best.pt on the TEST split, h=1 (2h round trip)
+============================================================================================================
+  checkpoint epoch 11, selected by val_mece
+  100 contracts/leg, taker fee 0.07, spread multiplier 0.5 per crossing, entry |delta| > $0.010
+  spreads file: 2,472,029 rows, 40,692 with BOTH legs' spreads present (1.6%)
+  distinct tickers with a spread: 50,192 across 70 series; global median 5.308c/leg
+    [backbone] projection done  T=168 N=9048  0.32s  rss=2409MB
+      [spatial] t=   0/168  active=  398  mece_edges=   86  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/168  active=  972  mece_edges=  128  ladder_edges=  284  elapsed=   0.0s
+      [spatial] t=  40/168  active=  588  mece_edges=  112  ladder_edges=  220  elapsed=   0.0s
+      [spatial] t=  60/168  active= 1043  mece_edges=  202  ladder_edges=  258  elapsed=   0.1s
+      [spatial] t=  80/168  active=  982  mece_edges=  176  ladder_edges=  252  elapsed=   0.1s
+      [spatial] t= 100/168  active=  614  mece_edges=   70  ladder_edges=  241  elapsed=   0.2s
+      [spatial] t= 120/168  active=  990  mece_edges=  220  ladder_edges=  257  elapsed=   0.2s
+      [spatial] t= 140/168  active= 1145  mece_edges=  190  ladder_edges=  289  elapsed=   0.2s
+      [spatial] t= 160/168  active=  604  mece_edges=  174  ladder_edges=  251  elapsed=   0.3s
+      [spatial] t= 167/168  active= 1065  mece_edges=  206  ladder_edges=  258  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1171 (at t=116)  total_elapsed=0.3s
+    [backbone] spatial done     0.29s  rss=2409MB
+      [temporal] n_active=9048  node_batch_size=512  -> 18 batch(es)  T=168
+      [temporal] batch   1/18  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch   6/18  b= 512  ckpt=False  elapsed=   2.7s
+      [temporal] batch  11/18  b= 512  ckpt=False  elapsed=   4.5s
+      [temporal] batch  16/18  b= 512  ckpt=False  elapsed=   6.3s
+      [temporal] batch  18/18  b= 344  ckpt=False  elapsed=   6.9s
+    [backbone] temporal done    6.88s  rss=3081MB
+  chunk 1/3 scanned  (2,743 basket-snapshots)
+    [backbone] projection done  T=168 N=10592  0.24s  rss=3081MB
+      [spatial] t=   0/168  active= 1133  mece_edges=  174  ladder_edges=  261  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=  244  ladder_edges=  134  elapsed=   0.0s
+      [spatial] t=  40/168  active=  453  mece_edges=  152  ladder_edges=  123  elapsed=   0.0s
+      [spatial] t=  60/168  active=  822  mece_edges=  284  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t=  80/168  active=  656  mece_edges=  192  ladder_edges=   71  elapsed=   0.1s
+      [spatial] t= 100/168  active=  376  mece_edges=  142  ladder_edges=   73  elapsed=   0.1s
+      [spatial] t= 120/168  active=  849  mece_edges=  330  ladder_edges=   92  elapsed=   0.1s
+      [spatial] t= 140/168  active=  946  mece_edges=  272  ladder_edges=  147  elapsed=   0.2s
+      [spatial] t= 160/168  active=  393  mece_edges=  142  ladder_edges=   72  elapsed=   0.2s
+      [spatial] t= 167/168  active=  799  mece_edges=  186  ladder_edges=   83  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1133 (at t=0)  total_elapsed=0.2s
+    [backbone] spatial done     0.22s  rss=3081MB
+      [temporal] n_active=10592  node_batch_size=512  -> 21 batch(es)  T=168
+      [temporal] batch   1/21  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch   6/21  b= 512  ckpt=False  elapsed=   2.1s
+      [temporal] batch  11/21  b= 512  ckpt=False  elapsed=   4.0s
+      [temporal] batch  16/21  b= 512  ckpt=False  elapsed=   5.7s
+      [temporal] batch  21/21  b= 352  ckpt=False  elapsed=   7.3s
+    [backbone] temporal done    7.35s  rss=3235MB
+  chunk 2/3 scanned  (6,756 basket-snapshots)
+    [backbone] projection done  T=24 N=3448  0.00s  rss=3235MB
+      [spatial] t=   0/24  active=  810  mece_edges=  202  ladder_edges=   86  elapsed=   0.0s
+      [spatial] t=  20/24  active=  924  mece_edges=  184  ladder_edges=  141  elapsed=   0.0s
+      [spatial] t=  23/24  active=  970  mece_edges=  260  ladder_edges=   94  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1225 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=3235MB
+      [temporal] n_active=3448  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 376  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.03s  rss=3235MB
+  chunk 3/3 scanned  (7,035 basket-snapshots)
+
+  7,035 complete basket-snapshots, 345 distinct baskets
+  shrinkage oracle alpha (fitted on this split) = 0.7032
+
+  spread sources: global=27,335
+
+============================================================================================================
+strategy          trades   win%      gross $      fees $    spreads $         NET $   net/trade                 95% CI
+------------------------------------------------------------------------------------------------------------
+model              1,391  54.9%          847       1,109        5,137        -5,398       -3.88         [-4.88, -2.98]
+oracle_shrink      1,358  50.4%          752         895        4,177        -4,320       -3.18         [-4.14, -2.48]
+always_revert      3,040  39.7%          852       2,250        7,837        -9,235       -3.04         [-3.65, -2.52]
+random             1,391  37.9%          -83       1,109        5,137        -6,328       -4.55         [-5.47, -3.68]
+static_arb         3,040 100.0%        2,090       1,330        3,918        -3,158       -1.04         [-1.28, -0.83]
+------------------------------------------------------------------------------------------------------------
+
+============================================================================================================
+EXECUTABLE SIZE
+============================================================================================================
+  capped at 10% of the thinnest leg-side's window volume
+  requested size        : 100 contracts/leg
+  achievable, median    : 1.0
+  achievable, p25 / p75 : 0.4 / 3.5
+  achievable, p90       : 13.5
+  reached full size     : 2.7% of opportunities
+  dropped below 1 contract : 3,217 of 7,035 (45.7%)
+
+  This is the closest analogue available here to the executable-size
+  analysis order-book studies run -- the Polymarket NBA study found
+  76.9% of its opportunities capped near 14.8 shares. Traded volume is
+  a WEAKER proxy than depth: it says how much changed hands over two
+  hours, not how much sits at the touch right now, and it is therefore
+  likely to be OPTIMISTIC.
+
+============================================================================================================
+MODEL minus BASELINE  (the comparison the supervisor's question asks for)
+============================================================================================================
+baseline          model $/trd   base $/trd       gap                 95% CI  verdict
+------------------------------------------------------------------------------------------------------------
+random                  -3.88        -4.55     +0.67         [+0.43, +1.00]  model BEATS it
+oracle_shrink           -3.88        -3.18     -0.70         [-1.04, -0.35]  model is significantly WORSE
+always_revert           -3.88        -3.04     -0.84         [-1.38, -0.33]  model is significantly WORSE
+static_arb              -3.88        -1.04     -2.84         [-3.65, -2.11]  model is significantly WORSE
+------------------------------------------------------------------------------------------------------------
+  'random' is the causal control: identical entry rule, direction thrown
+  away. It is the only row where nothing but the forecast differs, so it
+  is the one that isolates the model's contribution.
+
+  The other rows are competing STRATEGIES with their own entry rules and
+  their own trade sets. Losing to one of them can mean the signal is worse
+  OR that the model picks costlier trades -- compare gross/trade against
+  cost/trade before deciding which.
+
+  And when every strategy loses money, 'which loses least' is a weak
+  ranking: not trading at all scores $0 and beats all of them.
+------------------------------------------------------------------------------------------------------------
+strategy           gross/trade    cost/trade    net/trade
+model                     0.61          4.49        -3.88
+random                   -0.06          4.49        -4.55
+oracle_shrink             0.55          3.74        -3.18
+always_revert             0.28          3.32        -3.04
+static_arb                0.69          1.73        -1.04
+
+============================================================================================================
+BREAK-EVEN
+============================================================================================================
+  mean round-trip cost per trade      : $4.49  (fees $0.80 + spreads $3.69)
+  basket sum must therefore move      :   4.49c  in 2h, in the predicted direction
+  it actually moves (mean |delta|)    :   2.26c
+  90th percentile |delta|             :   6.00c
+
+============================================================================================================
+HOW TO READ THIS
+============================================================================================================
+  vs the no-model reversion rule:
+    net/trade   model $  -3.88   revert $  -3.04
+    gross/trade model $   0.61   revert $   0.28
+    cost/trade  model $   4.49   revert $   3.32
+
+  The model loses on NET but wins on GROSS ($0.61 vs $0.28, 2.2x).
+  So this is NOT 'the signal is no better than mean reversion'. The
+  signal is better; the trades cost $+1.17 more. The entry gate
+  fires on predicted dislocation, dislocation grows with leg count, and
+  so do fees and spread crossings -- signal strength and execution cost
+  share a common cause, so selecting on one selects for the other.
+  Report it as a trade-SELECTION failure, not a forecasting failure.
+
+  If NET is negative everywhere while gross is positive, the forecast edge is
+  real and smaller than the cost of acting on it. That is a legitimate and
+  publishable finding -- it is the same shape as the ladder result, and it is
+  the honest answer to 'is this strategy profitable'.
+
+  Compare model against static_arb, not against zero. static_arb crosses each
+  leg ONCE because settlement is free; the round trip crosses twice. A forecast
+  strategy that loses to holding the static arbitrage has not earned its
+  complexity even if its own net is positive.

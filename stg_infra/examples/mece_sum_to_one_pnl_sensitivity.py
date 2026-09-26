@@ -74,7 +74,7 @@ def main():
             ["haircut_cents_per_leg", "category", "n_opportunities", "avg_legs",
              "realistic_total_usd", "realistic_win_rate"]
         )
-        out_path = "mece_sum_to_one_pnl_sensitivity_results.parquet"
+        out_path = "results/mece/mece_sum_to_one_pnl_sensitivity_results.parquet"
         sweep.write_parquet(out_path)
         print(f"Wrote full sweep detail to {out_path} -- use it to plot realistic_total_usd vs. "
               f"haircut_cents_per_leg per category, and to check whether larger-avg_legs categories "

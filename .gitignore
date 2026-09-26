@@ -53,15 +53,17 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs: stray logs are ignored; archived run logs under logs/ are the
+# evidence behind reported figures and ARE committed (see logs/README.md)
 *.log
-logs/
+!logs/**/*.log
 
-# Model artifacts
+# Model artifacts: weights stay local; runs/*/history.* are committed
 *.pt
 *.pth
 *.ckpt
 *.pkl
 *.pickle
-checkpoints/
-runs/
+
+# Per-month tensor bundles (rebuilt by run_real_training.py)
+cache/

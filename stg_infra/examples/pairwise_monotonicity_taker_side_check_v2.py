@@ -393,9 +393,9 @@ def main():
     print(f"same-side ('yes') violation rate: {rate('same_side_yes_violation')}")
     print(f"same-side ('no') violation rate:  {rate('same_side_no_violation')}")
 
-    out_path = "pairwise_monotonicity_taker_side_results_corrected.parquet"
+    out_path = "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet"
     if args.months:
-        out_path = "pairwise_monotonicity_taker_side_results_corrected_smoketest.parquet"
+        out_path = "results/ladder/pairwise_monotonicity_taker_side_results_corrected_smoketest.parquet"
         print(f"\n--months override was used -- writing to {out_path}, NOT the real results file")
     results.write_parquet(out_path)
     print(f"\nfull corrected results written to {out_path} "

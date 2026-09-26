@@ -237,12 +237,12 @@ def _gap_bootstrap(book_a, book_b, n_boot=2000, seed=0):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--checkpoint", default="checkpoints_mece/best.pt")
+    ap.add_argument("--checkpoint", default="runs/v2_mece/best.pt")
     ap.add_argument("--split", choices=["train", "val", "test"], default="test")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")
     ap.add_argument("--spreads",
-                    default="pairwise_monotonicity_taker_side_results_corrected.parquet",
+                    default="results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet",
                     help="parquet carrying measured per-leg spreads. Pass 'none' to "
                          "fall back to a flat assumption -- and then do not call the "
                          "result a measured one.")
