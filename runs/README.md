@@ -31,3 +31,24 @@ Logs are under `logs/v2_forecast/`. The ablation and ladder runs have no
 archived console log; their `history.*` files are the only record of them.
 Their exact flags aren't recorded either — the configurations above come
 from the run names and the Recess consult (Table 9).
+
+## Clean MECE rerun (pre-registered 2026-09-27, before any result)
+
+Two pipeline issues invalidated `v2_mece`'s inputs: resolved markets were
+replayed after close (fixed in `cache_fixed/`, commit `2473561`), and
+`time_to_close` leaked after-the-fact close times (zeroed in every split,
+commit `b78d5da`). `v2_mece_fixed` has the first fix only and must not be cited.
+
+| Run | Configuration |
+|---|---|
+| `v2_mece_clean_s0` … `s3` | as `v2_mece` (`--w-ladder 0 --supervise all --select-on mece --epochs 25`), `--cache cache_fixed`, slot 8 zeroed, seeds 0–3 |
+
+**Protocol, fixed before training finished:**
+1. Checkpoint per seed = that seed's `best.pt`, selected on val MECE as always.
+   No seed is dropped or re-run.
+2. Test (2025-09) is scored **once per seed** with `score_forecast.py`, no flags
+   beyond `--checkpoint` and `--cache cache_fixed`.
+3. The reported figure is the **mean and range across all four seeds** of
+   model/oracle MECE MSE on test, next to the same statistic on val.
+4. Whatever the result, it replaces 0.853× as the headline, with the old figure
+   and both pipeline issues disclosed.
