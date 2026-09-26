@@ -588,3 +588,55 @@ def format_verdict(label: str, lo: float, hi: float, point: Optional[float] = No
             "undefined": "undefined (CI not computable)"}[v]
     pt = f"  point {point:+.4f}" if point is not None else ""
     return f"{label:<34} [{lo:+.4f}, {hi:+.4f}]{pt}   {word}"
+
+# ---------------------------------------------------------------------
+# 10. A resolved market must never appear in the graph
+# ---------------------------------------------------------------------
+
+def check_no_post_close_nodes(timestamps: Sequence, node_ids: Sequence, mask,
+                              close_times: Dict[str, "object"], *, verbose: bool = True) -> Dict[str, int]:
+    """Fails if any node is present in a window that STARTS at or after its
+    market's close_time. Such a node cannot have traded; its presence is a
+    carry-forward replay of a resolved contract, frozen at its last print.
+
+    Caught late, not by luck but not early either: per-month builds only
+    knew close times for markets CREATED that month, so contracts created
+    earlier and still trading were never evicted. They made up 62-72% of
+    scored ladder pairs and 17-33% of MECE leg observations (May-Aug 2025),
+    all trivially 'unchanged', and silently shaped both mechanisms' results.
+    See diagnose_ladder_timing.py.
+
+    ``close_times`` maps ticker -> naive-UTC datetime. Tickers without one
+    are counted and reported, not failed: the guard can only check what it
+    can see, and saying how much that is matters as much as the check.
+    """
+    import numpy as np
+
+    m = mask.numpy() if hasattr(mask, "numpy") else np.asarray(mask)
+    ts = np.array([np.datetime64(t.replace(tzinfo=None) if getattr(t, "tzinfo", None) else t, "s")
+                   for t in timestamps])
+    cl, unknown = [], 0
+    for n in node_ids:
+        c = close_times.get(str(n))
+        if c is None:
+            unknown += 1
+            cl.append(np.datetime64("NaT"))
+        else:
+            cl.append(np.datetime64(c.replace(tzinfo=None) if getattr(c, "tzinfo", None) else c, "s"))
+    cl = np.array(cl)
+    bad = m & (ts[:, None] >= cl[None, :])
+    n_bad = int(bad.sum())
+    stats = {"nodes": len(node_ids), "nodes_without_close_time": unknown, "post_close_observations": n_bad}
+    if n_bad:
+        cols = np.where(bad.any(axis=0))[0]
+        examples = ", ".join(str(node_ids[i]) for i in cols[:5])
+        raise SystemExit(
+            f"GUARD FAILED: {n_bad:,d} node-observations of {len(cols):,d} resolved markets appear in "
+            f"windows starting at/after their close_time (e.g. {examples}). These are carry-forward "
+            f"replays of contracts that can no longer trade. Pass close times for EVERY traded ticker "
+            f"to KalshiTickerNodes (build_combined_graph's node_markets_df), not just markets created "
+            f"in the build's month.")
+    if verbose:
+        print(f"  [guard] no post-close nodes: {len(node_ids):,d} nodes checked, "
+              f"{unknown:,d} without a close_time (unverifiable)")
+    return stats
