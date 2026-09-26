@@ -32,7 +32,14 @@ archived console log; their `history.*` files are the only record of them.
 Their exact flags aren't recorded either — the configurations above come
 from the run names and the Recess consult (Table 9).
 
-## Clean MECE rerun (pre-registered 2026-09-27, before any result)
+## Clean MECE rerun, first attempt (pre-registered 2026-09-27) -- SUPERSEDED
+
+Stopped before completion and never scored: the leakage audit that followed found
+leaky ladder edge features, outcome-based basket selection and partial-basket
+scoring. Its runs (`v2_mece_clean_s*`) are not committed and must not be cited.
+The protocol below it is kept as a record.
+
+### Original protocol
 
 Two pipeline issues invalidated `v2_mece`'s inputs: resolved markets were
 replayed after close (fixed in `cache_fixed/`, commit `2473561`), and
@@ -52,3 +59,28 @@ commit `b78d5da`). `v2_mece_fixed` has the first fix only and must not be cited.
    model/oracle MECE MSE on test, next to the same statistic on val.
 4. Whatever the result, it replaces 0.853× as the headline, with the old figure
    and both pipeline issues disclosed.
+
+## Causal MECE rerun (pre-registered 2026-09-27, before any result)
+
+Supersedes both plans above. Fixes in force (commits `2473561`, `b78d5da`, `b11d30d`):
+
+| Fix | Setting |
+|---|---|
+| Resolved markets not replayed; post-close trades dropped | `cache_causal/` built by `run_real_training.py` |
+| `time_to_close` zeroed as an input, every split | `zero_input_slots=(8,)` |
+| Ladder edge features zeroed, every split | `zero_ladder_edge_features=True` |
+| MECE membership: hindsight-curated in train months, **causal** in val/test (families qualified on instances known resolved >= 24h earlier; event's own outcome unused) | `results/mece/mece_membership.parquet` |
+| Hub leg counts use only legs already listed, every split | `MeceMembership` |
+| Score a basket only when every listed leg is present; value legs closed by t+h at settlement | `mece_rule="whole_settle"` |
+
+| Run | Configuration |
+|---|---|
+| `v2_mece_causal_s0` … `s3` | `train_forecast.py --cache cache_causal --w-ladder 0 --supervise all --select-on mece --epochs 25 --seed {0..3}` (all fixes above are the defaults) |
+
+**Protocol, fixed before training:**
+1. Checkpoint per seed = that seed's `best.pt` (val MECE). No seed dropped or re-run.
+2. Test (2025-09) scored **once per seed**: `score_forecast.py --checkpoint runs/v2_mece_causal_s{k}/best.pt --cache cache_causal`.
+3. **Primary figure:** mean and range across the four seeds of model/oracle MECE MSE on test under `whole_settle`, beside the same on val.
+4. **Secondary, for comparability only, never used for any choice:** the same checkpoints scored on test with `--mece-rule legacy`.
+5. Also reported: basket-snapshot counts per split under the causal membership vs the old detection-based one.
+6. Whatever the result, it replaces 0.853x as the headline, with every fix above disclosed.
