@@ -125,6 +125,8 @@ Paths below are relative to `stg_infra/` unless they start with `scripts/`.
 | `diagnose_basket_coverage.py` | How much of the MECE market can a naive real-time trader see? |
 | `diagnose_basket_composition.py` | What kind of market is the model actually trading? |
 
+**Pipeline-wide:** `verify_pipeline.py` — 13 invariants (causality, residual head starts at persistence, ablation, baselines, reporting, identities, bootstrap coverage, splits); `--self-test` proves each check fails on a planted bug.
+
 ## Phase 5 — Measurement and data window
 
 | Script | Output / question |

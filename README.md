@@ -37,10 +37,13 @@ The full story, including every conclusion that was later overturned, is in
 
 ```
 CLAUDE.md               Living handoff: state, open items, gotchas, closed decisions
-docs/
-  RESEARCH_LOG.md       Chronology of the project + corrections/retractions
-  SCRIPTS.md            Every script, what question it answers, inputs -> outputs
+docs/                   Research documents; map in docs/REPO-LAYOUT.md
+  INDEX.md              Chronology of every document, what superseded what
+  CORRECTIONS.md        Every withdrawn claim and the evidence that withdrew it
+  1-detection/ 2-model/ 3-economics/ 4-data/ 5-literature/ planning/
   reports/              Supervisor reports (Week 3, Week 5, Recess Week, data-window memo)
+  RESEARCH_LOG.md       Condensed project narrative with pointers to code/results/logs
+  SCRIPTS.md            Every script, what question it answers, inputs -> outputs
 stg_infra/              Code (run everything from the repo root, see below)
   stg/                  Graph-construction library (installable package `stg`)
   model/                STGAT: backbone, heads, objectives, chunking, run guards
