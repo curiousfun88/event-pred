@@ -76,7 +76,7 @@ def main():
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")
     ap.add_argument("--supervise", choices=["active", "all"], default="active")
-    ap.add_argument("--mece-rule", choices=["whole_settle", "legacy"], default=None,
+    ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default=None,
                     help="default: the rule the checkpoint was trained under "
                          "(legacy for checkpoints before 2026-09-27)")
     ap.add_argument("--w-node", type=float, default=1.0)

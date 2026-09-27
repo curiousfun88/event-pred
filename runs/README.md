@@ -259,3 +259,50 @@ the headline **"forecasts basket microstructure and settlement convergence",
 not bid-side dislocation.** Caveats: the bid-side no-settled sample is small
 (117 positions, 56 baskets) and selected for very active baskets. Bid prints
 are not live quotes. The change-based forecast assumes a stable spread.
+
+## Unsettled-only MECE retrain (pre-registered 2026-09-27, before training)
+
+**Why.** On test, the causal checkpoints' whole 0.909x margin came from baskets
+that settle by t+h, whose target is exactly $1. A shrinkage oracle fitted per
+series x horizon absorbs about half the val margin. This retrain removes
+settled baskets from the MECE loss and from selection. It asks whether any
+forecasting skill on traded prices remains beyond the constraint plus
+contract family. **This is the last forecasting retrain; no further variants
+whatever the result.**
+
+| Run | Configuration |
+|---|---|
+| `v2_mece_unsettled_s0` … `s3` | as `v2_mece_causal_s*` plus `--mece-rule whole_unsettled`: `train_forecast.py --cache cache_causal --w-ladder 0 --supervise all --select-on mece --epochs 25 --seed {0..3} --mece-rule whole_unsettled --checkpoint-dir runs/v2_mece_unsettled_s{k}` |
+
+`whole_unsettled` is `whole_settle` with any basket that has a leg settled by
+the end of window t+h dropped. Verified before training: on val with
+`v2_mece_causal_s0` it selects exactly the 46,777 unsettled positions, and its
+error sums match the independent dump.
+
+**Protocol, fixed before training:**
+1. Checkpoint per seed = `best.pt`, selected on val MECE under
+   `whole_unsettled`. No seed is dropped or re-run.
+2. Val first, then test (2025-09) once per seed:
+   `score_mece_bidside.py --checkpoint runs/v2_mece_unsettled_s{k}/best.pt --split {val,test}`.
+3. **Primary:** mean and range over seeds of last-print model/oracle on
+   **unsettled** positions against the **per-series x horizon shrinkage
+   oracle**. That oracle is fitted on the scored sample, so it is optimistic.
+   Each seed gets a 95% cluster bootstrap CI by event, with group alphas refit
+   per resample, and k printed.
+4. **Secondary:** the same against the single-alpha oracle, and model/persistence.
+   The bid-side sections the script prints are reported but not used.
+5. **Decision rule:** the result is a positive forecasting claim only if the
+   test mean is < 0.97x the family oracle **and** at least 3 of 4 seed CIs
+   exclude 1.0. Otherwise the claim is "the constraint plus contract family
+   suffices on traded prices".
+6. **Caveats, stated now:**
+   - The unsettled stratum conditions on the basket not settling within h,
+     which is not strictly known at t (early closes). It is therefore a
+     conditional evaluation, like the moved-pairs ladder metric.
+   - September 2025 has now been scored for several model variants. The test
+     result carries a multiple-look caveat.
+
+**Prediction, stated before training:** about 0.95–1.05x the family oracle on
+unsettled test positions, i.e. no clear positive. That is based on the causal
+checkpoints: 1.034x single-alpha on unsettled test, and a val margin that has
+been shrinking about 15 points from val to test.

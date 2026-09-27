@@ -309,7 +309,7 @@ def main():
     ap.add_argument("--patience", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
-    ap.add_argument("--mece-rule", choices=["whole_settle", "legacy"], default="whole_settle",
+    ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default="whole_settle",
                     help="which MECE baskets are scored and against what (see "
                          "MechanismForecastObjective). 'legacy' reproduces runs before 2026-09-27.")
     ap.add_argument("--keep-ladder-edge-features", action="store_true",

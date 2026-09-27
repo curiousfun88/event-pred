@@ -245,8 +245,17 @@ class MechanismForecastObjective(HorizonForecastObjective):
         #                   SETTLEMENT if its market closed by the end of window
         #                   t+h, else at its price. Resolving baskets are scored,
         #                   against the value they actually reached.
-        if mece_rule not in ("legacy", "whole_settle"):
-            raise ValueError(f"mece_rule must be 'legacy' or 'whole_settle', got {mece_rule!r}")
+        #   "whole_unsettled"  as whole_settle, but a basket with ANY leg settled
+        #                   by the end of window t+h is dropped. Settled baskets
+        #                   pin the target to exactly $1, which a model can learn
+        #                   as family-level convergence (RESEARCH_LOG Revisions
+        #                   §7). Whether a basket settles within h is not
+        #                   strictly known at t (early closes), so as an
+        #                   EVALUATION this is a conditional stratum, like
+        #                   restrict_moved; as a TRAINING filter it is fine.
+        if mece_rule not in ("legacy", "whole_settle", "whole_unsettled"):
+            raise ValueError("mece_rule must be 'legacy', 'whole_settle' or 'whole_unsettled', "
+                             f"got {mece_rule!r}")
         self.mece_rule = mece_rule
         self.w_node, self.w_ladder, self.w_mece = float(w_node), float(w_ladder), float(w_mece)
         # Score mechanisms whose weight is 0 anyway, for monitoring only.
@@ -347,7 +356,7 @@ class MechanismForecastObjective(HorizonForecastObjective):
         return sm_u, sp_u, n, (sxx, sxy, syy), (sm_w, wt)
 
     def _mece_terms(self, pred, prices, mask, mece_adj, i, h, T, ctx=None):
-        if getattr(self, "mece_rule", "legacy") == "whole_settle":
+        if getattr(self, "mece_rule", "legacy") in ("whole_settle", "whole_unsettled"):
             return self._mece_terms_whole_settle(pred, prices, mask, mece_adj, i, h, T, ctx)
         sm = sp = torch.zeros((), device=pred.device)
         n = 0
@@ -411,6 +420,9 @@ class MechanismForecastObjective(HorizonForecastObjective):
             priced = mask[t + h, leg] & ~closed[t + h, leg]
             ok = (mask[t, leg] & (settled | priced)).to(pred.dtype)
             full = whole & (torch.zeros(k, device=dev).index_add_(0, inv, ok) == n_linked)
+            if self.mece_rule == "whole_unsettled":
+                n_settled = torch.zeros(k, device=dev).index_add_(0, inv, settled.to(pred.dtype))
+                full = full & (n_settled == 0)
             if not bool(full.any()):
                 continue
             tgt_leg = torch.where(settled, torch.nan_to_num(settle[leg]), prices[t + h, leg])

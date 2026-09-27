@@ -139,6 +139,47 @@ def cluster_bootstrap(rows: dict, sel: np.ndarray, n_boot=N_BOOT, seed=0):
     return float(lo), float(hi), k
 
 
+def series_of(cluster: str) -> str:
+    """Basket series (family) from the hub id, e.g. 'MECE:KXHIGHNY-25JUL03' -> 'MECE:KXHIGHNY'.
+    Known ex ante: a basket's family is fixed at listing."""
+    return str(cluster).split("-")[0]
+
+
+def family_oracle(rows: dict, sel: np.ndarray, n_boot=N_BOOT, seed=0) -> dict:
+    """LAST-PRINT model vs a shrinkage oracle with one alpha PER SERIES x HORIZON
+    (fitted on the scored sample, so optimistic), plus a 95% cluster bootstrap
+    over events with every group alpha refit per resample."""
+    x = rows["s_now"][sel] - 1.0
+    y = rows["s_tgt"][sel] - 1.0
+    m = rows["s_pred"][sel] - 1.0
+    if x.size == 0:
+        return {"n": 0}
+    keys = np.array([f"{series_of(c)}|{h}" for c, h in zip(rows["cluster"][sel], rows["h"][sel])])
+    _, gi = np.unique(keys, return_inverse=True)
+    _, ci = np.unique(rows["cluster"][sel], return_inverse=True)
+    k, G = int(ci.max()) + 1, int(gi.max()) + 1
+    A = np.zeros((3, k, G))
+    for j, v in enumerate((x * x, x * y, y * y)):
+        np.add.at(A[j], (ci, gi), v)
+    sse_m = np.zeros(k)
+    np.add.at(sse_m, ci, (m - y) ** 2)
+
+    def oracle_sse(sxx, sxy, syy):
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return (syy - np.where(sxx > 0, sxy * sxy / np.where(sxx > 0, sxx, 1.0), 0.0)).sum(axis=-1)
+
+    o = oracle_sse(A[0].sum(0), A[1].sum(0), A[2].sum(0))
+    point = sse_m.sum() / o if o > 0 else math.nan
+    rng = np.random.default_rng(seed)
+    w = rng.multinomial(k, np.full(k, 1.0 / k), size=n_boot).astype(float)       # (B, k)
+    ob = oracle_sse(w @ A[0], w @ A[1], w @ A[2])                                 # (B,)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ratio = (w @ sse_m) / ob
+    ratio = ratio[np.isfinite(ratio)]
+    lo, hi = (np.percentile(ratio, [2.5, 97.5]) if ratio.size >= 0.99 * n_boot else (math.nan, math.nan))
+    return {"n": int(x.size), "vs_oracle": point, "lo": float(lo), "hi": float(hi), "k": k, "groups": G}
+
+
 def select(rows: dict, r_h: float, stratum: str = "all") -> np.ndarray:
     r_ns = r_h * NS_PER_H
     sel = (rows["age_now"] <= r_ns) & (rows["age_tgt"] <= r_ns)
@@ -209,6 +250,19 @@ def self_test() -> int:
     lo, hi, k = cluster_bootstrap(rows, np.ones(3, bool), n_boot=200)
     check("settled-only target: oracle exact, ratio undefined (nan), no crash",
           s["oracle"] < 1e-20 and math.isnan(s["vs_oracle"]) and math.isnan(lo) and k == 3)
+
+    # family oracle: two series, each exactly y = a_g * x -> per-group oracle is exact
+    x = np.tile([0.1, -0.2, 0.05, 0.3], 10)
+    ser = np.repeat(["MECE:A-1", "MECE:B-1"], 20)
+    y = np.where(np.char.startswith(ser, "MECE:A"), 0.2, 0.9) * x
+    fr = {"s_now": 1 + x, "s_tgt": 1 + y, "s_pred": 1 + 0.5 * x, "cluster": ser, "h": np.ones(40, int)}
+    f = family_oracle(fr, np.ones(40, bool), n_boot=200)
+    single = score_rows({"b_now": fr["s_now"], "b_tgt": fr["s_tgt"], "b_model": fr["s_pred"]}, np.ones(40, bool))
+    check("family oracle exact when each series has its own alpha (0 error -> ratio undefined)",
+          math.isnan(f["vs_oracle"]))
+    check("family oracle: 2 groups, 2 clusters, beats single-alpha oracle",
+          f["groups"] == 2 and f["k"] == 2 and single["oracle"] > 1e-6)
+    check("series_of strips the event date", series_of("MECE:KXHIGHNY-25JUL03") == "MECE:KXHIGHNY")
 
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
@@ -430,6 +484,19 @@ def run(args) -> int:
             f"{sl['vs_oracle']:.3f}x  CI95 [{lo:.3f}, {hi:.3f}]"
         print(f"  {stratum:<12}: model/oracle {vo}  k={k:,} | model/persist {sl['vs_persist']:.3f}x | "
               f"alpha {sl['alpha']:.3f} | n={sl['n']:,} ({100.0 * sl['n'] / n_all:.1f}%)")
+
+    print()
+    print("=" * 96)
+    print("UNSETTLED, LAST-PRINT, vs PER-SERIES x HORIZON ORACLE  [primary for the whole_unsettled")
+    print(" retrain, pre-registered 2026-09-27; for earlier checkpoints: diagnostic only]")
+    print("=" * 96)
+    u = ~rows["settled_any"]
+    f = family_oracle(rows, u)
+    sl = score_last(rows, u)
+    print(f"  model / family oracle : {f['vs_oracle']:.3f}x  CI95 [{f['lo']:.3f}, {f['hi']:.3f}]  "
+          f"k={f['k']:,} baskets, {f['groups']} series x horizon groups, n={f['n']:,}")
+    print(f"  model / single-alpha  : {sl['vs_oracle']:.3f}x (alpha {sl['alpha']:.3f})   "
+          f"model / persistence {sl['vs_persist']:.3f}x")
 
     for r_h in (R_PRIMARY_H,) + R_SENSITIVITY_H:
         tag = "PRIMARY" if r_h == R_PRIMARY_H else "sensitivity (not used for any choice)"
