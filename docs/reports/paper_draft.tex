@@ -1,0 +1,486 @@
+% ---------------------------------------------------------------------------
+% Paper-format draft for supervisor review. Single file; compiles on Overleaf
+% with pdflatex (run twice for references).
+%
+% Every number in this draft is taken from committed logs on branch
+% fix/post-close-carry-forward (see runs/README.md and docs/RESEARCH_LOG.md).
+% Figures marked "exploratory" were not pre-registered.
+%
+% LaTeX notes carried over from data_window_memo.tex:
+%   1. \textcent is text-mode only; use \cent (defined below) in maths.
+%   2. Maths inside \textbf{} is not bolded; use \bm{}.
+%   3. Check WARNINGS as well as errors when building.
+% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=blue!50!black, urlcolor=blue!60!black}
+
+\newcommand{\cent}{\text{\textcent}}
+\newcommand{\x}{\ensuremath{\times}}
+\setlist[itemize]{itemsep=2pt, topsep=4pt}
+\setlist[enumerate]{itemsep=2pt, topsep=4pt}
+
+\title{\textbf{When Does Graph Learning Beat a No-Arbitrage Constraint?}\\[4pt]
+\large Coherence and Learnability in Kalshi Event Contracts}
+\author{[Author name]\\[2pt]
+\small Final Year Project --- draft for supervisor review}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Mutually exclusive, collectively exhaustive (MECE) baskets of event contracts must
+be priced to sum to \$1, and threshold ladders must be monotone in strike. These
+no-arbitrage constraints give free structure that a learned model could exploit.
+We ask where a spatio-temporal graph attention network (STGAT) adds value over the
+constraint itself, and where the constraint suffices. Using Kalshi trade data and
+hourly top-of-book quotes, we find three things.
+(i) \emph{The baskets are priced coherently.} Where every leg has a two-sided
+quote, the mid-price sum is within $0.34\cent$ of \$1. The apparent dislocation
+in last-trade prices is almost entirely microstructure: 82--87\% comes from the
+side of the book on which trades print, and the rest from one-sided books.
+(ii) \emph{The constraint is a strong forecaster, and how strong depends on its
+form.} Shrinking toward \$1 cuts basket forecast error by a third against
+persistence (shrinkage factor $0.55$). The ladder's inequality constraint gives
+almost no reversion ($0.94$).
+(iii) \emph{The STGAT learns traded-price dynamics well, but the skill stops at
+executable prices.} It forecasts basket trade prices at $0.61\x$ persistence
+error, and learns settlement convergence without being given time to close; the
+graph is what lets it compete with the constraint. On the executable bid,
+however, it is $1.82\x$ the constraint oracle. Its entry timing beats a coin flip
+but not immediate entry, and no strategy is profitable after fees at quoted
+prices. The learned model adds value in predicting how prices \emph{trade}; the
+constraint suffices for what they are \emph{worth}. We also document four
+evaluation pitfalls that produced false results during the project, and a test
+that detects each.
+\end{abstract}
+
+% ===========================================================================
+\section{Introduction}
+% ===========================================================================
+
+Prediction markets list contracts whose payoffs are tied together by construction.
+In a MECE basket, such as ``Which range will New York's high temperature fall in
+tomorrow?'', exactly one leg pays \$1, so the legs' prices should sum to \$1. In a
+threshold ladder (``above $K_1$'', ``above $K_2$'' with $K_1<K_2$), the higher
+strike cannot be worth more than the lower one. These no-arbitrage constraints are
+known exactly, before any data is seen.
+
+This makes event contracts an unusual test bed for learned forecasting models. In
+most financial settings, a model must discover cross-asset structure from noisy
+data. Here the structure is given, and the question becomes sharper:
+\begin{quote}
+\emph{Where does a learned model add value over the constraint itself, and where
+does the constraint suffice?}
+\end{quote}
+
+We study this question on Kalshi, a CFTC-regulated exchange, using a
+spatio-temporal graph attention network (STGAT) whose graph encodes the
+constraints: basket legs are linked through a basket hub, and ladder strikes are
+linked in order. We compare it against baselines that use the constraint alone,
+at two kinds of price: the last traded price, which most studies use, and the
+executable top-of-book quote, which is what a trader would actually pay or
+receive.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item \textbf{A coherence measurement.} Using hourly best bid/ask quotes for
+    10{,}981 basket legs, we show that Kalshi baskets are priced coherently at the
+    mid. We decompose the apparent last-price dislocation into bid/ask print side
+    and one-sided books. The size of the print-side effect was predicted before it
+    was measured (Section~\ref{sec:coherence}).
+  \item \textbf{The constraint as a forecaster.} A single shrinkage factor toward
+    \$1 is a strong baseline for baskets and a weak one for ladders. We explain the
+    difference by the constraint's form: an equality pins a level, while an
+    inequality only bounds a half-line (Section~\ref{sec:constraint}).
+  \item \textbf{Where learning helps.} An ablation ladder runs from persistence,
+    through constraint-only and family-aware shrinkage and a graph-free temporal
+    model, to the full STGAT. It locates the model's value in traded-price
+    dynamics and settlement convergence, and shows that the graph is necessary
+    for it (Section~\ref{sec:learning}).
+  \item \textbf{Executable boundaries.} At quoted prices, the model has no
+    forecasting skill on the bid, and its timing beats chance but not immediate
+    entry. No strategy is profitable after fees (Section~\ref{sec:exec}).
+  \item \textbf{Evaluation pitfalls.} Four traps, each of which produced a false
+    result during this project, together with the test that detects each
+    (Section~\ref{sec:pitfalls}).
+\end{enumerate}
+
+% ===========================================================================
+\section{Background}
+% ===========================================================================
+
+\paragraph{Prediction markets.} Prices of binary event contracts are commonly read
+as probabilities \cite{wolfers2004}. They are generally informative, but show
+systematic biases, most prominently the favourite--longshot bias
+\cite{snowberg2010}. On Kalshi specifically, contract prices become more accurate
+as markets approach close. Takers lose about 32\% on average and makers about
+10\% \cite{burgi2025}.
+
+\paragraph{Basket dislocations.} Saguillo et al.~\cite{saguillo2025} estimate about \$40M of realised profit from MECE baskets on
+Polymarket priced away from \$1 (April 2024--April 2025). Polymarket was largely
+fee-free for trading over that period, and the profits went to automated traders
+acting on the live order book. Whether the same dislocations are executable on a
+fee-charging, market-maker-intermediated venue is an open empirical question,
+and one we address.
+
+\paragraph{Microstructure of trade prices.} A trade executes at either the bid or
+the ask, so trade prices ``bounce'' across the spread even when the efficient price
+does not move \cite{roll1984}. Trade and quote series can be decomposed into an
+efficient price plus microstructure noise \cite{hansen2006}. Trade direction is
+classically inferred from quotes \cite{lee1991}, with about 85\% accuracy
+\cite{oddswhite2000}. Kalshi instead reports the aggressor side of every trade
+directly. Constraints spanning several instruments are further affected by
+non-synchronous trading \cite{lomackinlay1990}. Classic put--call parity tests
+restrict comparisons to near-simultaneous prices for this reason
+\cite{klemkosky1979, kamara1995}.
+
+\paragraph{Graph neural networks for markets.} Graph attention
+\cite{velickovic2018} and spatio-temporal graph models \cite{yu2018stgcn} combine
+cross-sectional structure with temporal dynamics. In market microstructure,
+deep models usually forecast \emph{changes} in a reference price, not levels
+\cite{zhang2019deeplob}. We use a graph whose edges are the known constraints,
+not a learned adjacency.
+
+% ===========================================================================
+\section{Motivation}
+% ===========================================================================
+
+Early in this project, a model trained on last-trade prices appeared to beat an
+optimal constraint-based shrinkage forecast by 15\%. It also appeared to identify
+tradeable dislocations. Both claims failed under scrutiny, for reasons that
+motivate the design of this paper.
+
+\begin{itemize}
+  \item \textbf{Last-trade basket sums are dominated by microstructure.} 68.7\% of
+    basket trade prints are ask-side. With a half-spread of $2.8\cent$, that
+    predicts a $+6.3\cent$ mean excess on a 6-leg basket. The measured excess was
+    $+5.25\cent$. A model that forecasts last-trade sums may therefore be
+    forecasting which side the next prints land on, not mispricing.
+  \item \textbf{Several pipeline leaks inflated the result.}
+    \begin{itemize}
+      \item resolved markets were replayed after close;
+      \item time-to-close used after-the-fact close times;
+      \item basket membership was selected with hindsight;
+      \item baskets were scored on a subset of their legs.
+    \end{itemize}
+    Section~\ref{sec:pitfalls} quantifies each.
+\end{itemize}
+
+We therefore (a) rebuilt the pipeline causally and pre-registered every re-run
+before seeing results; (b) scored forecasts against baselines that use the
+constraint, not only against persistence; and (c) measured executable prices
+directly from quotes rather than inferring them from trades.
+
+% ===========================================================================
+\section{Method}
+% ===========================================================================
+
+\subsection{Population and graph}
+Contracts are nodes on a 2-hour snapshot grid. A \emph{MECE basket} is an event
+whose legs partition the outcome space. Membership is decided causally in
+validation and test: a family qualifies only on instances known to have resolved
+at least 24h earlier, and the event's own outcome is never used. (Training months
+use a curated membership list.) Each basket has
+a hub node, linked to its legs by directed edges in both directions. \emph{Ladder}
+pairs are adjacent strikes of the same underlying, linked by a monotonicity edge.
+Node features summarise each 2-hour window: last price, VWAP, return, volatility,
+volume, order flow and hub leg counts. Time-to-close is zeroed as an input in
+every split, and ladder edge features are zeroed.
+
+\subsection{Model}
+The STGAT has four parts:
+\begin{itemize}
+  \item a type-specific input projection;
+  \item a two-channel spatial attention layer, whose channels are MECE hub--leg
+    and ladder;
+  \item per-node \emph{causal} temporal self-attention over the snapshot sequence;
+  \item a residual forecast head, $\hat p_{t+h} = p_t + \Delta_h$, with the final
+    layer zero-initialised so training starts exactly at persistence.
+\end{itemize}
+Horizons are $h\in\{1,2,3,6,12\}$ snapshots, i.e.\ 2--24 hours. The loss combines
+per-node error with a basket-sum term; the ladder term's weight is zero.
+Checkpoints are selected on validation MECE error.
+
+\subsection{Targets and baselines}
+For basket $b$ with legs $L_b$, let $S_t=\sum_{i\in L_b} p_{i,t}$. Under the
+\texttt{whole\_settle} rule, a basket is scored only if every listed leg is
+present. A leg that settles by $t+h$ is valued at its settlement (0 or 1).
+Baselines:
+\begin{itemize}
+  \item \textbf{Persistence:} $\hat S_{t+h}=S_t$.
+  \item \textbf{Constraint oracle:} $\hat S_{t+h}=1+\alpha(S_t-1)$, with the single
+    $\alpha$ that minimises squared error \emph{on the scored split}. This is
+    deliberately optimistic.
+  \item \textbf{Family oracle:} the same, with one $\alpha$ per series \x\
+    horizon. A basket's family is known in advance.
+\end{itemize}
+
+\subsection{Executable prices}
+Hourly best bid and ask for every basket leg come from Kalshi's public historical
+candlestick endpoint \cite{kalshiapi}, aligned to the snapshot window ends.
+A bid of 0, or an ask of \$1, is a real one-sided book and is kept as the
+executable price.
+\begin{itemize}
+  \item \textbf{Bid-side forecast.} The model's predicted change in the
+    last-trade sum is applied to the quoted bid sum:
+    $\hat B_{t+h} = B_t + (\hat S_{t+h}-S_t)$. The half-spread cancels in the
+    change if the spread is stable \cite{roll1984}.
+  \item \textbf{Hold to settlement.} Selling a basket at the bids yields gross
+    $(\sum_i \mathrm{bid}_i - 1)$ per set, and buying at the asks yields
+    $(1-\sum_i \mathrm{ask}_i)$. Kalshi's taker fee is charged on the executed
+    price.
+\end{itemize}
+
+\subsection{Timing control}
+The model chooses to enter now, or to wait one step if it predicts the
+dislocation will widen. The control makes the same choice by coin flip, on
+identical events and sizes, so any gap is due only to the forecast. Confidence
+intervals come from a cluster bootstrap over baskets.
+
+% ===========================================================================
+\section{Experimental Setup}
+% ===========================================================================
+
+\begin{itemize}
+  \item \textbf{Data.} Kalshi trades and markets, May--September 2025, with a
+    strictly forward split: train May--June, validation July--August, test
+    September. Hourly quotes cover all 10{,}982 validation/test basket legs;
+    10{,}981 were retrieved.
+  \item \textbf{Seeds and reporting.} Four seeds per configuration. We report
+    the mean and range over seeds, with a 95\% cluster-bootstrap CI per seed
+    and the cluster count $k$.
+  \item \textbf{Pre-registration.} Every re-run reported here was pre-registered
+    in the repository before results were seen: the protocol, the decision rule
+    and a stated prediction. The test split was scored once per seed per
+    protocol. Deviations are disclosed.
+  \item \textbf{Test positions.} 37{,}392 basket-horizon positions ($k=348$
+    baskets), of which 18.6\% settle within the horizon.
+\end{itemize}
+
+% ===========================================================================
+\section{Results}
+% ===========================================================================
+
+\subsection{Baskets are coherent at quoted prices}\label{sec:coherence}
+
+\begin{table}[h]
+\centering
+\caption{Basket sums on the test split: whole baskets with every leg live.
+Quotes cover 98.1\% of leg-snapshots and 97.1\% of basket-snapshots.}
+\label{tab:coherence}
+\begin{tabular}{lcc}
+\toprule
+ & all baskets ($n=7{,}532$) & every leg two-sided (69\%) \\
+\midrule
+Sum of last trades & $1.0405$ & $1.0261$ \\
+Sum of quoted mids & $1.0185$ & $\bm{1.0034}$ \\
+Sum of bids / asks & $0.944$ / $1.093$ & $0.967$ / $1.039$ \\
+Sell at bids beats \$1 & 1.8\% of snapshots ($\approx 2\cent$) & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Where every leg has a two-sided quote, the mid-price sum is within $0.34\cent$
+of \$1 (Table~\ref{tab:coherence}). The same holds on validation ($+0.50\cent$).
+In these baskets, 82--87\% of the last-trade excess is print side. Across all
+baskets, the remaining excess sits in legs with no bid, whose mid is inflated.
+Executable dislocation is rare and small. Selling at the bids beats \$1 in 1.8\%
+of snapshots, by about $2\cent$, before a taker fee of $1.3$--$5.8\cent$ per
+basket. The quoted per-leg spread (median $2.0\cent$, mean $2.9\cent$) is below
+our earlier trade-based estimates ($4.7$--$5.6\cent$). The trade-print bid proxy
+overstated quoted bids by $1.1\cent$ per leg on average.
+
+\subsection{The constraint as a forecaster}\label{sec:constraint}
+
+On test, the constraint oracle has 0.67\x\ the error of persistence for basket
+sums ($\alpha=0.55$), but 0.985\x\ for ladder gaps ($\alpha=0.94$). Basket
+deviations revert strongly to the level the constraint pins. Ladder gaps are only
+bounded above by zero, so there is no level for them to revert to.
+
+\subsection{Where learning helps: the ablation ladder}\label{sec:learning}
+
+\begin{table}[h]
+\centering
+\caption{Test error, relative to the single-$\alpha$ constraint oracle unless
+stated. Mean over 4 seeds (range). ``Unsettled'' = baskets with no leg settling
+by $t+h$.}
+\label{tab:ladder}
+\begin{tabular}{lccc}
+\toprule
+Model & all positions & unsettled & vs.\ persistence \\
+\midrule
+Persistence & $1.49$ & --- & $1.00$ \\
+Constraint oracle (single $\alpha$) & $1.00$ & $1.00$ & $0.67$ \\
+Temporal model, no graph & $1.128$ & $1.106$ & $0.760$ \\
+STGAT (full) & $\bm{0.909}$ ($0.883$--$0.941$) & $1.034$ & $\bm{0.613}$ \\
+STGAT, unsettled-only retrain\textsuperscript{a} & --- & $0.950$ & $0.781$ \\
+\midrule
+\multicolumn{4}{l}{\emph{Against the family oracle (per series \x\ horizon), unsettled:}} \\
+STGAT, unsettled-only retrain & --- & $1.052$ ($1.024$--$1.074$) & --- \\
+Temporal model, no graph & --- & $1.224$ & --- \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize \textsuperscript{a} Settled baskets excluded from the loss and from selection.}
+\end{tabular}
+\end{table}
+
+Three findings (Table~\ref{tab:ladder}):
+\begin{itemize}
+  \item \textbf{The STGAT forecasts traded basket prices well}, at $0.61\x$
+    persistence error, consistently across seeds.
+  \item \textbf{The graph is necessary.} Without the MECE and ladder edges, the
+    model falls behind even the single-$\alpha$ constraint ($1.128\x$).
+  \item \textbf{On test, the margin over the constraint comes from settlement
+    convergence.} Baskets that settle by $t+h$ have a target of exactly \$1, and
+    the model anticipates this even though time-to-close is not an input.
+    Perturbation tests confirm that predictions at $t$ are unchanged when future
+    snapshots or time-to-close are randomised, so this is not leakage. The
+    model's pull toward \$1 rises smoothly as close approaches, with no jump at
+    the settlement boundary, which points to family-level lifecycle learning.
+    On unsettled baskets the model matches, but does not beat, the constraint
+    plus contract family. On validation it does beat it (0.887\x\ single-$\alpha$
+    unsettled), but that is the selection split.
+\end{itemize}
+
+\paragraph{Ladders (exploratory).} On 99{,}646 test ladder positions, the model
+scores $0.982$--$0.993\x$ the oracle and $0.966$--$0.977\x$ persistence. The
+graph-free model is marginally better ($0.974$--$0.982\x$), so the small ladder
+gain comes from per-contract temporal forecasting, not from ladder structure.
+
+\subsection{Executable boundaries}\label{sec:exec}
+
+\begin{table}[h]
+\centering
+\caption{Executable-price results on test (4 seeds, cluster CIs by basket).}
+\label{tab:exec}
+\small
+\begin{tabular}{p{7.4cm}cc}
+\toprule
+Quantity & result & CIs excluding null \\
+\midrule
+Bid-side forecast vs.\ oracle, unsettled ($n=30{,}001$, $k=344$) & $1.822\x$ ($1.80$--$1.85$) & 4/4 above 1 \\
+Timing: model $-$ random, last prices (\$/trade, $k=312$) & $+0.192$ ($0.179$--$0.211$) & 4/4 above 0 \\
+Timing: model $-$ random, quoted prices & $+0.867$ & 3/4 above 0 \\
+Timing: model $-$ enter now, quoted prices & $-0.957$ & 4/4 \emph{below} 0 \\
+Fee-aware entry at quotes: trades fired / net & 1 of 2{,}090 / $+\$0.07$ & --- \\
+Static entry at quotes: net per trade & $-\$2.18$ & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three results (Table~\ref{tab:exec}):
+\begin{itemize}
+  \item \textbf{No bid-side skill.} Applied to the quoted bid, the model's
+    forecast is $1.82\x$ the constraint oracle, and worse than persistence. Its
+    predicted change tracks where trades print, not where the bid moves.
+  \item \textbf{Timing beats chance, but not the trivial policy.} The model's
+    entry timing beats a coin flip at last prices (4/4 seeds) and at quoted
+    prices (3/4). At quoted prices, however, waiting is costly, and the model
+    loses to entering immediately on every seed.
+  \item \textbf{No profit after fees at executable prices.} A rule that enters
+    only when the quoted edge exceeds the fee fired once in 2{,}090
+    opportunities. This agrees with evidence that Kalshi takers lose on average
+    \cite{burgi2025}. It contrasts with the fee-free Polymarket evidence
+    \cite{saguillo2025}.
+\end{itemize}
+
+\subsection{Evaluation pitfalls}\label{sec:pitfalls}
+
+\begin{table}[h]
+\centering
+\caption{Traps that produced false results during the project, and the test
+that detects each.}
+\label{tab:pitfalls}
+\begin{tabular}{p{4.1cm}p{5.6cm}p{4.3cm}}
+\toprule
+Trap & Effect & Detection \\
+\midrule
+Settled contracts replayed after close & 57\% of old ladder test pairs were
+frozen replays, producing ``ladders are unforecastable'' & audit of the share of
+pairs past close \\
+Settlement-pinned targets & all of the 0.909\x\ test margin came from baskets
+settling within $h$ & stratify by settlement \\
+Last trades treated as executable & bids overstated by $1.1\cent$ per leg;
+spreads by $\approx$40\%; bid-side skill assumed & validate against quoted top
+of book \\
+Ablation scored with the wrong graph & graph-free checkpoints would have been
+scored \emph{with} the graph & record dropped edges; known-answer test \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These were caught by reproduction guards, which check that every re-score
+reproduces the committed figures exactly, and by pre-registration
+(Table~\ref{tab:pitfalls}). One headline figure had no log at all, and was
+recovered and found to have been computed on the selection split. The
+provenance of every reported number is now logged.
+
+% ===========================================================================
+\section{Discussion and Limitations}
+% ===========================================================================
+
+\begin{itemize}
+  \item \textbf{Answer to the question.} Graph learning adds value on traded-price
+    dynamics: where trades print, and how baskets converge toward settlement. The
+    graph is necessary for this. Wherever money changes hands, the constraint
+    suffices. This follows from the coherence finding: if baskets are coherent at
+    executable prices, no model should profit there.
+  \item \textbf{Limitations.}
+    \begin{itemize}
+      \item Top-of-book quotes only, at hourly resolution; no depth, so fills at
+        size are assumed.
+      \item A single test month, scored for several model variants; the
+        multiple-look caveat applies.
+      \item The timing control's wait rate is not matched to the model's.
+      \item Ladder figures are exploratory.
+      \item The pilot window is five months, and the population is concentrated
+        in weather and sports.
+    \end{itemize}
+  \item \textbf{Next.} A pre-registered 7-fold walk-forward over November 2024 to
+    November 2025, with the protocol frozen from this study, fresh held-out
+    months, and quotes for all months.
+\end{itemize}
+
+% ===========================================================================
+\section{Conclusion}
+% ===========================================================================
+Kalshi's MECE baskets are priced coherently once microstructure is accounted for.
+A no-arbitrage constraint is a strong forecaster where it pins a level, and a weak
+one where it only bounds an inequality. A constraint-structured STGAT learns
+traded-price dynamics well, and needs its graph to do so. That skill does not
+extend to executable prices, where the constraint alone is as good or better.
+
+% ===========================================================================
+\begin{thebibliography}{99}
+\bibitem{burgi2025} C.~B\"urgi, W.~Deng and K.~Whelan. Makers and Takers: The Economics of the Kalshi Prediction Market. CESifo / CEPR Discussion Paper DP20631, 2025.
+\bibitem{hansen2006} P.~R.~Hansen and A.~Lunde. Realized variance and market microstructure noise. \emph{Journal of Business \& Economic Statistics}, 24(2):127--161, 2006.
+\bibitem{kalshiapi} Kalshi. Get Market Candlesticks (historical). API documentation, \url{https://docs.kalshi.com/api-reference/market/get-market-candlesticks}, accessed 2026-09-27.
+\bibitem{kamara1995} A.~Kamara and T.~W.~Miller. Daily and intradaily tests of European put-call parity. \emph{Journal of Financial and Quantitative Analysis}, 30(4):519--539, 1995.
+\bibitem{klemkosky1979} R.~C.~Klemkosky and B.~G.~Resnick. Put-call parity and market efficiency. \emph{Journal of Finance}, 34(5):1141--1155, 1979.
+\bibitem{lee1991} C.~M.~C.~Lee and M.~J.~Ready. Inferring trade direction from intraday data. \emph{Journal of Finance}, 46(2):733--746, 1991.
+\bibitem{lomackinlay1990} A.~W.~Lo and A.~C.~MacKinlay. An econometric analysis of nonsynchronous trading. \emph{Journal of Econometrics}, 45:181--212, 1990.
+\bibitem{oddswhite2000} E.~R.~Odders-White. On the occurrence and consequences of inaccurate trade classification. \emph{Journal of Financial Markets}, 3:259--286, 2000.
+\bibitem{roll1984} R.~Roll. A simple implicit measure of the effective bid-ask spread in an efficient market. \emph{Journal of Finance}, 39(4):1127--1139, 1984.
+\bibitem{saguillo2025} O.~Saguillo, V.~Ghafouri, L.~Kiffer and G.~Suarez-Tangil. Unravelling the Probabilistic Forest: Arbitrage in Prediction Markets. In \emph{Advances in Financial Technologies (AFT)}, LIPIcs, 2025. arXiv:2508.03474.
+\bibitem{snowberg2010} E.~Snowberg and J.~Wolfers. Explaining the favorite-longshot bias: Is it risk-love or misperceptions? \emph{Journal of Political Economy}, 118(4):723--746, 2010.
+\bibitem{velickovic2018} P.~Veli\v{c}kovi\'c, G.~Cucurull, A.~Casanova, A.~Romero, P.~Li\`o and Y.~Bengio. Graph attention networks. In \emph{ICLR}, 2018.
+\bibitem{wolfers2004} J.~Wolfers and E.~Zitzewitz. Prediction markets. \emph{Journal of Economic Perspectives}, 18(2):107--126, 2004.
+\bibitem{yu2018stgcn} B.~Yu, H.~Yin and Z.~Zhu. Spatio-temporal graph convolutional networks: A deep learning framework for traffic forecasting. In \emph{IJCAI}, 2018.
+\bibitem{zhang2019deeplob} Z.~Zhang, S.~Zohren and S.~Roberts. DeepLOB: Deep convolutional neural networks for limit order books. \emph{IEEE Transactions on Signal Processing}, 67(11):3001--3012, 2019.
+\end{thebibliography}
+
+\end{document}
