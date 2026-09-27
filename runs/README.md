@@ -211,3 +211,51 @@ Script: `stg_infra/score_mece_bidside.py` (with `--self-test`). Logs:
    leg with no bid print in the lookback at all. The R = 1h primary is
    therefore estimable on well under 1% of positions. It is run and reported
    as registered anyway, with no change of R.
+
+### Result (val then test, once per seed; logs `logs/v2_forecast/bidside_{val,test}_s*.log`)
+
+The reproduction guard passed on every chunk and horizon. The test last-print
+branch matches `score_forecast.py` exactly for all four seeds.
+
+**Primary, bid-side target, R = 1h, model/oracle** (95% cluster CI, k baskets):
+
+| seed | val no-settled | **test no-settled** | test all | test n (no-settled / all) |
+|---|---|---|---|---|
+| s0 | 1.575x | **1.450x** [1.078, 2.216] | 19.6x | 117 / 1,754 |
+| s1 | 1.529x | **1.544x** [1.165, 2.301] | 17.9x | 117 / 1,754 |
+| s2 | 1.543x | **1.451x** [1.047, 2.338] | 18.8x | 117 / 1,754 |
+| s3 | 1.583x | **1.416x** [1.026, 2.208] | 16.5x | 117 / 1,754 |
+| mean (range) | 1.558x | **1.465x (1.416–1.544)**, k = 56 | 18.2x | 0.3% / 4.7% of `whole_settle` |
+
+On the bid side the model is **worse than the oracle** in the no-settled
+stratum on every seed, and every CI excludes 1.0. The "all" row is dominated
+by fully settled baskets. Their target is exactly $1, so the oracle with alpha
+about 0 is nearly exact. The some-settled stratum's ratio is undefined (0/0).
+The R = 30min and 2h sensitivities agree: test no-settled 1.53–1.91x and
+1.59–1.65x. On the same no-settled subset, the last-print ratio is
+0.90–0.95x (alpha 0.896). The model's predicted last-print change does not
+carry over to the bid side.
+
+**Post-hoc decomposition of the last-print headline** (added after val s0
+was seen, used for no choice), over all `whole_settle` positions:
+
+| seed | val no-settled | **test no-settled** (81.4% of positions) | test pooled (for reference) |
+|---|---|---|---|
+| s0 | 0.879x | **1.057x** [0.846, 1.447] | 0.921x [0.786, 1.169] |
+| s1 | 0.876x | **1.034x** [0.812, 1.429] | 0.941x [0.794, 1.185] |
+| s2 | 0.891x | **1.038x** [0.826, 1.419] | 0.891x [0.761, 1.138] |
+| s3 | 0.901x | **1.006x** [0.822, 1.344] | 0.883x [0.777, 1.090] |
+| mean | 0.887x | **1.034x**, k = 344 | 0.909x, k = 348 |
+
+On test, **the whole 0.909x margin comes from the 18.6% of positions whose
+basket settles by t+h.** There the target is exactly $1, and the model moves
+toward it (0.11–0.21x persistence). A single-alpha oracle cannot do that. On
+unsettled test positions the model does not beat the oracle. The pooled test
+CI includes 1.0 on every seed.
+
+**Against the prediction.** I predicted no-settled within 0.97–1.03x. The
+observed 1.42–1.54x is worse than that. The pre-registered decision rule gives
+the headline **"forecasts basket microstructure and settlement convergence",
+not bid-side dislocation.** Caveats: the bid-side no-settled sample is small
+(117 positions, 56 baskets) and selected for very active baskets. Bid prints
+are not live quotes. The change-based forecast assumes a stable spread.
