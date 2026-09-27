@@ -39,7 +39,19 @@ Deadline: late Oct 2026.
   (+0.254 at ttc 1s, +0.037 at 24h, all 4/4 CIs above 0). The old +$0.170 was
   val-only on the leaky checkpoint; provenance is in
   `logs/v2_forecast/settlement_pnl_val_ttc_sweep.log`. **Strongest positive
-  result.**
+  result -- at last-print pricing.**
+  - **At quoted top of book (pre-registered, 2026-09-27):** model beats random
+    by +$0.867/trade (3/4 CIs above 0).
+  - **But the model loses to never waiting on every seed** (-$0.96/trade, 4/4
+    CIs below 0). Waiting is costly at quotes, and the control's wait rate is
+    not matched to the model's.
+  - Report it as timing skill against a coin flip, **not** as executable
+    timing value.
+- **Bid-side at quoted bids (80% coverage): 1.822x the oracle** (4/4 CIs
+  above 1). This settles it: no bid-side forecasting skill.
+- **Economics at quotes:** gross is negative on about 97% of trades. The cost
+  gate fired once in 2,090 events ($0.07). Profitability stays withdrawn, now
+  at executable prices.
 - **Unsettled-only retrain (last retrain): no skill beyond constraint + family.**
   Test 1.052x the per-series x horizon oracle (1.024-1.074, 0/4 CIs exclude 1),
   0.950x single-alpha, 0.781x persistence.

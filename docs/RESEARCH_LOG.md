@@ -446,6 +446,15 @@ whole baskets with every leg live.
   basket-snapshots, by about 2c before fees (1.3–5.8c). Buying at the asks
   beats $1 in 0.2% (1.5%). No executable dislocation.
 
+**Quoted-price re-runs (pre-registered).** Full tables are in `runs/README.md`.
+- **Bid side:** 1.822x the oracle on 30,001 no-settled test positions, 4/4 CIs
+  above 1. This is conclusive.
+- **Timing:** the model beats random by +$0.867 at quotes (3/4 seeds), but
+  loses to entering immediately by -$0.957 (4/4). Waiting costs money at
+  executable prices, and the coin-flip control's wait rate is unmatched.
+- **Economics:** the cost gate fired once in 2,090 events. The profitability
+  withdrawal now holds at executable quotes.
+
 ### 8. Still open
 
 - ~~Settlement leak?~~ **Checked 2026-09-27, val s0 only: no leak found.**

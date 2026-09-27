@@ -521,3 +521,58 @@ of 4 CIs above 0, because entry-price noise no longer cancels. `cost_gated`
 fires on under 2% of events, with a total near $0.
 
 Logs: `logs/v2_forecast/{bidside_quotes_*,settlepnl_quotes_*}.log`.
+
+### Results: quoted-price re-runs (2026-09-27)
+
+**Guard passed:** `--prices last` reproduced test s0 at +0.1792 exactly.
+
+**A. Bid-side re-score at quoted bids** (`bidside_quotes_*`). Coverage is 80.2%
+of `whole_settle` positions (30,001 no-settled on test, k = 344), against 0.3%
+from trade prints. The reproduction guard passed on all 8 runs.
+
+| no-settled, R = 1h | s0 | s1 | s2 | s3 | mean |
+|---|---|---|---|---|---|
+| val, BID model/oracle | 1.656x | 1.655x | 1.695x | 1.677x | 1.671x |
+| **test, BID model/oracle** | **1.832x** [1.59, 2.17] | **1.802x** [1.58, 2.13] | **1.849x** [1.60, 2.21] | **1.805x** [1.58, 2.12] | **1.822x** (4/4 CIs above 1) |
+| test, same subset on last prints | 1.001x | 0.980x | 0.983x | 0.954x | 0.980x |
+
+Decision rule: **not met; conclusive.** At quoted bids the model is 1.8x the
+oracle, and worse than persistence (about 1.47x). This is worse than my
+predicted 1.00–1.15x. The model's predicted change in last prints does not
+carry over to the bid.
+
+**B1. Timing at quoted prices** (`settlepnl_quotes_*`). 2,554 events are fully
+quoted at t and t+h (2.1% dropped); 2,090 are sized; k = 312.
+
+| test, ttc 3600 | s0 | s1 | s2 | s3 | mean |
+|---|---|---|---|---|---|
+| **model - random** | **+1.094** [0.55, 1.73] | +0.462 [-0.03, 0.96] | **+1.284** [0.74, 1.91] | **+0.628** [0.13, 1.17] | **+0.867** (3/4 CIs above 0) |
+| model - static_now (never wait) | **-0.730** | **-1.362** | **-0.539** | **-1.196** | **-0.957** (4/4 CIs *below* 0) |
+| model waits (of 2,090) | 994 | 1,441 | 1,191 | 1,140 | random: 1,035 |
+
+Secondary:
+- ttc 1s: identical. The extra baskets are exactly those unquoted at t+h.
+- ttc 24h: gap -0.006 to -0.015, 0/4 significant.
+- val, ttc 3600: +0.49 / -0.09 / +0.64 / +0.28, 2/4 significant.
+
+Decision rule B1: **met** (mean > 0, 3/4 CIs above 0). My prediction
+(+0.00 to +0.12) was wrong. **But read it together with the static row:**
+- At quoted prices, **waiting is costly**. Random, which waits about half the
+  time, nets -$4.01 per trade against static's -$2.18.
+- The model beats the coin flip, but **loses to never waiting on every seed**
+  (CIs below 0). At last prints it beat static by +0.11.
+- The control's wait rate is not matched to the model's (the model waits
+  994–1,441 times, random 1,035), so part of the gap reflects *how often*
+  each waits, not only *when*. A rate-matched control was not pre-registered.
+- **Reading:** a formal replication of timing skill against a coin flip, but no
+  executable timing value. The best policy at quotes is to enter immediately
+  (or not at all).
+
+**B2. Economics at quotes:** gross is negative on about 97% of trades (win
+3.3%): selling at the bids or buying at the asks almost always captures less
+than $1 per set.
+- static_now: -$2.18 per trade, -$4,566 total.
+- model_timed: -$2.72 to -$3.55 per trade.
+- cost_gated fired **once** in 2,090 events, netting $0.07.
+- Rule: **no strategy nets > 0 with >= 30 entries. The profitability
+  withdrawal stands, now at executable quotes.**
