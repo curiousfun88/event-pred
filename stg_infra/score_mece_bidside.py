@@ -291,6 +291,21 @@ def _load_bids(months):
     return out
 
 
+def _load_quote_bids(path):
+    """ticker -> (sorted candle end times ns, QUOTED best bid 0-1) from the
+    hourly candlesticks (fetch_quote_candles.py). Null bids are skipped; a
+    bid of 0 is a real one-sided book and is kept. Age = window end minus
+    candle end, so an exact-hour candle has age 0."""
+    import polars as pl
+    q = (pl.read_parquet(path).filter(pl.col("bid_close").is_not_null())
+         .with_columns(pl.col("end_ts").cast(pl.Datetime("ns")).cast(pl.Int64).alias("e"))
+         .sort(["ticker", "e"]))
+    out = {}
+    for (tk,), g in q.group_by(["ticker"], maintain_order=True):
+        out[tk] = (g["e"].to_numpy(), g["bid_close"].to_numpy())
+    return out
+
+
 def _prev_month(m):
     y, mm = (int(v) for v in m.split("-"))
     return f"{y - 1}-12" if mm == 1 else f"{y}-{mm - 1:02d}"
@@ -340,8 +355,13 @@ def run(args) -> int:
                            for c in chunks for ts in store.timestamps[c.start:c.end]})
     bid_months = sorted(set(split_months) | {_prev_month(split_months[0])})
     print(f"  split months {split_months}; bid prints loaded from {bid_months}")
-    bids = _load_bids(bid_months)
-    print(f"  {len(bids):,} tickers with bid prints\n")
+    if args.bid_source == "quotes":
+        qp = Path(args.quotes)
+        bids = _load_quote_bids(qp if qp.is_absolute() else _REPO_ROOT / qp)
+        print(f"  BID SOURCE = QUOTED top of book ({args.quotes}); {len(bids):,} tickers\n")
+    else:
+        bids = _load_bids(bid_months)
+        print(f"  BID SOURCE = trade prints (taker_side == 'no'); {len(bids):,} tickers\n")
 
     model = STGATBackbone(padded_feature_width=store.feature_width,
                           zero_input_slots=getattr(cfg, "zero_input_slots", ()),
@@ -546,6 +566,8 @@ def main():
     ap.add_argument("--cache", default="cache_causal")
     ap.add_argument("--split", choices=["val", "test"])
     ap.add_argument("--months", nargs="+", default=None)
+    ap.add_argument("--bid-source", choices=["prints", "quotes"], default="prints")
+    ap.add_argument("--quotes", default="data/quotes/candles_1h_2025-07_09.parquet")
     ap.add_argument("--dump", default=None, help="save per-position rows (.npz) for diagnostics")
     args = ap.parse_args()
     if args.self_test:

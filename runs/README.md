@@ -458,3 +458,66 @@ clearly worse than the family oracle (1.224x, every CI above 1). With the
 graph it is 0.909x pooled. The graph is what lets the model match or beat the
 constraint-based baselines on price levels. It is not what gives it timing
 skill.
+
+## Quoted-price re-runs (pre-registered 2026-09-27, before any result)
+
+The quotes come from hourly top-of-book candles
+(`data/quotes/candles_1h_2025-07_09.parquet`, `fetch_quote_candles.py`).
+Validation: 98% of scored leg-snapshots are quoted, and the clocks align
+(`logs/v2_forecast/quote_validation_*.log`). Checkpoints are
+`v2_mece_causal_s{0..3}` throughout. Only the price source changes; each
+protocol is otherwise the one already registered above.
+
+### A. Bid-side re-score with quoted bids
+
+`score_mece_bidside.py --bid-source quotes`. A leg's bid is the latest candle
+bid at or before the window end, and its age is the window end minus the
+candle end. Settled legs take their settlement value, as before, and a bid of 0
+is kept.
+- **Primary:** R = 1h (the exact-hour candle, or the previous one), no-settled
+  stratum, test, model/oracle on the bid target. Report per seed with the
+  cluster CI and k, plus the mean and range.
+- **Also reported:** R = 0.5h and 2h, the some-settled stratum, coverage, and
+  last-print on the same subset. Val is run first.
+- **Decision rule** (unchanged): no-settled test mean < 0.97x with 3 of 4 CIs
+  excluding 1 means "forecasts traded-price dislocation, bid side". Otherwise
+  "microstructure and settlement convergence" stands, now on near-full
+  coverage.
+- **Prediction:** 1.00–1.15x, i.e. no bid-side skill. The model's predicted
+  last-print change is dominated by print side and settlement, and neither
+  moves the quoted bid.
+
+### B. Timing PnL at quoted prices
+
+`evaluate_mece_settlement_pnl.py --prices quotes`, with the same settings as
+the replicated control (`--max-participation 0.25 --min-leg-volume 20
+--min-ttc 3600`, taker, h = 1).
+- A sell fills at Σ quoted bids and a buy at Σ quoted asks, at the window end.
+  The basket settles at exactly $1.
+- The taker fee is charged on the executed price, with no separate spread
+  charge. Gross can be negative.
+- An event is kept only if every leg is quoted at both t and t+h.
+
+**Primary 1, timing skill at executable prices:** the test `model_timed -
+random_timed` $/trade over 4 seeds. It **survives** if the mean is > 0 and
+at least 3 of 4 CIs exclude 0.
+
+**Primary 2, economics:** net per trade and total for every strategy, on test.
+At quotes, `cost_gated` enters only when the *quoted* executable edge beats
+the fee. That is decidable at t, so a positive total would be executable
+dislocation at top of book. **It is an upper bound in all cases:** depth is
+unknown, the quote is an hourly candle close, and C contracts are assumed to
+fill at the best price. **The profitability withdrawal stands** unless a
+strategy nets > 0 on test with >= 30 entries **and** > 0 on val. Even then it
+is reported as a depth-unverified candidate, never as "arbitrage".
+
+**Secondary:** val, and the `--min-ttc 1` and `86400` sweep on test.
+
+**Guard:** `--prices last` must reproduce the committed test s0 figure
+(+0.1792) exactly before any quotes run is read.
+
+**Prediction:** the timing gap shrinks at quotes, to +0.00 to +0.12 with 2–4
+of 4 CIs above 0, because entry-price noise no longer cancels. `cost_gated`
+fires on under 2% of events, with a total near $0.
+
+Logs: `logs/v2_forecast/{bidside_quotes_*,settlepnl_quotes_*}.log`.
