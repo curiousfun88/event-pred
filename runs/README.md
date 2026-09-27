@@ -389,3 +389,45 @@ figure (+0.170), and above my prediction (+0.02 to +0.10), which was wrong.
 - **The caveats stand.** Absolute net is negative for every strategy except
   the cost gate. The model does not improve the gated rule
   (`model_timed_gated - cost_gated` < 0). `--min-ttc` is ex-post cleaned.
+
+## Graph ablation on the causal setup (pre-registered 2026-09-27, before training)
+
+**Question.** Does the graph carry the replicated timing skill (+$0.192/trade)?
+The old "graph supplies ~92% of the margin" came from the leaky `v2_mece`
+and its val history, so it is stale.
+
+**Fix made first.** Checkpoints now record `drop_edges`, and the backbone
+applies it itself (`STGATBackbone.drop_edges`). Every scoring script sets it
+from the checkpoint. Before this, a no-graph checkpoint scored by
+`score_forecast.py` / `evaluate_mece_*` would have been handed the full graph.
+The old 0.988x came from training-time val, where the drop was applied, so it
+was not affected. Verified: the attribute drop equals manual edge removal
+exactly, and an empty drop reproduces the original output.
+
+| Run | Configuration |
+|---|---|
+| `v2_mece_causal_nograph_s0` … `s3` | as `v2_mece_causal_s*` plus `--drop-edges ladder_monotonic mece_leg_to_basket mece_basket_to_leg` (no spatial channel; the MECE loss still uses the baskets) |
+
+**Protocol, fixed before training:**
+1. Checkpoint = `best.pt` (val MECE, `whole_settle`). No seed dropped or re-run.
+2. **Primary:** test, `evaluate_mece_settlement_pnl.py`, same settings as the
+   replicated control (`--max-participation 0.25 --min-leg-volume 20
+   --min-ttc 3600`). Report the `model_timed - random_timed` mean over seeds
+   and compare it with the full model's +0.192.
+3. **Decision rule:**
+   - **the graph carries the timing skill** if the no-graph mean is <= +0.096
+     (<= 50% of full);
+   - **the graph is not needed** if it is >= +0.154 (>= 80%);
+   - otherwise **partial**.
+4. **Secondary, test once:** `score_forecast.py` MECE vs single-alpha oracle
+   (`whole_settle`), and `score_mece_bidside.py`'s unsettled vs
+   per-series x horizon oracle, each beside the full model's figure. Val
+   timing at ttc 3600 is reported for comparability.
+5. **Caveat:** this is the fifth family of models scored on September 2025
+   (multiple looks).
+
+**Prediction, before training:** the graph carries most of the timing skill.
+The timing decision depends on the predicted change in the *basket* sum, and
+without MECE edges a leg cannot see its siblings. My guess is a no-graph mean
+of +0.03 to +0.10. For forecasting, no-graph will be close to the oracle
+(0.97–1.03x single-alpha).

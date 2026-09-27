@@ -112,6 +112,10 @@ class STGATBackbone(nn.Module):
         # (pairwise_monotonicity_taker_side_check_v2.py), i.e. the pair's own
         # future. Zeroed here, in every split, when set.
         self.zero_ladder_edge_features = bool(zero_ladder_edge_features)
+        # ABLATION: edge types the backbone never reads (loss terms still use
+        # them). Set from the checkpoint's "drop_edges" by every scoring script,
+        # so a no-graph model is scored without the graph it was trained without.
+        self.drop_edges: tuple = ()
         # FEATURE STANDARDIZATION BUFFERS. Registered (not plain
         # attributes) so they travel with state_dict into the checkpoint
         # -- a model reloaded for inference MUST standardize its inputs
@@ -184,6 +188,8 @@ class STGATBackbone(nn.Module):
         snapshot entry. Returns h_final, (T, N, D)."""
         T, N, _ = features.shape
         t0 = time.time()
+        if self.drop_edges:
+            adjacency_by_type = {k: v for k, v in adjacency_by_type.items() if k not in self.drop_edges}
         if self.zero_ladder_edge_features and "ladder_monotonic" in adjacency_by_type:
             adjacency_by_type = dict(adjacency_by_type)
             adjacency_by_type["ladder_monotonic"] = [_without_edge_features(e)

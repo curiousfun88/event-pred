@@ -616,6 +616,7 @@ def main():
             "config": cfg, "horizons": list(args.horizons), "epoch": epoch,
             "val_loss": val, "val_persistence": vap, "val_ratio": va_ratio,
             "objective": "horizon_forecast_residual",
+            "drop_edges": list(args.drop_edges),
         }
         # Save unconditionally: an earlier version of the reconstruction
         # trainer wrote nothing when a run had no val split, and a

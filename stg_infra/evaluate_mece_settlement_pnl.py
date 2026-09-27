@@ -421,6 +421,8 @@ def main():
                           max_len=cfg.chunk_len)
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=horizons)
     model.load_state_dict(ck["model"], strict=True)
+    model.drop_edges = tuple(ck.get("drop_edges") or ())
+    print(f"  backbone drops edge types: {list(model.drop_edges) or 'none'}")
     head.load_state_dict(ck["head"], strict=True)
     model.eval(); head.eval()
 
