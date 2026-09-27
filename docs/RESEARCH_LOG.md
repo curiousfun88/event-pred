@@ -419,9 +419,20 @@ Full tables: `runs/README.md`.
 
 ### 8. Still open
 
-- What lets the causal model detect imminent basket settlement with
-  `time_to_close` zeroed (0.11–0.21x persistence on settled baskets)? Check for
-  a legitimate cue (legs near 0/1) versus a leak.
+- ~~Settlement leak?~~ **Checked 2026-09-27, val s0 only: no leak found.**
+  - Scrambling every snapshot after t0 leaves predictions at t <= t0
+    bit-identical, and randomising slot 8 changes nothing.
+  - Within a horizon, the model's pull toward $1 rises *smoothly* as close
+    approaches (h=12: 0.93 within 26h, 0.88 at 26–52h where the basket does
+    *not* settle, 0.52 beyond 72h). There is no jump at the settlement
+    boundary.
+  - The highest leg price does not explain the pull.
+  - Reading: the model learned that short-lived basket families converge to
+    $1, which is visible ex ante. A shrinkage oracle fitted per series x
+    horizon absorbs about half the val margin (0.817x -> 0.920x; unsettled
+    0.861x -> 0.929x).
+  - Open: re-score test against that stronger oracle, and retrain with settled
+    positions excluded from the MECE loss (both to be pre-registered).
 - The graph ablation and model-vs-control result must be re-run on
   `v2_mece_causal_s*` (see revision 7).
 - Ladder on the causal cache: a val figure and a bootstrap CI would be needed

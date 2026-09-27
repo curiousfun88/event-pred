@@ -302,7 +302,8 @@ def run(args) -> int:
                                            monitor_unweighted=True, mece_rule="whole_settle")
 
     cols = {k: [] for k in ("cluster", "h", "s_now", "s_tgt", "s_pred", "b_now", "b_tgt",
-                            "age_now", "age_tgt", "settled_any")}
+                            "age_now", "age_tgt", "settled_any",
+                            "max_leg", "hours_to_close")}
     guard_sm = guard_sp = 0.0
     guard_n = 0
     with torch.no_grad():
@@ -380,6 +381,12 @@ def run(args) -> int:
                         cols["age_now"].append(age_now)
                         cols["age_tgt"].append(age_tgt)
                         cols["settled_any"].append(bool(st_members.any()))
+                        # diagnostics only (--dump); never model inputs
+                        cols["max_leg"].append(float(prices[t, torch.as_tensor(members)].max()))
+                        closes = [ct["node_close"][lg] for lg in members.tolist() if ct["node_close"][lg] is not None]
+                        cols["hours_to_close"].append(
+                            (min(closes) - (ct["timestamps"][t] + WINDOW)).total_seconds() / 3600.0
+                            if closes else math.nan)
                 if my_n != g_n or not math.isclose(my_sm, float(g_sm), rel_tol=1e-5, abs_tol=1e-9) \
                         or not math.isclose(my_sp, float(g_sp), rel_tol=1e-5, abs_tol=1e-9):
                     raise SystemExit(f"REPRODUCTION GUARD FAILED chunk {pos} h={h}: "
