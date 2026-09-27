@@ -417,6 +417,35 @@ survive as a claim about traded-price dislocation:
 - Headline: forecasts basket microstructure and settlement convergence.
 Full tables: `runs/README.md`.
 
+**Quoted top of book replaces trade-side inference (2026-09-27).** Hourly best
+bid/ask come from Kalshi's historical candlesticks
+(`stg_infra/fetch_quote_candles.py`): 10,981 of 10,982 val/test MECE legs.
+Descriptive validation is in `stg_infra/diagnose_quote_candles.py` and
+`logs/v2_forecast/quote_validation_{test,val}.log`. Figures are test (val) on
+whole baskets with every leg live.
+- **Coverage.** 98.1% (97.5%) of leg-snapshots are quoted at the window end,
+  and 97.1% (95.6%) of baskets are fully quoted. Last print minus quoted mid
+  has a median of +0.5c, so the clocks align.
+- **Quoted spread.** Median 2.0c, mean 2.9c (4.4c). The trade-based estimates
+  of 4.68–5.61c overstate it, most on test.
+- **Trade-print bid proxy.** It overstates the quoted bid by +1.1c per leg on
+  average (median 0). It matches exactly in only 33–50% of cases. So the
+  earlier executable "bid sum $0.9993" was biased up about 5c: the quoted bid
+  sum is **$0.944 ($0.922)**.
+- **Revision to the 92.5% overround finding.** Pooled, the print side carries
+  54% (56%) of the mean last-print basket deviation (+2.19c of +4.05c). The
+  rest sits in the *mid* sum, and almost all of that comes from **one-sided
+  books**: a leg with no bid has an inflated mid. In baskets where every leg
+  is two-sided, which is 69% (56%) of them, the **mid sum is within +0.34c
+  (+0.50c) of $1**, and the print side carries 87% (82%) of the deviation.
+  - Conclusion strengthened: at quoted mids, two-sided baskets are coherent
+    to within half a cent.
+  - Number revised: "92.5%" applies to two-sided baskets only (82–87%). The
+    rest of the deviation is one-sided-book artefact, not mispricing.
+- **Executable.** Selling a basket at the bids beats $1 in 1.8% (2.6%) of
+  basket-snapshots, by about 2c before fees (1.3–5.8c). Buying at the asks
+  beats $1 in 0.2% (1.5%). No executable dislocation.
+
 ### 8. Still open
 
 - ~~Settlement leak?~~ **Checked 2026-09-27, val s0 only: no leak found.**
