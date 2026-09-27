@@ -191,3 +191,23 @@ settlement convergence".
 
 Script: `stg_infra/score_mece_bidside.py` (with `--self-test`). Logs:
 `logs/v2_forecast/bidside_{val,test}_s{0..3}.log`.
+
+### Deviations, disclosed before test was scored
+
+1. **Bug fix after seeing val s0.** The first val s0 run crashed in the
+   some-settled bootstrap. On val, every some-settled position has all legs
+   settled, so the target is exactly $1. The alpha = 0 oracle is then exact
+   and model/oracle is undefined (0/0). The script now reports that stratum as
+   undefined instead of crashing. R, target, strata and forecasts are
+   unchanged. The partial output that was seen: val s0, R = 1h, all 24.5x
+   (dominated by the settled stratum), no-settled 1.575x on n = 213 (74
+   baskets, 0.4% coverage).
+2. **Added after seeing val s0, not pre-registered, used for no choice:** the
+   already-reported last-print headline split into no-settled vs some-settled
+   over all `whole_settle` positions, with no bid filter. Motivation: 19.8% of
+   val positions are fully settled baskets with a constant $1 target.
+3. **Coverage finding.** Bid prints are sparse. The median age of a basket's
+   stalest leg bid is about 16h, and 44% of unsettled val positions have a
+   leg with no bid print in the lookback at all. The R = 1h primary is
+   therefore estimable on well under 1% of positions. It is run and reported
+   as registered anyway, with no change of R.
