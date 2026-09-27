@@ -437,7 +437,13 @@ Full tables: `runs/README.md`.
   - The settlement-timing control **replicates on test**: +$0.192/trade, 4/4
     seed CIs above 0, k = 312. The old +$0.170 turned out to be val-only on
     the leaky checkpoint. See `runs/README.md`.
-- Graph ablation still to re-run on causal checkpoints.
+- Graph ablation re-run (pre-registered).
+  - Timing: no-graph keeps about 81% of the timing skill (+0.156 vs +0.192),
+    so the graph is "not needed" for timing, marginally. I predicted the
+    graph would carry most of it; that was wrong.
+  - Forecasting: without the graph the model falls behind both oracles
+    (1.128x single-alpha, 1.224x family on unsettled).
+  - The old "graph supplies ~92%" is retired.
 - The graph ablation and model-vs-control result must be re-run on
   `v2_mece_causal_s*` (see revision 7).
 - Ladder on the causal cache: a val figure and a bootstrap CI would be needed

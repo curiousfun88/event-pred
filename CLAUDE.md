@@ -24,10 +24,14 @@ Deadline: late Oct 2026.
   (RESEARCH_LOG Revisions §7). Oracle's alpha* was fitted on the scored split
   (0.552 test). Under the old partial-basket `legacy` rule the same
   checkpoints score 1.21-1.66x.
-- **STALE, from leaky `v2_mece`; re-run on causal checkpoints before citing:**
-  (graph ablation only; the control result below was re-run)
-  - Graph ablation: no-graph 0.988x vs full 0.851x -> graph supplied ~92% of
-    the margin.
+- **Graph ablation, re-run on the causal setup 2026-09-27 (pre-registered).**
+  The old "~92% from the graph" is retired.
+  - Timing skill: no-graph +$0.156/trade (4/4 CIs above 0) vs full +$0.192.
+    That is "graph not needed" by the rule, marginally (cut-off 0.154). Most
+    of the timing skill is per-leg temporal.
+  - Forecasting: no-graph 1.128x the single-alpha oracle (full 0.909x), and
+    1.224x the family oracle on unsettled positions. The graph is what makes
+    price-level forecasts competitive with the constraint baselines.
 - **Model beats randomised-timing control: REPLICATED ON TEST 2026-09-27.**
   +$0.192/trade (4 seeds: 0.179-0.211, every CI above 0, k=312). Causal
   checkpoints, measured spreads, `--min-ttc 3600`, pre-registered. The paired

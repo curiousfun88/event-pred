@@ -431,3 +431,30 @@ The timing decision depends on the predicted change in the *basket* sum, and
 without MECE edges a leg cannot see its siblings. My guess is a no-graph mean
 of +0.03 to +0.10. For forecasting, no-graph will be close to the oracle
 (0.97–1.03x single-alpha).
+
+### Result (2026-09-27). Logs: `logs/v2_forecast/{settlepnl_nograph_*,score_causal_nograph_s*,bidside_nograph_test_s*}.log`
+
+Every scoring log confirms the backbone dropped all three edge types.
+
+| | no-graph s0 | s1 | s2 | s3 | **no-graph mean** | full model mean |
+|---|---|---|---|---|---|---|
+| **timing gap, test, ttc 3600 (primary)** | +0.156 [0.080, 0.246] | +0.171 [0.090, 0.265] | +0.156 [0.077, 0.247] | +0.140 [0.064, 0.226] | **+0.156** (4/4 CIs > 0, k=312) | +0.192 |
+| timing gap, val, ttc 3600 | +0.170 | +0.163 | +0.151 | +0.155 | +0.160 | +0.208 |
+| MECE vs single-alpha oracle, test (`whole_settle`) | 1.128x | 1.117x | 1.134x | 1.134x | **1.128x** | 0.909x |
+| MECE vs persistence, test | 0.760x | 0.753x | 0.764x | 0.764x | 0.760x | 0.613x |
+| unsettled vs family oracle, test | 1.220x | 1.218x | 1.237x | 1.222x | **1.224x** (CIs exclude 1, above) | 1.052x (causal) |
+| unsettled vs single-alpha, test | 1.102x | 1.100x | 1.117x | 1.103x | 1.106x | 0.950x (unsettled retrain) |
+
+**Decision rule (timing): no-graph +0.156 >= +0.154, so the graph is "not
+needed" for the timing skill.** This is marginal: it clears the cut-off by
+0.002. The graph adds about +0.036/trade (about 19%), with no CI on that
+difference; a paired full-vs-no-graph comparison was not pre-registered. My
+prediction (+0.03 to +0.10) was **wrong**. Most of the timing skill comes from
+each leg's own temporal history, not from cross-leg structure.
+
+**Forecasting (secondary): the graph matters.** Without it, the model is
+*worse* than the single-alpha oracle (1.128x pooled, 1.106x unsettled) and
+clearly worse than the family oracle (1.224x, every CI above 1). With the
+graph it is 0.909x pooled. The graph is what lets the model match or beat the
+constraint-based baselines on price levels. It is not what gives it timing
+skill.

@@ -1,0 +1,95 @@
+================================================================================================
+SCORING best.pt ON THE TEST SPLIT
+================================================================================================
+  checkpoint epoch : 21
+  selected by      : val_mece  (val_loss=0.010373599968443456, val_ratio=1.0063656510250172)
+  horizons         : [1, 2, 3, 6, 12]
+
+  This is the held-out split. Whatever it prints is the result --
+  including if it is worse than val. Changing a setting and rerunning
+  folds test into the selection loop and there is no second held-out
+  split left to recover with.
+
+  3 chunk(s), 360 snapshot(s)
+
+  backbone drops edge types: ['ladder_monotonic', 'mece_leg_to_basket', 'mece_basket_to_leg']
+  MECE scoring rule: whole_settle
+    [backbone] projection done  T=168 N=9346  0.24s  rss=2113MB
+      [spatial] t=   0/168  active=  407  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  20/168  active=  768  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  40/168  active=  382  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  60/168  active=  828  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  80/168  active=  740  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 100/168  active=  371  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 120/168  active=  753  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 140/168  active=  924  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 160/168  active=  344  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 167/168  active=  817  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=944 (at t=116)  total_elapsed=0.0s
+    [backbone] spatial done     0.03s  rss=2113MB
+      [temporal] n_active=9346  node_batch_size=512  -> 19 batch(es)  T=168
+      [temporal] batch   1/19  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch   6/19  b= 512  ckpt=False  elapsed=   2.0s
+      [temporal] batch  11/19  b= 512  ckpt=False  elapsed=   3.6s
+      [temporal] batch  16/19  b= 512  ckpt=False  elapsed=   5.1s
+      [temporal] batch  19/19  b= 130  ckpt=False  elapsed=   5.8s
+    [backbone] temporal done    5.85s  rss=2759MB
+    [backbone] projection done  T=168 N=10597  0.20s  rss=2759MB
+      [spatial] t=   0/168  active=  882  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  40/168  active=  484  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  60/168  active=  870  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  80/168  active=  679  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 100/168  active=  395  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 120/168  active=  875  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 140/168  active=  976  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 160/168  active=  436  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t= 167/168  active=  821  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1078 (at t=128)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=2759MB
+      [temporal] n_active=10597  node_batch_size=512  -> 21 batch(es)  T=168
+      [temporal] batch   1/21  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/21  b= 512  ckpt=False  elapsed=   4.9s
+      [temporal] batch  11/21  b= 512  ckpt=False  elapsed=   6.5s
+      [temporal] batch  16/21  b= 512  ckpt=False  elapsed=   8.1s
+      [temporal] batch  21/21  b= 357  ckpt=False  elapsed=   9.7s
+    [backbone] temporal done    9.69s  rss=2870MB
+    [backbone] projection done  T=24 N=3504  0.00s  rss=2870MB
+      [spatial] t=   0/24  active=  842  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  20/24  active=  957  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] t=  23/24  active= 1004  mece_edges=    0  ladder_edges=    0  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1240 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.00s  rss=2870MB
+      [temporal] n_active=3504  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 432  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.04s  rss=2870MB
+
+================================================================================================
+TEST RESULT
+================================================================================================
+  node (pooled)  : 0.01206 vs persist 0.01191 = 1.012x  (n=332,477)
+  combined obj   : 0.02433   (no single baseline; reported for comparability with training logs only)
+  per-horizon    : h1: 0.00580/0.00571=1.015x  h2: 0.00927/0.00905=1.025x  h3: 0.01215/0.01196=1.016x  h6: 0.01747/0.01738=1.005x  h12: 0.01972/0.01956=1.008x
+  by regime      : moved: 0.02738/0.02738=1.000x (n=144,598)  flat: 0.00026/0.00000=nanx (n=187,879)
+  mechanisms     : ladder: 0.00935 vs persist 0.00973=0.961x vs shrink(a=0.942) 0.00958=0.977x (n=99,646)  |  ladder_moved: 0.01822 vs persist 0.01934=0.942x vs shrink(a=0.871) 0.01866=0.976x (n=50,142)  |  mece: 0.00298 vs persist 0.00390=0.764x vs shrink(a=0.552) 0.00262=1.134x (n=37,392)
+
+------------------------------------------------------------------------------------------------
+  HEADLINE (node): 1.000x on the 144,598 positions that MOVED.
+  The pooled 1.012x includes 187,879 flat positions (57%) where persistence
+  is exact by construction and no forecast can do better than tie.
+  LADDER : 0.977x vs shrink(alpha=0.942) -- BEATS the shrinkage oracle.  (0.961x vs persistence, n=99,646)
+  LADDER_MOVED: 0.976x vs shrink(alpha=0.871) -- BEATS the shrinkage oracle.  (0.942x vs persistence, n=50,142)
+  MECE   : 1.134x vs shrink(alpha=0.552) -- does NOT beat the shrinkage oracle.  (0.764x vs persistence, n=37,392)
+------------------------------------------------------------------------------------------------
+
+  An alpha well below 1 means the quantity genuinely mean-reverts and there
+  is something for a forecaster to find; an alpha near 1 means it is a random
+  walk and beating persistence on it would be surprising. That difference --
+  MECE alpha ~ 0.87 against ladder alpha ~ 0.99 -- is the structural finding,
+  and it follows from the constraints themselves: a MECE basket is pinned to
+  a LEVEL (the legs must sum to 1), while a ladder pair is only bounded by an
+  INEQUALITY (gap <= 0), which an entire half-line satisfies. There is no
+  level for a ladder gap to revert to, so there is nothing to forecast.
+exit: 0
