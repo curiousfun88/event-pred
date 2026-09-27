@@ -127,3 +127,67 @@ See RESEARCH_LOG Revisions §7 for why the old ladder population was mostly
 contracts replayed after close.
 
 Logs: `logs/v2_forecast/forecast_mece_causal_s*.log` and `score_causal_s*{,_legacy}.log`.
+
+## Bid-side re-score of the causal checkpoints (pre-registered 2026-09-27, before any result)
+
+The 0.909x is measured against last-print basket sums, and about 92.5% of
+last-print basket deviation is the bid/ask overround. This re-score asks
+whether the forecast still beats the oracle when the target is the
+**bid-side** basket sum, the side a basket seller would actually trade at.
+It is a re-score, not a retrain: the same four `best.pt`, `cache_causal/`,
+and the same basket positions `score_forecast.py` selects (`whole_settle`,
+`--supervise active`).
+
+**Leg bid.** The bid is taken from `yes_price` of the latest trade with
+`taker_side == "no"` (the taker sold into the bid). Only trades at or before
+the end of the snapshot window count, and bid prints from the previous month
+may carry into the first window. The bid's age is the window end minus that
+trade's time.
+
+**Target at t+h.** For a leg settled by t+h, the target is its settlement
+value (1 or 0), as under `whole_settle`. For any other leg, it is the leg's
+bid at t+h.
+
+**Eligible basket-position.** It must be one `whole_settle` already scores.
+In addition, every leg not settled by the end of its window must have a bid
+of age <= R, both at t and at t+h. **Primary R = 1h.** Sensitivity: R = 30min
+and 2h, which are not used for any choice.
+
+**Forecasts, all of the bid-side basket sum at t+h:**
+- persistence: `B(t)`, the sum of leg bids at t (settled legs at t take their settlement value)
+- model: `B(t) + (S_model(t) - S_last(t))`. This is the model's predicted
+  change in the last-print basket sum, applied to the bid level. It rests on
+  Roll's (1984) decomposition, trade price = efficient price +/- half-spread,
+  so the half-spread cancels in the change if the spread is stable over h. It
+  fails if the spread moves over h. That is a stated limitation.
+- oracle: `1 + alpha * (B(t) - 1)`, with alpha fitted on the scored split and
+  sample (optimistic, as before)
+
+**Reported, per seed and as the mean and range over the 4 seeds:**
+1. **Primary:** model/oracle MSE on the bid-side target, R = 1h, pooled over
+   horizons, on val (2025-07..08) and test (2025-09).
+2. The same split by stratum: **no leg settled by t+h** vs **some leg
+   settled**. Settled legs pin the target to $1 mechanically, so the
+   no-settled stratum is the one that measures forecasting of traded prices.
+3. The last-print ratio recomputed on the same bid-eligible subset. This
+   separates a change of population from a change of target.
+4. A 95% cluster bootstrap CI by basket (event) on model/oracle, with alpha
+   refit per resample, and the cluster count `k` printed.
+5. Coverage: bid-eligible positions as a share of the `whole_settle` positions.
+6. Reproduction guard: the script's last-print branch, on all positions, must
+   match `score_forecast.py`'s MECE (model, persistence, n) exactly, or the
+   run aborts.
+
+**Order.** Val is run first, then test, once per seed. There is no retry and
+no change of R, target or strata after seeing val.
+
+**Prediction, stated before measuring.** On the bid-side target the margin
+over the oracle shrinks from 0.909x toward 1.0. Most of what remains sits in
+the some-leg-settled stratum. In the no-settled stratum the model is within
++/-3% of the oracle (0.97-1.03x). If instead no-settled is clearly below 0.97x
+on test with a CI excluding 1.0, the headline is "forecasts traded-price
+dislocation, bid side". Otherwise it is "forecasts basket microstructure and
+settlement convergence".
+
+Script: `stg_infra/score_mece_bidside.py` (with `--self-test`). Logs:
+`logs/v2_forecast/bidside_{val,test}_s{0..3}.log`.
