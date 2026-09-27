@@ -14,6 +14,7 @@
 \documentclass[11pt,a4paper]{article}
 
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage[utf8]{inputenc}
 \usepackage{textcomp}
 \usepackage{amsmath}
@@ -35,7 +36,7 @@
 
 \title{\textbf{When Does Graph Learning Beat a No-Arbitrage Constraint?}\\[4pt]
 \large Coherence and Learnability in Kalshi Event Contracts}
-\author{[Author name]\\[2pt]
+\author{[Justyn]\\[2pt]
 \small Final Year Project --- draft for supervisor review}
 \date{\today}
 
@@ -372,13 +373,14 @@ gain comes from per-contract temporal forecasting, not from ladder structure.
 \toprule
 Quantity & result & CIs excluding null \\
 \midrule
-Bid-side forecast vs.\ oracle, unsettled ($n=30{,}001$, $k=344$) & $1.822\x$ ($1.80$--$1.85$) & 4/4 above 1 \\
-Timing: model $-$ random, last prices (\$/trade, $k=312$) & $+0.192$ ($0.179$--$0.211$) & 4/4 above 0 \\
+Bid-side forecast / oracle, unsettled\textsuperscript{a} & $1.822\x$ ($1.80$--$1.85$) & 4/4 above 1 \\
+Timing: model $-$ random, last prices\textsuperscript{b} & $+0.192$ ($0.179$--$0.211$) & 4/4 above 0 \\
 Timing: model $-$ random, quoted prices & $+0.867$ & 3/4 above 0 \\
 Timing: model $-$ enter now, quoted prices & $-0.957$ & 4/4 \emph{below} 0 \\
 Fee-aware entry at quotes: trades fired / net & 1 of 2{,}090 / $+\$0.07$ & --- \\
 Static entry at quotes: net per trade & $-\$2.18$ & --- \\
 \bottomrule
+\multicolumn{3}{l}{\footnotesize \textsuperscript{a} $n=30{,}001$ positions, $k=344$ baskets.\quad \textsuperscript{b} \$/trade, $k=312$ baskets; same units in the rows below.}
 \end{tabular}
 \end{table}
 
