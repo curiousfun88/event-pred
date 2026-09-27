@@ -9,14 +9,20 @@ Deadline: late Oct 2026.
 ## State
 
 **Established (positive)**
-- Model beats an optimal shrinkage oracle by ~15%: **0.851x** val, 0.853x
-  test. Oracle's alpha* was fitted on the scored split.
-- Graph ablation: no-graph 0.988x vs full 0.851x -> **graph supplies ~92%**
-  of the margin. Node-level is 0.991x; the gain is in the basket aggregate.
-- Model beats randomised-timing control: **+$0.170/trade, CI [+0.107,
-  +0.247]**, cluster-bootstrapped by basket. Identical across three cost
-  models, because the spread term cancels in a paired comparison -> this
-  result is **provably cost-model invariant**. Strongest number in project.
+- Model beats an optimal shrinkage oracle by ~9%: **0.909x** test (range
+  0.883-0.941 over 4 seeds), 0.823x val. This is the causal rerun
+  `runs/v2_mece_causal_s0..s3`, pre-registered, with test scored once per
+  seed. It replaces 0.851x/0.853x from `v2_mece`, whose inputs leaked
+  (RESEARCH_LOG Revisions §7). Oracle's alpha* was fitted on the scored split
+  (0.552 test). Under the old partial-basket `legacy` rule the same
+  checkpoints score 1.21-1.66x.
+- **STALE, from leaky `v2_mece`; re-run on causal checkpoints before citing:**
+  - Graph ablation: no-graph 0.988x vs full 0.851x -> graph supplied ~92% of
+    the margin.
+  - Model beats randomised-timing control: +$0.170/trade, CI [+0.107,
+    +0.247], cluster-bootstrapped by basket. The paired design makes it
+    cost-model invariant (the spread term cancels), and that property
+    carries over to the re-run.
 
 **Established (negative, and the central contribution)**
 - **92.5% of apparent basket deviation is the overround, not mispricing.**
@@ -32,15 +38,24 @@ Deadline: late Oct 2026.
   spread and wide-spread baskets execute worse.
 - **Profitability claim WITHDRAWN.** Do not reintroduce. Never write
   "arbitrage"; write "dislocation in traded prices".
-- Ladder forecast undeployable: all-pairs ratio minimised at epoch 0
-  (1.0015), rises monotonically under every mover weight, approaches 1.0
-  *from above* as weight -> 0. Reprice timing is not in the features.
-  FINAL, closed.
+- **Ladder closure STALE (2026-09-27).** "All-pairs ratio minimised at
+  epoch 0 (1.0015)" was measured on the leaky cache. There, 57% of scored
+  ladder pairs (h=1) were sub-1.5h contracts replayed after close: 583 pairs,
+  about 85k frozen copies, 0% moved. Persistence is exact on them, so learned
+  reversion could only lose. `cache_causal/` removes them (past-close 0%, was
+  66%). The causal MECE checkpoints (ladder weight 0, never selected on the
+  ladder) score **0.982-0.993x oracle, 0.966-0.977x persistence** on test
+  ladder pairs (n=99,646). This is exploratory: not pre-registered, no val
+  figure, no CI, and the moved-pairs lead is 0.4-0.9% (s3 loses at 1.004x).
+  Evidence: `logs/v2_forecast/ladder_timing{,_causal}.log`. Reprice timing
+  is still not in the features. The no-pivot decision stands. Sub-2h ladders
+  are out of scope, because contracts shorter than the 2h grid cannot be
+  forecast on it; this is a limitation, not a task.
 
 **Open, in priority order**
-1. **Re-score existing checkpoint with target = bid-side basket sum** (not
-   mixed last prints). The 0.851x is on the basket aggregate, which is the
-   92.5%-overround quantity. This decides whether the headline is
+1. **Re-score the causal checkpoints (`runs/v2_mece_causal_s*`) with target
+   = bid-side basket sum** (not mixed last prints). The 0.909x is on the
+   basket aggregate, which is the 92.5%-overround quantity. This decides whether the headline is
    "forecasts mispricing" or "forecasts microstructure". Re-score, not
    retrain. **Do this before anything else.**
 2. Rebuild `cache/` for 2024-11..2025-11; move `PILOT_MONTHS` off
@@ -110,7 +125,8 @@ cache/ data/  local only
 ```
 
 Run every script from the repo root; all paths are root-relative.
-Headline checkpoint: `runs/v2_mece/best.pt` (was `checkpoints_mece/`).
+Headline checkpoints: `runs/v2_mece_causal_s{0..3}/best.pt` on `cache_causal/`.
+`runs/v2_mece/best.pt` is superseded (leaky inputs).
 
 Key scripts: `examples/mece_sum_to_one_check.py` (basket identification),
 `examples/mece_spread_artefact_check.py` (the overround test),
@@ -123,6 +139,7 @@ Key scripts: `examples/mece_sum_to_one_check.py` (basket identification),
    by the overround; bid/ask decomposition; executable edge; fees.
 3. Forecasting accuracy vs persistence and the shrinkage oracle + ablation.
 4. Model vs control, and its cost-model invariance.
-5. Ladder as diagnosed negative control.
+5. Ladder: how the post-close leak manufactured a false negative, with the
+   small positive result on live pairs as exploratory.
 6. Limitations: funnel (11,607 -> 3,354 -> 257), composition (58% weather
    above 5c), cross-leg non-simultaneity (406 min), no order-book data.

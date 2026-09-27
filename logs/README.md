@@ -31,10 +31,15 @@ Unless noted, evaluations use `runs/v1_reconstruction/best.pt` (epoch 43, val lo
 | `forecast_smoke.log`, `train_forecast.log` | `train_forecast.py` | First forecast runs → `runs/v2_forecast` |
 | `forecast_active.log`, `forecast_strat.log` | `train_forecast.py` | → `runs/v2_active`, `runs/v2_strat` |
 | `forecast_mece.log` | `train_forecast.py` | **Headline training run** → `runs/v2_mece` |
-| `mece_test.log` | `score_forecast.py` | **Held-out test, scored once:** 0.853× oracle, 0.819× persistence (n = 41,700) |
+| `mece_test.log` | `score_forecast.py` | Superseded headline (leaky `v2_mece`). Held-out test, scored once: 0.853× oracle, 0.819× persistence (n = 41,700) |
 | `mece_pnl_test.log`, `mece_pnl_ci.log`, `mece_pnl_capped.log`, `mece_pnl_cap25.log` | `evaluate_mece_forecast_pnl.py` | Taker PnL and controls; cluster-bootstrap CIs; 10% and 25% participation caps |
 | `maker_flow.log`, `maker_optimistic.log`, `maker_partial.log`, `maker_ctrl.log` | `evaluate_mece_maker_pnl.py` | Maker execution under flow / optimistic / partial-fill models; `_ctrl` adds controls |
 | `mask_semantics.log` | `diagnose_mask_semantics.py` | 53.9% of masked positions are unchanged prices |
 | `ladder_reversion.log` | `diagnose_ladder_reversion.py` | Pooled reversion by gap bucket (α ≈ 0.99) |
 | `ladder_conditional.log`, `ladder_cond_test.log` | `diagnose_ladder_conditional.py` | Reversion conditional on a reprice (val, test) — overturns the random-walk reading |
 | `coverage.log` | `diagnose_basket_coverage.py` | MECE basket coverage on test |
+| `rebuild_causal.log` | `run_real_training.py --build-only` | Builds `cache_causal/` (real-time membership, post-close trades dropped) |
+| `forecast_mece_causal_s{0..3}.log` | `train_forecast.py` | Causal rerun training → `runs/v2_mece_causal_s*` |
+| `score_causal_s{0..3}.log` | `score_forecast.py` | **Current headline, test scored once per seed:** 0.921 / 0.941 / 0.891 / 0.883× oracle (mean 0.909×, n = 37,392) |
+| `ladder_timing_causal.log` | `diagnose_ladder_timing.py --cache cache_causal --horizons 1 12` | Past-close ladder pairs 0% (was 66%), sub-1.5h class gone, frozen share at h=1 74.2% (was 91.1%) |
+| `score_causal_s{0..3}_legacy.log` | `score_forecast.py --mece-rule legacy` | Secondary, for comparability only: 1.21–1.66× oracle (n = 51,029) |

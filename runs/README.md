@@ -20,7 +20,7 @@ use the old names (right-hand column).
 | `v2_forecast` | First forecast run; weights node = ladder = mece = 1, `--supervise active` | 6 epochs; first test of the residual head | `train_forecast.log`, `forecast_smoke.log` | `checkpoints_forecast` |
 | `v2_active` | `--supervise active` | 3 epochs | `forecast_active.log` | `checkpoints_active` |
 | `v2_strat` | `--supervise all` | 6 epochs | `forecast_strat.log` | `checkpoints_strat` |
-| **`v2_mece`** | `--w-ladder 0 --supervise all --select-on mece` | **Headline:** epoch 11; 0.851× oracle (val), 0.853× (test) | `forecast_mece.log`, `mece_test.log` | `checkpoints_mece` |
+| **`v2_mece`** | `--w-ladder 0 --supervise all --select-on mece` | Former headline, **superseded** by `v2_mece_causal_s*` (leaky inputs, see below): epoch 11; 0.851× oracle (val), 0.853× (test) | `forecast_mece.log`, `mece_test.log` | `checkpoints_mece` |
 | `v2_mece_noladder` | as `v2_mece`, `--drop-edges ladder_monotonic` | No detectable effect on MECE | — | `checkpoints_mece_noladder` |
 | `v2_mece_nograph` | as `v2_mece`, `--drop-edges` with all three edge types (no spatial channel) | Margin over the oracle collapses (~92% of it came from the graph) | — | `checkpoints_mece_nograph` |
 | `v2_ladder_weighted` | `--ladder-supervise weighted` | Ladder ratio best at epoch 0 | — | `checkpoints_ladder_weighted` |
@@ -84,3 +84,46 @@ Supersedes both plans above. Fixes in force (commits `2473561`, `b78d5da`, `b11d
 4. **Secondary, for comparability only, never used for any choice:** the same checkpoints scored on test with `--mece-rule legacy`.
 5. Also reported: basket-snapshot counts per split under the causal membership vs the old detection-based one.
 6. Whatever the result, it replaces 0.853x as the headline, with every fix above disclosed.
+
+### Result (scored 2026-09-27, test scored once per seed as registered)
+
+Test = 2025-09 and val = 2025-07..08, both under `whole_settle`. Model/oracle
+is the MECE MSE ratio against the shrinkage oracle, whose alpha is fitted on
+the split being scored (val 0.556, test 0.552). Val is the selection split, so
+it is optimistic.
+
+| seed | best epoch | val vs oracle | val vs persist | **test vs oracle** | test vs persist | test vs oracle, `legacy` rule (secondary) |
+|---|---|---|---|---|---|---|
+| s0 | 14 | 0.817x | 0.572x | **0.921x** | 0.621x | 1.465x |
+| s1 | 21 | 0.828x | 0.580x | **0.941x** | 0.634x | 1.658x |
+| s2 | 24 | 0.813x | 0.570x | **0.891x** | 0.601x | 1.210x |
+| s3 | 14 | 0.834x | 0.584x | **0.883x** | 0.595x | 1.325x |
+| **mean (range)** | | 0.823x (0.813–0.834) | 0.577x | **0.909x (0.883–0.941)** | 0.613x | 1.415x (1.210–1.658) |
+
+**Primary figure: 0.909x (range 0.883–0.941) on test.** It replaces 0.853x.
+All four seeds beat the oracle. The margin is about 9%, down from 15%.
+
+Scored MECE positions (the scorer's `n`; per-split basket-snapshot counts were
+not logged separately, and there is no count for train):
+
+| population | val | test |
+|---|---|---|
+| old: detection membership, `legacy` rule, `cache/` (`v2_mece`) | 64,717 | 41,700 |
+| causal membership, `legacy` rule, `cache_causal/` | — | 51,029 |
+| causal membership, `whole_settle`, `cache_causal/` (primary) | 58,354 | 37,392 |
+
+The checkpoints fail under the `legacy` rule, even though they beat the oracle
+under the rule they were selected on. The oracle itself also changes a lot:
+test alpha is 0.552 here against 0.917 in `v2_mece`, so the whole-basket target
+mean-reverts much more strongly. Both the model and the oracle gain from that
+(0.61x vs persistence, where it was 0.82x). This figure is still against
+mixed last-print basket sums; the bid-side re-score is open.
+
+**Ladder, exploratory (not in the protocol above).** Test ladder pairs: 0.985 /
+0.982 / 0.983 / 0.993x oracle (alpha 0.942) and 0.970 / 0.966 / 0.967 / 0.977x
+persistence (n = 99,646). Moved pairs: 0.995 / 0.991 / 0.992 / 1.004x. The
+runs had ladder weight 0, so there is no val figure. The old model was 1.031x.
+See RESEARCH_LOG Revisions §7 for why the old ladder population was mostly
+contracts replayed after close.
+
+Logs: `logs/v2_forecast/forecast_mece_causal_s*.log` and `score_causal_s*{,_legacy}.log`.

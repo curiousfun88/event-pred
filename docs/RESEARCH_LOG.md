@@ -122,6 +122,7 @@ constraint now lives only in the graph.
 
 Results on the 5-month pilot:
 - **MECE:** 0.851× (val) / **0.853× (test, scored once)** the shrinkage oracle.
+  *Superseded 2026-09-27: inputs leaked. The causal rerun gives 0.909× on test (Revisions §7).*
   Graph ablation: no-graph run loses ~92% of the margin. Ladder-edge ablation:
   no detectable effect.
 - **Ladder:** all-pairs ratio is best at initialisation under every mover
@@ -245,7 +246,7 @@ model.
 
 → [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md)
 
-### 2. The ladder conclusion, overturned then closed (2026-09-19)
+### 2. The ladder conclusion, overturned then closed (2026-09-19; closure stale, see §7)
 
 **Claimed:** ladder violations follow a near-random walk (pooled alpha ~0.99),
 so there is little to forecast.
@@ -350,14 +351,72 @@ three hours apart and proves the old limit accepts them.
 | Per-leg costing would improve measured PnL | It reduced it, twice. Both times the error was reasoning from a *median* spread where basket cost is a *sum* over legs, so the mean governs and the distribution is right-skewed |
 | `14+ leg families never achieve full coverage` | Holds only for the original two-month window. `KXF1RACE` (20 legs) and `KXNASCARRACE` (41 legs) achieve it on May–Sep |
 
-### 7. Still open
+### 7. The headline forecast was leaky; causal rerun replaces it (2026-09-27)
 
-- The primary forecasting result (0.851x against the shrinkage oracle) is on
-  the **basket aggregate** metric, which is the quantity now known to be
-  ~92.5% overround. The node-level figure is 0.991x. Re-scoring against
-  bid-side basket sums will determine whether the economic label survives.
-  Until then the result is stated as forecasting accuracy, not as arbitrage
-  detection.
+The 0.851x / 0.853x came from `v2_mece`, whose inputs leaked in four ways:
+- resolved markets were replayed after close;
+- `time_to_close` carried after-the-fact close times;
+- ladder edge features leaked;
+- MECE membership was selected with hindsight, using the event's own outcome.
+
+It was also scored on partial baskets. A first rerun (`v2_mece_clean_s*`) fixed
+only the first two. It was stopped before scoring and is not cited.
+
+The causal rerun (`v2_mece_causal_s0..s3`) was pre-registered before any result
+(`runs/README.md`). It has every fix in force and uses causal membership in
+val/test and the `whole_settle` scoring rule. Test was scored once per seed.
+
+| | val | test |
+|---|---|---|
+| model / oracle, mean (range) | 0.823x (0.813–0.834) | **0.909x (0.883–0.941)** |
+| model / persistence, mean | 0.577x | 0.613x |
+| oracle alpha | 0.556 | 0.552 |
+
+All four seeds beat the oracle, but the margin is ~9%, not ~15%. The
+same checkpoints scored under the old partial-basket rule are 1.21–1.66x (not
+used for any choice). The whole-basket target is far more mean-reverting
+(alpha 0.55 against 0.92 before), which helps both the model and the oracle.
+
+Figures computed on `v2_mece` are now stale: the graph ablation (~92%) and the
+model-vs-control PnL (+$0.170/trade). They need re-running on the causal
+checkpoints before they can be cited.
+
+**The ladder closure (Revision 2) is stale for the same reason.** On the old
+cache at h=1, 85,222 of 150,697 scored ladder pairs (57%) came from contracts
+that live 1.5h or less. The 2h grid never saw them live. They appeared only as
+replays after close: 583 pairs, 0% ever moved, and 66% of all scored pairs had
+a leg already closed by t+h. Persistence is exact on those pairs, so the
+all-pairs ratio could only be minimised by doing nothing. That is the
+"minimised at epoch 0" result. On `cache_causal/` the past-close share is 0%
+and the sub-1.5h class is gone. What remains (50,991 pairs) is essentially the
+old live-only subset (51,278). Evidence: `logs/v2_forecast/ladder_timing.log`
+vs `ladder_timing_causal.log` (train/val months only).
+
+On test, the causal MECE checkpoints score 0.982–0.993x the ladder shrinkage
+oracle (alpha 0.942, was 0.990) and 0.966–0.977x persistence, n = 99,646. They
+were trained with ladder weight 0 and ladder edge features zeroed, and selected
+on MECE. On moved pairs the range is 0.991–1.004x. This is **exploratory**:
+not pre-registered, no val counterpart (ladder val metrics are NaN at weight
+0), no CI. It retracts the negative closure; it does not establish a positive
+ladder result. Reprice timing is still absent from the features (hidden
+leg-age AUC 0.83 at h=1).
+
+Forecasting ladders that live under 2h would need a sub-2h grid, a new pipeline.
+It is recorded as a limitation, not pursued.
+
+### 8. Still open
+
+- The primary forecasting result (now 0.909x against the shrinkage oracle,
+  causal rerun) is still on the **basket aggregate of last prints**, which is
+  the quantity known to be ~92.5% overround. Re-scoring the causal checkpoints
+  against bid-side basket sums will determine whether the economic label
+  survives. Until then the result is stated as forecasting accuracy, not as
+  mispricing detection.
+- The graph ablation and model-vs-control result must be re-run on
+  `v2_mece_causal_s*` (see revision 7).
+- Ladder on the causal cache: a val figure and a bootstrap CI would be needed
+  before the 0.98x is more than exploratory. `score_forecast.py` still prints
+  a hardcoded "ladder alpha ~0.99" paragraph that the causal numbers contradict.
 - `KXCLUBWCGAME` may not be a genuine partition: one snapshot shows sum $1.89
   with 369 trades on the thinnest leg at a 0.02h gap, which is not credible
   as a standing arbitrage. Knockout ties plausibly resolve "tie" and "winner"
