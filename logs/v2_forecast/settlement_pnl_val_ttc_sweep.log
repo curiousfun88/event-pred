@@ -1,0 +1,67 @@
+# PROVENANCE of the +$0.170/trade figure. Recovered 2026-09-27 from the user's terminal
+# (the original run was never logged). Per-chunk [backbone]/[spatial]/[temporal] progress
+# lines removed; everything else verbatim. Command (run from stg_infra/):
+#   for T in 1 3600 86400; do
+#     python evaluate_mece_settlement_pnl.py --split val --max-participation 0.25 \
+#         --min-leg-volume 20 --min-ttc $T
+#   done
+# Checkpoint: checkpoints_mece/best.pt (= runs/v2_mece, leaky inputs; selected on val).
+# The quoted +0.170 [+0.107, +0.247] is the --min-ttc 3600 run. Scored on the SELECTION
+# split (val). Every basket costed at the global median spread (spreads file = ladder).
+
+########## --min-ttc 1
+checkpoint /home/fyp/event-pred/checkpoints_mece/best.pt  (epoch 11, selected on val_mece)
+split=val  horizon=1  execution=taker  cap=0.25
+robustness filters, attributed one at a time over 11,607 complete baskets:
+  --min-leg-volume 20      would drop 7,673 (66.1%) -- a leg below this had no tradeable last price
+  --min-ttc 1             would drop 1,849 (15.9%) -- near resolution, post-determination prints possible
+  combined: kept 3,424 of 11,607 (29.5%), dropped 8,183
+  spread sources: global=27,386
+  baskets over threshold : 2,880
+  strategy              trades    win%   gross/trd   cost/trd    net/trd    total net
+  static_now             2,880  100.0%        1.69       3.82      -2.13       -6,128
+  cost_gated               174  100.0%        7.29       4.45       2.84          494
+  model_timed            2,880   99.0%        1.75       3.76      -2.01       -5,779
+  random_timed           2,880   98.5%        1.52       3.69      -2.17       -6,260
+  model_timed_gated        215  100.0%        6.81       4.24       2.57          552
+  model_timed - random_timed         [+0.0985, +0.2393]  point +0.1673   BEATS  (CI entirely above 0)
+  model_timed - static_now           [+0.0913, +0.1576]  point +0.1214   BEATS  (CI entirely above 0)
+  model_timed_gated - cost_gated     [-0.5303, -0.0908]  point -0.2730   WORSE  (CI entirely below 0)
+
+########## --min-ttc 3600   <-- the quoted +0.170
+checkpoint /home/fyp/event-pred/checkpoints_mece/best.pt  (epoch 11, selected on val_mece)
+split=val  horizon=1  execution=taker  cap=0.25
+robustness filters, attributed one at a time over 11,607 complete baskets:
+  --min-leg-volume 20      would drop 7,673 (66.1%) -- a leg below this had no tradeable last price
+  --min-ttc 3600             would drop 1,920 (16.5%) -- near resolution, post-determination prints possible
+  combined: kept 3,354 of 11,607 (28.9%), dropped 8,253
+  spread sources: global=27,092
+  baskets over threshold : 2,831
+  strategy              trades    win%   gross/trd   cost/trd    net/trd    total net
+  static_now             2,831  100.0%        1.61       3.71      -2.10       -5,940
+  cost_gated               164  100.0%        6.85       4.15       2.70          442
+  model_timed            2,831   99.0%        1.68       3.65      -1.98       -5,592
+  random_timed           2,831   98.8%        1.45       3.59      -2.15       -6,074
+  model_timed_gated        205  100.0%        6.43       3.99       2.44          500
+  model_timed - random_timed         [+0.1066, +0.2472]  point +0.1703   BEATS  (CI entirely above 0)
+  model_timed - static_now           [+0.0913, +0.1578]  point +0.1229   BEATS  (CI entirely above 0)
+  model_timed_gated - cost_gated     [-0.5123, -0.0552]  point -0.2576   WORSE  (CI entirely below 0)
+
+########## --min-ttc 86400
+checkpoint /home/fyp/event-pred/checkpoints_mece/best.pt  (epoch 11, selected on val_mece)
+split=val  horizon=1  execution=taker  cap=0.25
+robustness filters, attributed one at a time over 11,607 complete baskets:
+  --min-leg-volume 20      would drop 7,673 (66.1%) -- a leg below this had no tradeable last price
+  --min-ttc 86400             would drop 6,631 (57.1%) -- near resolution, post-determination prints possible
+  combined: kept 1,219 of 11,607 (10.5%), dropped 10,388
+  spread sources: global=8,390
+  baskets over threshold : 974
+  strategy              trades    win%   gross/trd   cost/trd    net/trd    total net
+  static_now               974  100.0%        0.87       2.26      -1.39       -1,355
+  cost_gated                53  100.0%        3.74       2.24       1.49           79
+  model_timed              974   98.8%        0.88       2.26      -1.38       -1,339
+  random_timed             974   98.5%        0.83       2.26      -1.43       -1,394
+  model_timed_gated         57  100.0%        3.71       2.30       1.41           80
+  model_timed - random_timed         [+0.0204, +0.1061]  point +0.0560   BEATS  (CI entirely above 0)
+  model_timed - static_now           [-0.0022, +0.0388]  point +0.0162   inconclusive (CI includes 0)
+  model_timed_gated - cost_gated     [-0.1942, -0.0123]  point -0.0848   WORSE  (CI entirely below 0)

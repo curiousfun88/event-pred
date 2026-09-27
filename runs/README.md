@@ -306,3 +306,44 @@ error sums match the independent dump.
 unsettled test positions, i.e. no clear positive. That is based on the causal
 checkpoints: 1.034x single-alpha on unsettled test, and a val margin that has
 been shrinking about 15 points from val to test.
+
+## Settlement-timing control re-run on causal checkpoints (pre-registered 2026-09-27, before any result)
+
+**Provenance of the old figure.** The +$0.170/trade [+0.107, +0.247] is
+`evaluate_mece_settlement_pnl.py --split val --max-participation 0.25
+--min-leg-volume 20 --min-ttc 3600` on `checkpoints_mece` (= leaky `v2_mece`).
+It is one run of a three-setting `--min-ttc` sweep: +0.167 at 1s, +0.170 at 1h,
++0.056 at 24h, with all CIs above 0. It was scored on **val, the selection
+split**, and every basket was costed at the global median spread. The output
+was recovered from the user's terminal:
+`logs/v2_forecast/settlement_pnl_val_ttc_sweep.log`.
+
+**Re-run.** Same settings (`--max-participation 0.25 --min-leg-volume 20`,
+h = 1, taker, 100 contracts, entry $0.01, `--n-boot 2000`), on
+`runs/v2_mece_causal_s{0..3}/best.pt` with `--cache cache_causal`. The
+`--spreads` default is now `mece_leg_spreads.parquet`. That changes absolute
+net figures but not the paired gap, where the spread cancels.
+
+| | |
+|---|---|
+| **Primary** | **test**, `--min-ttc 3600`: `model_timed - random_timed` $/trade, per seed, with the script's basket-clustered 95% CI; mean and range over the 4 seeds |
+| Secondary | test at `--min-ttc 1` and `86400` (the full sweep); val at all three for comparability with the old figure |
+| Decision rule | directional timing skill replicates if the test mean gap > 0 **and** at least 3 of 4 seed CIs exclude 0 |
+
+**Caveats, stated now:**
+- `--min-ttc` reads raw slot 8, built from recorded close times, so it selects
+  on after-the-fact information (early closes).
+- The paired gap measures timing skill only. Every strategy's absolute net
+  remains negative after fees. Profitability stays withdrawn.
+- `--n-boot` and the clustering are whatever the script does; k is to be
+  printed per CLAUDE.md item 4. If the script does not print k, it is counted
+  separately.
+
+**Prediction, before running:** the gap shrinks relative to +0.170. That is
+partly because test is held out, and partly because the causal model's
+settlement skill is family-level shrinkage, which carries little one-step
+timing information. My guess is test mean +0.02 to +0.10, with 2–4 of 4 CIs
+excluding 0.
+
+Runs after the unsettled retrain finishes (memory). Logs:
+`logs/v2_forecast/settlepnl_{test,val}_ttc{1,3600,86400}_s{0..3}.log`.
