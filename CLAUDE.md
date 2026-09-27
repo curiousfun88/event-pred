@@ -49,6 +49,16 @@ Deadline: late Oct 2026.
   68.7% of trade prints are ask-side; with half-spread 2.8c that predicts
   +6.3c signed mean on a 6-leg basket. *Predicted before measured.*
   Measured +5.25c.
+- **Quoted top of book (2026-09-27; RESEARCH_LOG §7 end).** Hourly best
+  bid/ask for 10,981 legs, `data/quotes/`. With direct quotes, two-sided
+  baskets sum to **$1 within +0.34c at mid** (test). In those baskets the
+  print side is 82-87% of last-print deviation; the rest of the pooled
+  deviation is one-sided-book artefact. Quoted bid sum **$0.944**, ask sum
+  **$1.093**. Selling at the bids beats $1 in only 1.8% of basket-snapshots
+  (about 2c, before fees). Quoted spread median 2.0c, mean 2.9c: the
+  trade-based 4.68-5.61c overstates it. The trade-print bid proxy is biased
+  about +1.1c per leg. The trade-based figures below are superseded where
+  they conflict.
 - Executable (legs within 1h, both sides priced, n=662): buy at ask
   **$1.1334**, sell at bid **$0.9993**, settles $1.0000. Selling nets
   **-0.07c gross** before fees. Kalshi taker fee on a 6-leg basket is
