@@ -404,14 +404,24 @@ leg-age AUC 0.83 at h=1).
 Forecasting ladders that live under 2h would need a sub-2h grid, a new pipeline.
 It is recorded as a limitation, not pursued.
 
+**Bid-side re-score (pre-registered, 2026-09-27).** The 0.909x does not
+survive as a claim about traded-price dislocation:
+- On test, all of the 0.909x comes from the 18.6% of positions whose basket
+  settles by t+h, where the target is exactly $1. On unsettled positions the
+  model scores 1.034x (1.006–1.057; post-hoc decomposition, disclosed), and
+  every pooled test CI includes 1.0.
+- On the bid-side target (unsettled, R = 1h) it scores 1.465x (1.42–1.54),
+  with every CI excluding 1.0. That is on a thin sample: 117 positions, 56
+  baskets, because bid prints are sparse.
+- I predicted 0.97–1.03x; the result was worse.
+- Headline: forecasts basket microstructure and settlement convergence.
+Full tables: `runs/README.md`.
+
 ### 8. Still open
 
-- The primary forecasting result (now 0.909x against the shrinkage oracle,
-  causal rerun) is still on the **basket aggregate of last prints**, which is
-  the quantity known to be ~92.5% overround. Re-scoring the causal checkpoints
-  against bid-side basket sums will determine whether the economic label
-  survives. Until then the result is stated as forecasting accuracy, not as
-  mispricing detection.
+- What lets the causal model detect imminent basket settlement with
+  `time_to_close` zeroed (0.11–0.21x persistence on settled baskets)? Check for
+  a legitimate cue (legs near 0/1) versus a leak.
 - The graph ablation and model-vs-control result must be re-run on
   `v2_mece_causal_s*` (see revision 7).
 - Ladder on the causal cache: a val figure and a bootstrap CI would be needed

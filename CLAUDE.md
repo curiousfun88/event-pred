@@ -9,6 +9,14 @@ Deadline: late Oct 2026.
 ## State
 
 **Established (positive)**
+- **Headline qualified 2026-09-27 (bid-side re-score, runs/README.md).** On
+  test the pooled 0.909x has a cluster CI that includes 1.0 on every seed.
+  The whole margin comes from the 18.6% of positions whose basket settles by
+  t+h, where the target is exactly $1. On unsettled test positions the model
+  scores **1.034x** the oracle (1.006-1.057; val 0.887x). On the bid-side
+  target, unsettled, R=1h, it scores **1.465x** (1.42-1.54, CI excludes 1;
+  n=117, k=56). The pre-registered rule gives the claim "forecasts basket
+  microstructure and settlement convergence", not bid-side dislocation.
 - Model beats an optimal shrinkage oracle by ~9%: **0.909x** test (range
   0.883-0.941 over 4 seeds), 0.823x val. This is the causal rerun
   `runs/v2_mece_causal_s0..s3`, pre-registered, with test scored once per
@@ -53,11 +61,10 @@ Deadline: late Oct 2026.
   forecast on it; this is a limitation, not a task.
 
 **Open, in priority order**
-1. **Re-score the causal checkpoints (`runs/v2_mece_causal_s*`) with target
-   = bid-side basket sum** (not mixed last prints). The 0.909x is on the
-   basket aggregate, which is the 92.5%-overround quantity. This decides whether the headline is
-   "forecasts mispricing" or "forecasts microstructure". Re-score, not
-   retrain. **Do this before anything else.**
+1. ~~Bid-side re-score~~ **DONE 2026-09-27**: model loses on the bid side;
+   the last-print margin is settlement convergence (above). Open follow-up:
+   what lets the model detect imminent settlement with `time_to_close`
+   zeroed? Check for a legitimate cue (prices near 0/1) versus a leak.
 2. Rebuild `cache/` for 2024-11..2025-11; move `PILOT_MONTHS` off
    2025-05..09; retrain.
 3. Walk-forward: 7 expanding folds inside 2024-11..2025-11, strictly
