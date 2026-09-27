@@ -161,6 +161,30 @@ not a learned adjacency.
 \section{Motivation}
 % ===========================================================================
 
+\subsection{From pairs trading to structural constraints}
+The project began as a statistical pairs-trading study (``Direction A''): search
+the whole Kalshi universe for pairs of contracts whose prices co-move, estimate
+the relationship from history, and trade divergences. A correlation- and
+half-life-based baseline on October 2025 data returned a Sharpe ratio of 5.52.
+On inspection, most selected pairs were economically unrelated, for example a
+music-chart market paired with a public-health case count. The result is best
+explained by multiple testing. With a 20-day lookback, a correlation of about
+0.44 is nominally significant, and tens of thousands of candidate pairs were
+screened without correction.
+
+Three structural problems make estimated relationships a poor fit for event
+contracts:
+\begin{itemize}
+  \item Most contracts live days or hours, far shorter than any formation window.
+  \item Binary terminal payoffs have no stationary equilibrium spread to revert to.
+  \item Screening millions of tickers guarantees spurious pairs.
+\end{itemize}
+On supervisory advice, the scope moved to relationships that need no
+estimation: the MECE and ladder constraints, which are exact, known in advance
+and enforced at settlement. A deviation from them therefore has a defined target,
+and the question of whether it can be forecast is well posed.
+
+\subsection{Why the first positive result did not stand}
 Early in this project, a model trained on last-trade prices appeared to beat an
 optimal constraint-based shrinkage forecast by 15\%. It also appeared to identify
 tradeable dislocations. Both claims failed under scrutiny, for reasons that
@@ -252,6 +276,50 @@ The model chooses to enter now, or to wait one step if it predicts the
 dislocation will widen. The control makes the same choice by coin flip, on
 identical events and sizes, so any gap is due only to the forecast. Confidence
 intervals come from a cluster bootstrap over baskets.
+
+\subsection{The causal rebuild and how each fix was verified}\label{sec:fixes}
+The first pipeline leaked future information in five ways. Each fix was checked
+with a test that has a known answer, not assumed to work (Table~\ref{tab:fixes}).
+
+\begin{table}[h]
+\centering
+\small
+\caption{Leakage fixes and their verification.}
+\label{tab:fixes}
+\begin{tabular}{p{4.2cm}p{4.6cm}p{5.4cm}}
+\toprule
+Leak & Fix & Verification \\
+\midrule
+Resolved markets replayed after close & drop trades after close; no carry-forward
+past close & past-close share of scored ladder pairs falls from 66\% to 0\% \\
+Time-to-close from after-the-fact close times & input slot zeroed in every split &
+randomising the slot changes predictions by exactly 0 \\
+\emph{Check:} can temporal attention see the future? & causal mask (already present) &
+scrambling every snapshot after $t_0$ leaves predictions at $t\le t_0$
+bit-identical \\
+Basket membership chosen with hindsight & causal membership in validation/test &
+event's own outcome never used; family must have resolved $\ge$24h earlier \\
+Partial baskets scored as whole & score only baskets with every listed leg
+(\texttt{whole\_settle}) & re-score reproduces the scorer chunk by chunk
+(reproduction guard) \\
+Ladder edge features from whole-life statistics & zeroed & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Residual risks we are aware of.}
+\begin{itemize}
+  \item Training months use a curated membership list. This affects which
+    baskets the model learns from, not evaluation.
+  \item The \texttt{-{}-min-ttc} robustness filter reads recorded close times,
+    which include early closes. Results using it are labelled ex post.
+  \item The unsettled stratum conditions on a basket not settling within $h$,
+    which is not strictly known at $t$ (scheduled close times are public, early
+    closes are not).
+  \item September 2025 has been scored for several model variants. Each
+    protocol was pre-registered and scored once, but the multiple-look caveat
+    remains until the walk-forward supplies fresh test months.
+\end{itemize}
 
 % ===========================================================================
 \section{Experimental Setup}
@@ -411,7 +479,7 @@ that detects each.}
 \toprule
 Trap & Effect & Detection \\
 \midrule
-Settled contracts replayed after close & 57\% of old ladder test pairs were
+Settled contracts replayed after close & 57\% of old scored ladder pairs (train/validation months) were
 frozen replays, producing ``ladders are unforecastable'' & audit of the share of
 pairs past close \\
 Settlement-pinned targets & all of the 0.909\x\ test margin came from baskets
@@ -456,6 +524,125 @@ provenance of every reported number is now logged.
     November 2025, with the protocol frozen from this study, fresh held-out
     months, and quotes for all months.
 \end{itemize}
+
+% ===========================================================================
+\section{Questions for Supervisor Review}\label{sec:questions}
+% ===========================================================================
+
+\subsection{Update on the Recess Week consultation (24 September)}
+The consultation document raised seven questions. Its three supporting results
+(0.853\x\ the oracle; about 92\% of the margin from the graph; directional skill
+of $+\$2.92$ per trade over random) all came from the leaky pipeline, and are
+superseded by the results above. Table~\ref{tab:consult} gives the current
+status of each question.
+
+\begin{table}[h]
+\centering
+\small
+\caption{Recess Week consultation questions: what has changed since.}
+\label{tab:consult}
+\begin{tabular}{p{3.6cm}p{7.6cm}p{3.0cm}}
+\toprule
+Question (then) & What has changed & Status \\
+\midrule
+\textbf{Q1.} Does the evidence meet the requirement to beat baselines
+\emph{and show PnL}? &
+It beats persistence (0.61\x) and matches constraint-plus-family shrinkage. Its
+timing beats a coin flip on held-out test ($+\$0.19$ per trade, 4/4 seeds). No
+strategy is profitable after fees at quoted prices. The PnL half of the
+requirement is not met. &
+\textbf{Open}; see new concern~C below \\
+\addlinespace
+\textbf{Q2.} Are the execution proxies (spread, depth, maker fills) adequate? &
+Partly resolved. Kalshi's historical API \emph{does} retain hourly top-of-book
+quotes; the consultation stated otherwise. Against real quotes, the
+trade-based spreads were $\approx$40\% too high and the trade-print bid proxy
+$1.1\cent$ per leg too high. \emph{Depth} is still unobservable, so the
+participation cap remains. &
+Open, narrowed to: is top-of-book at hourly resolution adequate? \\
+\addlinespace
+\textbf{Q3.} Keep static entry as a baseline? &
+At quoted prices, static entry is now \emph{executable} at top of book, not
+idealised. On identical events it beats the model's timing by \$0.96 per trade
+(4/4 seeds). This is the matched-event comparison Q3 proposed. &
+Proposed: keep it as a full baseline \\
+\addlinespace
+\textbf{Q4.} Is gross edge a legitimate measure of signal quality? &
+Gross edge at last prices was $|\text{dev}|$-based, and so mostly overround. At
+quotes it is negative on 97\% of trades. We propose measuring signal quality by
+forecast error ratios and paired timing gaps instead, with net PnL reported
+alongside. &
+Proposed: replace gross edge \\
+\addlinespace
+\textbf{Q5.} Add features to predict \emph{whether} a ladder pair reprices? &
+Time since last trade predicts repricing (AUC 0.83) but is not a model input.
+Not pursued, to protect the deadline. &
+Open (future work) \\
+\addlinespace
+\textbf{Q6--7.} Abandon the ladder? Still document it? &
+The ladder negative was an artefact: 57\% of the old scored ladder pairs
+(train/validation months) were replayed dead contracts. After the fix, the ladder is slightly positive (exploratory), and
+the graph adds nothing to it. &
+See new concern~B below \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Data-window memo (26 September): still applicable}
+All six questions remain open and determine the walk-forward design:
+\begin{enumerate}
+  \item Does a seven-fold expanding walk-forward within one liquidity regime
+    (November 2024--November 2025) address the concern, or is the concern
+    calendar span?
+  \item Is 2022-04 to 2022-11 acceptable as a labelled structural backcast?
+  \item Should the thin 2022-12 to 2024-10 period be included with a staleness
+    filter, or excluded?
+  \item Is the basket-day the right unit for reporting effective sample size?
+  \item Is there a departmental expectation on window length?
+  \item \emph{Revised.} The proposed dissertation shape has changed. It is now
+    (a) the coherence and microstructure measurement, strengthened with quotes;
+    (b) the constraint as a forecaster, plus the ablation ladder (the ``92\% from
+    the graph'' attribution is retired); and (c) the ladder as a contrast case
+    corrected for an artefact, not a diagnosed negative control. See concern~A.
+\end{enumerate}
+
+\subsection{New questions}
+\begin{enumerate}[label=\textbf{\Alph*.}]
+  \item \textbf{Is the reframing valid?} The proposed research question is:
+    \emph{where does a learned model add value over the constraint, and where
+    does the constraint suffice?} Its positive answers are:
+    \begin{itemize}
+      \item coherence at quoted mids;
+      \item the constraint as a strong forecaster whose strength depends on its
+        form;
+      \item the graph being necessary for the model's traded-price skill;
+      \item timing better than chance.
+    \end{itemize}
+    Its negatives are stated as boundaries: no skill at executable prices, and
+    no profit. Is this an acceptable dissertation, or does it read as retreating
+    from the original trading question?
+  \item \textbf{Should the ladder stay?} Our proposal is to keep it as the
+    contrast chapter. An inequality constraint gives weak reversion
+    ($\alpha=0.94$ against $0.55$), the graph adds nothing, and the earlier
+    ``unforecastable'' verdict was a replay artefact, itself a methodological
+    finding. Its figures are exploratory and would be firmed up in the
+    walk-forward. Alternatively, we could drop it to a short section for a
+    focused MECE study. Which do you prefer?
+  \item \textbf{Is positive PnL a hard requirement?} After fees, at quoted
+    prices, no strategy is profitable. The fee-aware rule fired once in 2{,}090
+    opportunities. This agrees with Kalshi-wide evidence that takers lose about
+    32\% on average \cite{burgi2025}. We do not believe a profitable strategy
+    exists in this data without order-book speed and depth that we do not have.
+    If positive PnL is required, the project cannot meet it honestly. If
+    rigorous evidence on \emph{why} it is absent is acceptable, Sections
+    \ref{sec:coherence} and \ref{sec:exec} provide it.
+  \item \textbf{Are the leakage fixes sufficient?} Section~\ref{sec:fixes} lists
+    each fix, its verification and the residual risks. Is there any check you
+    would want before the walk-forward is run?
+  \item \textbf{Walk-forward scope.} Seven folds need about 21 hours of training,
+    and quotes for an estimated 30--40k legs. Should we pre-register all seven, or a
+    smaller fixed subset (e.g.\ 3--4 folds) to protect writing time?
+\end{enumerate}
 
 % ===========================================================================
 \section{Conclusion}
