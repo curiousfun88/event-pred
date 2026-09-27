@@ -347,3 +347,45 @@ excluding 0.
 
 Runs after the unsettled retrain finishes (memory). Logs:
 `logs/v2_forecast/settlepnl_{test,val}_ttc{1,3600,86400}_s{0..3}.log`.
+
+### Results (2026-09-27): unsettled retrain and settlement-timing control
+
+**Unsettled-only retrain.** Primary: last-print, unsettled, test, against the
+per-series x horizon oracle. Logs: `logs/v2_forecast/unsettled_{val,test}_s*.log`.
+
+| seed | val vs family oracle | **test vs family oracle** (95% CI, k = 344) | test vs single-alpha | test vs persistence |
+|---|---|---|---|---|
+| s0 | 0.907x | **1.024x** [0.863, 1.329] | 0.924x | 0.760x |
+| s1 | 0.940x | **1.074x** [0.856, 1.491] | 0.970x | 0.797x |
+| s2 | 0.914x | **1.063x** [0.851, 1.459] | 0.959x | 0.789x |
+| s3 | 0.963x | **1.048x** [0.868, 1.391] | 0.946x | 0.778x |
+| mean (range) | 0.931x | **1.052x (1.024–1.074)**, 0/4 CIs exclude 1 | 0.950x | 0.781x |
+
+Decision rule (< 0.97x and 3/4 CIs excluding 1): **not met.** On traded prices,
+**the constraint plus contract family suffices**; the prediction (0.95–1.05x)
+held. This was the last retrain.
+
+**Settlement-timing control** on `v2_mece_causal_s*`, `model_timed -
+random_timed` $/trade. Logs: `logs/v2_forecast/settlepnl_{test,val}_ttc*_s*.log`.
+The spreads are 100% measured per leg, and the bootstrap clusters by basket
+(k = 312 on primary test).
+
+| split, `--min-ttc` | s0 | s1 | s2 | s3 | mean | CIs excluding 0 |
+|---|---|---|---|---|---|---|
+| **test, 3600 (primary)** | **+0.179** [0.101, 0.272] | **+0.211** [0.125, 0.313] | **+0.180** [0.100, 0.274] | **+0.199** [0.116, 0.299] | **+0.192** | **4/4** |
+| test, 1 | +0.237 | +0.277 | +0.242 | +0.262 | +0.254 | 4/4 |
+| test, 86400 | +0.042 | +0.022 | +0.043 | +0.041 | +0.037 | 4/4 |
+| val, 3600 | +0.198 | +0.223 | +0.195 | +0.217 | +0.208 | 4/4 |
+
+Decision rule: **met.** The directional timing skill replicates on held-out
+test with the causal checkpoints. The primary +$0.192 is close to the old val
+figure (+0.170), and above my prediction (+0.02 to +0.10), which was wrong.
+
+- **Where the skill sits.** The gap shrinks as baskets near close are
+  excluded (+0.25 -> +0.19 -> +0.04). Most of the skill is in timing entries
+  near resolution, consistent with the settlement-convergence behaviour
+  (RESEARCH_LOG Revisions §7). That behaviour passed the causality and slot-8
+  perturbation checks.
+- **The caveats stand.** Absolute net is negative for every strategy except
+  the cost gate. The model does not improve the gated rule
+  (`model_timed_gated - cost_gated` < 0). `--min-ttc` is ex-post cleaned.

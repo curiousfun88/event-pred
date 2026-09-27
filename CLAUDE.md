@@ -25,12 +25,20 @@ Deadline: late Oct 2026.
   (0.552 test). Under the old partial-basket `legacy` rule the same
   checkpoints score 1.21-1.66x.
 - **STALE, from leaky `v2_mece`; re-run on causal checkpoints before citing:**
+  (graph ablation only; the control result below was re-run)
   - Graph ablation: no-graph 0.988x vs full 0.851x -> graph supplied ~92% of
     the margin.
-  - Model beats randomised-timing control: +$0.170/trade, CI [+0.107,
-    +0.247], cluster-bootstrapped by basket. The paired design makes it
-    cost-model invariant (the spread term cancels), and that property
-    carries over to the re-run.
+- **Model beats randomised-timing control: REPLICATED ON TEST 2026-09-27.**
+  +$0.192/trade (4 seeds: 0.179-0.211, every CI above 0, k=312). Causal
+  checkpoints, measured spreads, `--min-ttc 3600`, pre-registered. The paired
+  design makes it cost-model invariant. It concentrates near resolution
+  (+0.254 at ttc 1s, +0.037 at 24h, all 4/4 CIs above 0). The old +$0.170 was
+  val-only on the leaky checkpoint; provenance is in
+  `logs/v2_forecast/settlement_pnl_val_ttc_sweep.log`. **Strongest positive
+  result.**
+- **Unsettled-only retrain (last retrain): no skill beyond constraint + family.**
+  Test 1.052x the per-series x horizon oracle (1.024-1.074, 0/4 CIs exclude 1),
+  0.950x single-alpha, 0.781x persistence.
 
 **Established (negative, and the central contribution)**
 - **92.5% of apparent basket deviation is the overround, not mispricing.**

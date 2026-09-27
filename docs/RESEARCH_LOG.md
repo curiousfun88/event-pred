@@ -431,8 +431,13 @@ Full tables: `runs/README.md`.
     $1, which is visible ex ante. A shrinkage oracle fitted per series x
     horizon absorbs about half the val margin (0.817x -> 0.920x; unsettled
     0.861x -> 0.929x).
-  - Open: re-score test against that stronger oracle, and retrain with settled
-    positions excluded from the MECE loss (both to be pre-registered).
+  - Done (pre-registered): the unsettled-only retrain scores 1.052x the
+    family oracle on test (0/4 CIs exclude 1), so there is no forecasting
+    skill on traded prices beyond constraint + family.
+  - The settlement-timing control **replicates on test**: +$0.192/trade, 4/4
+    seed CIs above 0, k = 312. The old +$0.170 turned out to be val-only on
+    the leaky checkpoint. See `runs/README.md`.
+- Graph ablation still to re-run on causal checkpoints.
 - The graph ablation and model-vs-control result must be re-run on
   `v2_mece_causal_s*` (see revision 7).
 - Ladder on the causal cache: a val figure and a bootstrap CI would be needed

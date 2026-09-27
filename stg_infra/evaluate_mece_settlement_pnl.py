@@ -637,6 +637,8 @@ def main():
     pt, lo, hi_ = _gap_bootstrap(books["model_timed"], books["random_timed"],
                                  n_boot=args.n_boot, seed=args.seed)
     print("  " + format_verdict("model_timed - random_timed", lo, hi_, pt))
+    print(f"    clusters: k={len({*books['model_timed'].baskets, *books['random_timed'].baskets}):,} "
+          f"baskets (bootstrap resamples baskets, applied to both books)")
 
     for n in ("static_now", "cost_gated", "model_timed_gated"):
         if books[n].n and books["model_timed"].n:
