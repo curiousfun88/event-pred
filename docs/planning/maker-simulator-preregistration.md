@@ -158,3 +158,44 @@ and reported whatever they show.
    development months until it is correct.
 3. Freeze the code, then run the test months once. Report against §7.
 4. Run the confirmation months once. Report.
+
+---
+
+## Amendment A1 (2026-09-28, before any simulator code or result)
+
+**Objective, per the student:** find a strategy with positive net PnL under
+realistic costs. To pursue that without producing an overfit, pseudo-profitable
+backtest:
+
+1. **Strategy search is allowed on the development months only (May–June).** A
+   declared grid (below) is evaluated there, and the search is free to be
+   aggressive. The simulator **refuses** to run the grid on any month from
+   2025-07 onward.
+2. **Selection rule, fixed now:** highest **pessimistic** net return on
+   development, among configurations with at least 300 fills and at least 30
+   distinct events filled. Ties go to more fills.
+3. **The selected configuration is frozen and committed**, and then run **once**
+   on the test months (Jul–Sep), under both fill models. The pre-registered S1
+   is run beside it as the reference. Nothing else from the grid is evaluated on
+   test.
+4. **Verdict** (as §7, applied to the selected configuration): viable if its
+   pessimistic test return is > 0 with the event-cluster CI excluding 0.
+   October–November confirmation follows once.
+5. The fill models, fees, settlement P&L and position limits (§4–§5) **cannot
+   be changed** to improve results. Realism is not a tuning parameter.
+
+**Declared grid** (maker only, hourly refresh, held to settlement):
+
+| dimension | values |
+|---|---|
+| sides quoted | both; bid only (buy YES); ask only (sell YES) |
+| price level | join the touch; improve by 1¢ (needs spread >= 3¢) |
+| order-price band (¢) | 1–15; 15–85; 85–99; 1–99 |
+| minimum quoted spread (¢) | 2; 4 |
+| series | all; taker-only (no maker fee) |
+| order size q | 10 |
+| basket mode (S3) | off; on (bids on every leg when Σbid <= 100 − Σ maker fee) |
+
+That is at most 3 × 2 × 4 × 2 × 2 × 2 = 192 configurations. The model filter
+(S4) is evaluated only as an add-on to the selected configuration, on September
+(clean for the STGAT).
