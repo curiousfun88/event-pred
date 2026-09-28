@@ -247,8 +247,9 @@ def run(args) -> int:
     parts_dir.mkdir(exist_ok=True)
     cov = existing_coverage(out.parent)
     empty_done = set()
-    for f in out.parent.glob("*.parts/empty.txt"):
-        empty_done |= set(f.read_text().split())
+    if not args.recheck_empty:
+        for f in out.parent.glob("*.parts/empty.txt"):
+            empty_done |= set(f.read_text().split())
     jobs = {}
     for tk, (lo, hi) in rng.items():
         if tk in empty_done:
@@ -276,9 +277,10 @@ def run(args) -> int:
     def fetch(tk):
         if not hasattr(local, "sess"):
             local.sess = requests.Session()
-        rows, errs = [], 0
+        rows, errs, all_ok = [], 0, True
         for lo_s, hi_s in jobs[tk]:
             for s, e in split_range(lo_s, hi_s):
+                got = False
                 for attempt in range(6):
                     throttle()
                     try:
@@ -288,15 +290,19 @@ def run(args) -> int:
                         continue
                     if r.status_code == 200:
                         rows += parse_candles(tk, r.json())
+                        got = True
                         break
                     if r.status_code in (429, 500, 502, 503, 504):
                         time.sleep(2 ** attempt)
                         continue
                     errs += 1
                     break
-        return tk, rows, errs
+                all_ok &= got
+        # "confirmed empty" ONLY if every range answered 200 with zero candles. A network
+        # failure or HTTP error leaves the ticker unmarked, so the next run retries it.
+        return tk, rows, errs, all_ok
 
-    buf, empty, n_err, n_done = [], [], 0, 0
+    buf, empty, n_err, n_done, n_failed = [], [], 0, 0, 0
     t0 = time.time()
 
     def flush():
@@ -314,13 +320,15 @@ def run(args) -> int:
         order = sorted(jobs, key=lambda t: (-priority.get(t, 0), t))
         futs = [ex.submit(fetch, tk) for tk in order]
         for fu in as_completed(futs):
-            tk, rows, errs = fu.result()
+            tk, rows, errs, all_ok = fu.result()
             n_err += errs
             n_done += 1
             if rows:
                 buf += rows
-            elif tk not in cov:
+            elif all_ok and tk not in cov:
                 empty.append(tk)
+            elif not all_ok:
+                n_failed += 1
             if len(buf) >= 50_000:
                 flush()
             if n_done % 500 == 0:
@@ -334,6 +342,7 @@ def run(args) -> int:
         print(f"\nwrote {out}: {df.height:,} candles, {df['ticker'].n_unique():,} tickers; {n_err} request errors")
     else:
         print("\nnothing new to write")
+    print(f"tickers that FAILED (network/HTTP; left unmarked, retried next run): {n_failed:,}")
     print("exit: 0")
     return 0
 
@@ -346,6 +355,8 @@ def main():
     ap.add_argument("--out", default="data/quotes/candles_1h_2025-07_09.parquet")
     ap.add_argument("--rate", type=float, default=10.0, help="requests per second, all workers combined (Basic tier ~20)")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--recheck-empty", action="store_true",
+                    help="re-request tickers previously marked empty (older runs could mark network failures as empty)")
     ap.add_argument("--min-trades", type=int, default=1,
                     help="with --legs all: download only tickers with at least this many trades in the window")
     ap.add_argument("--legs", choices=["cache", "membership", "all"], default="cache",
