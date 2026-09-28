@@ -1,0 +1,92 @@
+5,990 MECE legs in ['2025-05', '2025-06']; 0 already fetched; 5,990 to fetch
+  250/5,990 legs, 250 requests, 0 errors, 2.3 min
+  500/5,990 legs, 500 requests, 0 errors, 4.4 min
+  750/5,990 legs, 750 requests, 0 errors, 6.6 min
+  1,000/5,990 legs, 1,000 requests, 0 errors, 8.8 min
+  1,250/5,990 legs, 1,250 requests, 0 errors, 11.0 min
+  1,500/5,990 legs, 1,500 requests, 0 errors, 13.1 min
+  1,750/5,990 legs, 1,750 requests, 0 errors, 15.3 min
+  2,000/5,990 legs, 2,000 requests, 0 errors, 17.5 min
+  2,250/5,990 legs, 2,250 requests, 0 errors, 19.7 min
+  2,500/5,990 legs, 2,500 requests, 0 errors, 21.9 min
+  2,750/5,990 legs, 2,750 requests, 0 errors, 24.1 min
+  3,000/5,990 legs, 3,000 requests, 0 errors, 26.4 min
+  3,250/5,990 legs, 3,250 requests, 0 errors, 28.5 min
+  3,500/5,990 legs, 3,500 requests, 0 errors, 30.7 min
+  3,750/5,990 legs, 3,750 requests, 0 errors, 32.9 min
+  4,000/5,990 legs, 4,000 requests, 0 errors, 35.1 min
+  4,250/5,990 legs, 4,250 requests, 0 errors, 37.3 min
+  4,500/5,990 legs, 4,500 requests, 0 errors, 39.5 min
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+               ^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connection.py", line 571, in getresponse
+    httplib_response = super().getresponse()
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/http/client.py", line 1457, in getresponse
+    response.begin()
+  File "/usr/lib/python3.12/http/client.py", line 336, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/http/client.py", line 297, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/socket.py", line 707, in readinto
+    return self._sock.recv_into(b)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/ssl.py", line 1252, in recv_into
+    return self.read(nbytes, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/ssl.py", line 1104, in read
+    return self._sslobj.read(len, buffer)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/adapters.py", line 696, in send
+    resp = conn.urlopen(
+           ^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 842, in urlopen
+    retries = retries.increment(
+              ^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/util/retry.py", line 498, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/util/util.py", line 39, in reraise
+    raise value
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 536, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=read_timeout)
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/urllib3/connectionpool.py", line 367, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.elections.kalshi.com', port=443): Read timed out. (read timeout=30)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/fetch_quote_candles.py", line 233, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/fyp/event-pred/stg_infra/fetch_quote_candles.py", line 229, in main
+    return self_test() if args.self_test else run(args)
+                                              ^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/fetch_quote_candles.py", line 181, in run
+    r = sess.get(BASE.format(tk), params={"start_ts": s, "end_ts": e, "period_interval": 60}, timeout=30)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/sessions.py", line 671, in get
+    return self.request("GET", url, params=params, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/adapters.py", line 742, in send
+    raise ReadTimeout(e, request=request)
+requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.elections.kalshi.com', port=443): Read timed out. (read timeout=30)
