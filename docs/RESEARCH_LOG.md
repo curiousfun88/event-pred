@@ -455,6 +455,34 @@ whole baskets with every leg live.
 - **Economics:** the cost gate fired once in 2,090 events. The profitability
   withdrawal now holds at executable quotes.
 
+**Strategy-pathway screen (exploratory, May–June 2025 only, 2026-09-28).**
+Prompted by the supervisor's reply: a strategy must survive realistic costs on
+realistic tapes, and the student should judge which pathways are worth pursuing.
+`stg_infra/examples/taker_maker_return_screen.py`, log
+`logs/v2_forecast/taker_maker_screen_2025-05_06.log`. Inference resamples events.
+
+- **Fees, verified.**
+  - Taker: `0.07·C·P·(1−P)`, rounded up to the cent.
+  - Maker, before 2025-07: flat $0.0025 per contract. From 2025-07:
+    `0.0175·C·P·(1−P)`.
+  - Makers pay **only on series whose API `fee_type` charges them**: 163 of
+    14,399 series. Weather, MLS, crypto and Spotify are taker-only.
+  - The fee-change log starts 2025-10-04. Snapshots are in
+    `results/mece/kalshi_series_fee_{types.json,changes.json}`.
+  - The primary fee PDF is blocked on this network, so the maker rates rest on
+    secondary sources.
+- **Takers lose:** −5.6% contract-weighted, CI [−7.4%, −3.5%]. No price bucket
+  is reliably positive. The favourite–longshot pathway, taking liquidity, is
+  closed.
+- **Makers in aggregate earn** +2.2% net of maker fees, CI [+0.6%, +3.6%]. On
+  taker-only series it is **+1.5%, CI [+0.6%, +2.3%]**, broad-based: the top 10
+  events hold only 7% of stake.
+- **Not achievable as-is.** This is the average over whoever was filled, including
+  makers with queue priority. A newcomer faces adverse selection. It identifies
+  where an edge exists, not whether it can be captured. Next step: a
+  pre-registered, tape-driven maker fill simulator with optimistic and
+  pessimistic queue bounds, on months after June 2025.
+
 ### 8. Still open
 
 - ~~Settlement leak?~~ **Checked 2026-09-27, val s0 only: no leak found.**
