@@ -412,10 +412,15 @@ def run_one(task):
     fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months)
     r = summarise(fills)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    import polars as pl
+    # NO polars in forked workers: polars' thread pool can deadlock after fork()
+    # (seen 2026-09-29: 6 workers idle for 31 min). numpy only.
     if fills:
-        pl.DataFrame(fills, schema=["event", "ticker", "side", "price", "qty", "fee_c", "net_c", "capital_c", "markout_c"],
-                     orient="row").write_parquet(CACHE_DIR / f"{key}.fills.parquet")
+        cols = list(zip(*fills))
+        np.savez_compressed(CACHE_DIR / f"{key}.fills.npz",
+                            event=np.array(cols[0], dtype=object), ticker=np.array(cols[1], dtype=object),
+                            side=np.array(cols[2]), price=np.array(cols[3]), qty=np.array(cols[4]),
+                            fee_c=np.array(cols[5]), net_c=np.array(cols[6]), capital_c=np.array(cols[7]),
+                            markout_c=np.array(cols[8], dtype=float))
     summ_f.write_text(json.dumps({**r, "config": dataclasses.asdict(cfg), "model": model, "months": months}))
     return cfg, model, r, False
 
