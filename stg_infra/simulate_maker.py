@@ -187,9 +187,18 @@ def self_test() -> int:
 
 def load(months):
     import polars as pl
-    # every quote file on disk (finished files and in-progress parts), de-duplicated
-    qfiles = sorted((_REPO / "data/quotes").glob("*.parquet")) + sorted((_REPO / "data/quotes").glob("*.parts/*.parquet"))
-    q = pl.concat([pl.read_parquet(f) for f in qfiles]).unique(["ticker", "end_ts"])
+    # Prefer the monthly partition (partition_quotes.py) when it is UP TO DATE: every
+    # requested month present and newer than every raw download file. Otherwise read
+    # the raw files, so a stale partition can never silently drop data.
+    qdir = _REPO / "data/quotes"
+    raw = sorted(qdir.glob("*.parquet")) + sorted(qdir.glob("*.parts/*.parquet"))
+    part = [qdir / "by_month" / f"quotes_{m}.parquet" for m in months]
+    newest_raw = max((f.stat().st_mtime for f in raw), default=0)
+    if all(f.exists() for f in part) and min(f.stat().st_mtime for f in part) >= newest_raw:
+        qfiles = part
+    else:
+        qfiles = raw
+    q = pl.concat([pl.read_parquet(f) for f in qfiles], how="diagonal_relaxed").unique(["ticker", "end_ts"])
     q = q.with_columns(pl.col("end_ts").cast(pl.Datetime("ns")).cast(pl.Int64).alias("e"))
     lo = min(months)
     y, mo = map(int, max(months).split("-"))
