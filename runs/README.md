@@ -576,3 +576,10 @@ than $1 per set.
 - cost_gated fired **once** in 2,090 events, netting $0.07.
 - Rule: **no strategy nets > 0 with >= 30 entries. The profitability
   withdrawal stands, now at executable quotes.**
+
+## Maker (liquidity-provision) pathway (pre-registered 2026-09-28, before any code)
+
+Full design, fill models, decision rules and predictions:
+`docs/planning/maker-simulator-preregistration.md`. Month roles are fixed: May–June
+for development only, July–September as test (scored once), October–November
+as confirmation.
