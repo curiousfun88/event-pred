@@ -382,9 +382,20 @@ def summarise(fills):
             "markout_c_per_contract": (sum(mk) / qty_mk) if qty_mk else float("nan")}
 
 
+def data_fingerprint(months) -> str:
+    """Name+size of every quote file the run would read, so re-partitioned or
+    re-downloaded data never silently reuses results computed on older data."""
+    import hashlib
+    qdir = _REPO / "data/quotes"
+    part = [qdir / "by_month" / f"quotes_{m}.parquet" for m in sorted(months)]
+    files = part if all(f.exists() for f in part) else (sorted(qdir.glob("*.parquet")) + sorted(qdir.glob("*.parts/*.parquet")))
+    return hashlib.sha1("|".join(f"{f.name}:{f.stat().st_size}" for f in files).encode()).hexdigest()[:12]
+
+
 def cache_key(cfg: Config, model: str, months) -> str:
     import hashlib
-    blob = json.dumps({"cfg": dataclasses.asdict(cfg), "model": model, "months": sorted(months), "v": SIM_VERSION}, sort_keys=True)
+    blob = json.dumps({"cfg": dataclasses.asdict(cfg), "model": model, "months": sorted(months), "v": SIM_VERSION,
+                       "data": data_fingerprint(months)}, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:16]
 
 

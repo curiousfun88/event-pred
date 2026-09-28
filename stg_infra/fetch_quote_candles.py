@@ -251,12 +251,26 @@ def run(args) -> int:
         for f in out.parent.glob("*.parts/empty.txt"):
             empty_done |= set(f.read_text().split())
     jobs = {}
-    for tk, (lo, hi) in rng.items():
-        if tk in empty_done:
-            continue
-        miss = missing_ranges(utc_ts(lo) - 2 * H, utc_ts(hi) + H, cov.get(tk))
-        if miss:
-            jobs[tk] = miss
+    if args.recheck_empty:
+        # ONLY the tickers previously marked empty (older runs could mark network failures
+        # as empty); their whole range is re-requested once.
+        marked = set()
+        for f in out.parent.glob("*.parts/empty.txt"):
+            marked |= set(f.read_text().split())
+        for tk in sorted(marked & set(rng)):
+            lo, hi = rng[tk]
+            jobs[tk] = [(utc_ts(lo) - 2 * H, utc_ts(hi) + H)]
+        # rewrite the empty lists without these tickers; confirmed-empty ones are re-added below
+        for f in out.parent.glob("*.parts/empty.txt"):
+            f.write_text("".join(f"{t}\n" for t in f.read_text().split() if t not in jobs))
+        cov = {t: v for t, v in cov.items() if t not in jobs}
+    else:
+        for tk, (lo, hi) in rng.items():
+            if tk in empty_done:
+                continue
+            miss = missing_ranges(utc_ts(lo) - 2 * H, utc_ts(hi) + H, cov.get(tk))
+            if miss:
+                jobs[tk] = miss
     print(f"{len(rng):,} MECE legs in {args.months[0]}..{args.months[-1]} (legs from {args.legs}); "
           f"{len(rng) - len(jobs):,} already fully on disk; {len(jobs):,} need fetching "
           f"({sum(len(v) for v in jobs.values()):,} ranges), {args.workers} workers at <= {args.rate}/s")
@@ -356,7 +370,7 @@ def main():
     ap.add_argument("--rate", type=float, default=10.0, help="requests per second, all workers combined (Basic tier ~20)")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--recheck-empty", action="store_true",
-                    help="re-request tickers previously marked empty (older runs could mark network failures as empty)")
+                    help="re-request ONLY tickers previously marked empty (older runs could mark network failures as empty)")
     ap.add_argument("--min-trades", type=int, default=1,
                     help="with --legs all: download only tickers with at least this many trades in the window")
     ap.add_argument("--legs", choices=["cache", "membership", "all"], default="cache",
