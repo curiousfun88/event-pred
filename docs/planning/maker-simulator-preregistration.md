@@ -288,3 +288,56 @@ qualified MECE families.
   of A4 are unchanged.
 - **No result informed this decision.** The only simulator output seen so far
   is the A3-disclosed S1 timing run.
+
+## Amendment A6 (2026-09-29, after train/validation, BEFORE any test-month simulation)
+
+**Gate 1 outcome (train/validation only).** The frozen winner
+(`runs/maker/selected.json`): sell YES 1¢ below the best ask, order price
+85–99¢, spread >= 4¢, inventory cap 25, MECE.
+- Train: +6.62% [−11.52, +25.78], 3,011 fills.
+- Validation: +24.19% [−12.28, +61.28], 1,125 fills.
+- Both are positive point estimates, so per the plan the STGAT route (S4/S5) is
+  pursued. No test month has been simulated.
+
+**A6.1 Stricter fill check ("strict").** For an *improved* order (bid+1 or
+ask−1) the optimistic and pessimistic models coincide, since we are alone at a
+new level. That assumes other makers do not also improve. The strict model
+fills an improved order only on trades **strictly beyond the original touch**:
+- for a bid at b+1: taker sells at yes_price < b;
+- for an ask at a−1: taker buys at yes_price > a.
+
+These are trades that would also have swept a competitor who matched our
+price. For non-improved orders, strict = pessimistic. It is reported beside
+the main result and used for no selection.
+
+**A6.2 Test run of the frozen base (now).** Months 2025-08 to 2025-11, once,
+under the optimistic, pessimistic and strict models, beside the S1 reference.
+- **Verdict (A1/A4):** viable if the pessimistic return > 0 with the
+  event-cluster CI excluding 0.
+- Strict and optimistic are reported as bounds.
+
+**A6.3 S4 and S5, fixed now, before the base test is seen.**
+- **Signal:** the tuned 7/2/4 STGAT's next-hour quoted-mid-move head (B1.2),
+  **averaged over the 4 final seeds**. It is taken from the latest snapshot
+  whose window ends at or before the quoting hour H. m̂ = predicted change in
+  the mid, in cents; s = quoted spread at H.
+- **S4 (filter on the base):** identical to the frozen base, except the ask is
+  **not** posted when m̂ > +s/2 (a predicted rise against a seller).
+- **S5 (model-led quoting):**
+  - universe: all MECE legs;
+  - order price 1–99¢, spread >= 4¢, inventory cap 25, improve by 1¢ when the
+    spread is >= 3¢;
+  - post a bid at b+1 **only if** m̂ > +s/2; post an ask at a−1 **only if**
+    m̂ < −s/2; otherwise post nothing.
+- **Evaluation:** test months 2025-08 to 2025-11; optimistic, pessimistic and
+  strict models; event-cluster CIs.
+  - S4 − base is paired on identical quoting hours.
+  - S5 is judged on its own return and against the base.
+- **Verdicts:**
+  - the STGAT adds value as a filter if S4 − base > 0 (pessimistic) with CI
+    excluding 0;
+  - S5 is a viable STGAT-led strategy if its pessimistic return > 0 with CI
+    excluding 0.
+- The strict model is reported for both.
+- **No parameter of S4/S5 (thresholds s/2, bands, caps) may be changed after
+  the base test result is seen.**

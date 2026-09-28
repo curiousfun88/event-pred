@@ -97,20 +97,25 @@ def maker_fee_c(price_c: float, count: float, charged: bool, month: str) -> floa
 
 
 def fills_for_order(side: int, price: int, qty: int, improved: bool, model: str,
-                    tr_price, tr_count, tr_side, room_fn):
+                    tr_price, tr_count, tr_side, room_fn, orig_price=None):
     """Walk the hour's trades in time order; return [(trade_idx, filled_qty)].
     side +1 = resting YES bid, -1 = resting YES ask. tr_side: +1 taker bought
     YES ('yes'), -1 taker sold YES ('no'). room_fn(side) -> contracts allowed now."""
     out, remaining, used = [], qty, 0
-    strict = (model == "pess") and not improved
+    # "strict" (A6.1): an IMPROVED order fills only on trades strictly beyond the ORIGINAL
+    # touch (as if a competitor matched our improvement); otherwise identical to "pess".
+    if model == "strict" and improved and orig_price is not None:
+        price_cmp, strict = orig_price, True
+    else:
+        price_cmp, strict = price, (model in ("pess", "strict")) and not improved
     for i in range(len(tr_price)):
         if remaining <= 0:
             break
         p, c, s = tr_price[i], tr_count[i], tr_side[i]
         if side > 0:
-            hit = s < 0 and (p < price if strict else p <= price)
+            hit = s < 0 and (p < price_cmp if strict else p <= price_cmp)
         else:
-            hit = s > 0 and (p > price if strict else p >= price)
+            hit = s > 0 and (p > price_cmp if strict else p >= price_cmp)
         if not hit:
             continue
         f = min(remaining, int(c), room_fn(side) - used)
@@ -166,6 +171,14 @@ def self_test() -> int:
           fills_for_order(+1, 40, 10, False, "pess", P, C, S, big) == [(1, 5)])
     check("bid @41 improved: pessimistic behaves like optimistic",
           fills_for_order(+1, 41, 20, True, "pess", P, C, S, big) == [(0, 5), (1, 5), (2, 5)])
+    check("strict, improved bid @41 (touch 40): only sells strictly below 40 fill",
+          fills_for_order(+1, 41, 20, True, "strict", P, C, S, big, orig_price=40) == [(1, 5)])
+    Pa2 = np.array([59, 60, 61]); Ca2 = np.array([3, 3, 3]); Sa2 = np.array([1, 1, 1])
+    check("strict, improved ask @59 (touch 60): only buys strictly above 60 fill",
+          fills_for_order(-1, 59, 10, True, "strict", Pa2, Ca2, Sa2, big, orig_price=60) == [(2, 3)])
+    check("strict on a non-improved order equals pessimistic",
+          fills_for_order(+1, 40, 10, False, "strict", P, C, S, big, orig_price=40)
+          == fills_for_order(+1, 40, 10, False, "pess", P, C, S, big))
     check("taker BUYS never fill a resting bid",
           fills_for_order(+1, 40, 10, False, "opt", P, C, np.array([1, 1, 1]), big) == [])
     Pa = np.array([60, 61]); Ca = np.array([4, 8]); Sa = np.array([1, 1])
@@ -329,10 +342,10 @@ def simulate(cfg: Config, model: str, legs, events, charged, months):
                 want_ask = (not cfg.basket) and cfg.sides in ("both", "ask")
                 imp = cfg.improve and spread >= 3 and not cfg.basket
                 if want_bid:
-                    orders.append((+1, b + (1 if imp else 0)))
+                    orders.append((+1, b + (1 if imp else 0), b))
                 if want_ask:
-                    orders.append((-1, a - (1 if imp else 0)))
-                orders = [(s, p) for s, p in orders if cfg.band_lo <= p <= cfg.band_hi]
+                    orders.append((-1, a - (1 if imp else 0), a))
+                orders = [(s, p, o) for s, p, o in orders if cfg.band_lo <= p <= cfg.band_hi]
                 if not orders:
                     continue
                 lo_i = np.searchsorted(L["tt"], H, side="right")
@@ -347,12 +360,12 @@ def simulate(cfg: Config, model: str, legs, events, charged, months):
                     bn, an = L["bid"][j + 1], L["ask"][j + 1]
                     if bn is not None and an is not None and not (np.isnan(bn) or np.isnan(an)):
                         mid_next = 50 * (bn + an)
-                for side, price in orders:
+                for side, price, orig in orders:
                     def room(s, tk=tk):
                         leg_room = cfg.pos_limit - s * pos[tk]
                         ev_room = cfg.event_limit - sum(abs(v) for v in pos.values())
                         return max(0, min(leg_room, ev_room))
-                    for _, f in fills_for_order(side, price, cfg.q, bool(imp), model, tp, tc, ts, room):
+                    for _, f in fills_for_order(side, price, cfg.q, bool(imp), model, tp, tc, ts, room, orig):
                         pos[tk] += side * f
                         mo = month_of(H)
                         fee = maker_fee_c(price, f, charged(L["series"], mo), mo)
@@ -513,9 +526,9 @@ def main():
         cfgs = [("S1 (pre-registered reference)", Config())]
         if args.config:
             cfgs.insert(0, ("SELECTED (frozen)", Config(**json.loads(Path(args.config).read_text()))))
-        res = run_many([(c, m, args.months) for _, c in cfgs for m in ("opt", "pess")], args.workers)
+        res = run_many([(c, m, args.months) for _, c in cfgs for m in ("opt", "pess", "strict")], args.workers)
         for label, cfg in cfgs:
-            for m in ("opt", "pess"):
+            for m in ("opt", "pess", "strict"):
                 print(f"{label:<30} {m.upper():<4} {fmt(res[(cfg, m)])}")
     print("\nexit: 0")
     return 0
