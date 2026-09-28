@@ -174,6 +174,22 @@ def leg_ranges_membership(months: list) -> dict:
     return {t: (lo, hi) for t, lo, hi in df.iter_rows()}
 
 
+def leg_ranges_all(months: list):
+    """EVERY traded ticker over `months`: ticker -> (first trade, last trade),
+    plus its trade count (used to fetch the most-traded markets first)."""
+    import polars as pl
+    frames = []
+    for m in months:
+        par = "even" if int(m.split("-")[1]) % 2 == 0 else "odd"
+        f = _REPO_ROOT / f"data/trades/trades_kalshi_{par}/trades_{m}.parquet"
+        if f.exists():
+            frames.append(pl.scan_parquet(f).group_by("ticker").agg(
+                pl.col("created_time").min().alias("lo"), pl.col("created_time").max().alias("hi"),
+                pl.len().alias("n")).collect())
+    df = pl.concat(frames).group_by("ticker").agg(pl.col("lo").min(), pl.col("hi").max(), pl.col("n").sum())
+    return ({t: (lo, hi) for t, lo, hi, _ in df.iter_rows()}, {t: n for t, _, _, n in df.iter_rows()})
+
+
 def existing_coverage(quotes_dir: Path) -> dict:
     """ticker -> (min end_ts ns, max end_ts ns) across EVERY quote file and part
     already on disk, so no candle is ever fetched twice."""
@@ -214,8 +230,11 @@ def run(args) -> int:
     if args.legs == "cache":
         cache = Path(args.cache)
         rng = leg_ranges(cache if cache.is_absolute() else _REPO_ROOT / cache, args.months)
+    elif args.legs == "all":
+        rng, n_trades = leg_ranges_all(args.months)
     else:
         rng = leg_ranges_membership(args.months)
+    priority = n_trades if args.legs == "all" else {}
     parts_dir = out.with_suffix(".parts")
     parts_dir.mkdir(exist_ok=True)
     cov = existing_coverage(out.parent)
@@ -283,7 +302,9 @@ def run(args) -> int:
             empty = []
 
     with ThreadPoolExecutor(max_workers=args.workers) as ex:
-        futs = [ex.submit(fetch, tk) for tk in sorted(jobs)]
+        # most-traded markets first, so an interrupted run has already covered the bulk of trading
+        order = sorted(jobs, key=lambda t: (-priority.get(t, 0), t))
+        futs = [ex.submit(fetch, tk) for tk in order]
         for fu in as_completed(futs):
             tk, rows, errs = fu.result()
             n_err += errs
@@ -317,7 +338,7 @@ def main():
     ap.add_argument("--out", default="data/quotes/candles_1h_2025-07_09.parquet")
     ap.add_argument("--rate", type=float, default=10.0, help="requests per second, all workers combined (Basic tier ~20)")
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--legs", choices=["cache", "membership"], default="cache",
+    ap.add_argument("--legs", choices=["cache", "membership", "all"], default="cache",
                     help="cache: legs on MECE edges of a graph cache; membership: causal MECE membership + trades (any window)")
     args = ap.parse_args()
     return self_test() if args.self_test else run(args)
