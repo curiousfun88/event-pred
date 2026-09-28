@@ -480,6 +480,10 @@ def main():
     if ck_path is None:
         raise SystemExit(f"checkpoint not found: {args.checkpoint}")
     ck = torch.load(ck_path, weights_only=False, map_location="cpu")
+    if ck.get("split"):
+        # score on the split the checkpoint was trained under (older checkpoints: constants)
+        from data_windows import set_split
+        set_split(*ck["split"])
     cfg, horizons = ck["config"], list(ck["horizons"])
     if args.horizon not in horizons:
         raise SystemExit(f"--horizon {args.horizon} not among trained horizons {horizons}")

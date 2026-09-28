@@ -94,6 +94,10 @@ def main():
         raise SystemExit(f"checkpoint not found: {args.checkpoint}")
 
     ck = torch.load(ck_path, weights_only=False, map_location="cpu")
+    if ck.get("split"):
+        # score on the split the checkpoint was trained under (older checkpoints: constants)
+        from data_windows import set_split
+        set_split(*ck["split"])
     cfg = ck["config"]
     horizons = ck.get("horizons") or list(getattr(cfg, "horizons", (1, 2, 3, 6, 12)))
 

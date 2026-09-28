@@ -307,6 +307,11 @@ def main():
                          "training weight leaking into the REPORTED metric, which has "
                          "happened once and survived three runs.")
     ap.add_argument("--patience", type=int, default=5)
+    ap.add_argument("--min-delta", type=float, default=0.0,
+                    help="an epoch counts as an improvement only if the selection metric falls by at least "
+                         "this RELATIVE amount (0.005 = 0.5%%). Default 0 reproduces earlier runs")
+    ap.add_argument("--split", default=None,
+                    help="'TRAIN_END,VAL_END' (e.g. 2025-05,2025-07 for the 7/2/4 design). Default: data_windows constants")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
     ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default="whole_settle",
@@ -323,6 +328,11 @@ def main():
     args = ap.parse_args()
 
     months = args.months or PILOT_MONTHS
+    if args.split:
+        from data_windows import set_split
+        set_split(*args.split.split(","))
+    from data_windows import active_split
+    print(f"SPLIT BOUNDARIES in force: train <= {active_split()[0]} < val <= {active_split()[1]} < test", flush=True)
     torch.manual_seed(args.seed)
 
     cache_dir = Path(args.cache)
@@ -616,6 +626,7 @@ def main():
             "config": cfg, "horizons": list(args.horizons), "epoch": epoch,
             "val_loss": val, "val_persistence": vap, "val_ratio": va_ratio,
             "objective": "horizon_forecast_residual",
+            "split": list(__import__("data_windows").active_split()),
             "drop_edges": list(args.drop_edges),
         }
         # Save unconditionally: an earlier version of the reconstruction
@@ -652,7 +663,7 @@ def main():
         # written and the run stops at the patience limit looking exactly
         # like a model that could not learn. Fail now and say why.
         _sel = require_finite_selection(_sel_name, _sel)
-        if va_n and _sel < best_val:
+        if va_n and _sel < best_val * (1.0 - args.min_delta):
             best_val = _sel
             since_improve = 0
             torch.save({**payload, "selected_by": _sel_name}, ckpt_dir / "best.pt")
