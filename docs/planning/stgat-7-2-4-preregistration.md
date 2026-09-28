@@ -25,8 +25,17 @@ the project.
 - ladder edge features zeroed;
 - causal MECE membership in validation and test (curated in train).
 
-The existing May–September bundles are reused as they are. The eight missing
-months are built.
+**Cache for 7/2/4: `cache_724/`.** `cache_causal/` is left untouched, so earlier
+results reproduce. The membership rule is chosen per month by its split
+(hindsight for train, causal for validation and test), so the build runs under
+`FYP_SPLIT=2025-05,2025-07`.
+- **Reused** (linked) from `cache_causal/`, because their rule is unchanged:
+  2025-05 (train, hindsight), 2025-07 to 2025-09 (causal).
+- **Built:** 2024-11 to 2025-04 (train) and 2025-10/11 (test).
+- **Rebuilt: 2025-06.** It was a *training* month under the pilot split, built
+  with the hindsight rule, but it is *validation* under 7/2/4 and must use the
+  causal rule. Reusing it would have put hindsight membership into
+  validation.
 
 ## 3. Tuning (validation only)
 

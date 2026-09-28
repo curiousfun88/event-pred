@@ -103,7 +103,7 @@ def read_history(run_dir: Path):
 
 def command(c: dict, epochs: int, seed: int, run_dir: Path):
     return [sys.executable, "-u", str(_REPO / "stg_infra/train_forecast.py"),
-            "--cache", "cache_causal", "--months", *TRAIN_MONTHS, *VAL_MONTHS, "--split", SPLIT,
+            "--cache", "cache_724", "--months", *TRAIN_MONTHS, *VAL_MONTHS, "--split", SPLIT,
             "--w-ladder", "0", "--supervise", "all", "--select-on", "mece",
             "--epochs", str(epochs), "--patience", str(PATIENCE), "--min-delta", str(MIN_DELTA),
             "--seed", str(seed), "--embed-dim", str(c["embed_dim"]), "--n-heads", str(c["n_heads"]),
