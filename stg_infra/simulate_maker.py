@@ -53,12 +53,14 @@ _REPO = _THIS.parent
 H_NS = 3_600_000_000_000
 MAKER_SWITCH = "2025-07"
 MAKER_FEE_TYPES = {"quadratic_with_maker_fees", "quadratic_with_combo_maker_fees"}
-FIRST_TEST_MONTH = "2025-07"
-DEV_MONTHS = ["2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06"]
-TEST_MONTHS = ["2025-07", "2025-08", "2025-09"]
-CONFIRM_MONTHS = ["2025-10", "2025-11"]
+# Amendment A4: 7 months train (search) / 2 months validation (shortlist only) / 4 months test (once)
+TRAIN_MONTHS = ["2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05"]
+VAL_MONTHS = ["2025-06", "2025-07"]
+TEST_MONTHS = ["2025-08", "2025-09", "2025-10", "2025-11"]
+FIRST_VAL_MONTH = VAL_MONTHS[0]
+SHORTLIST_K = 10
 # Bump when simulation logic changes: cached results from older logic are then ignored.
-SIM_VERSION = "1"
+SIM_VERSION = "2"
 CACHE_DIR = _REPO / "runs/maker/cache"
 
 
@@ -74,10 +76,13 @@ class Config:
     basket: bool = False         # S3: bid every leg when sum(bid) <= 100 - sum(maker fee)
     pos_limit: int = 50
     event_limit: int = 200
+    universe: str = "mece"       # mece | liquid
+    min_trades_24h: int = 0      # causal liquidity rule: trades in (H-24h, H]
 
     def name(self):
-        return (f"sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
-                f"minspr={self.min_spread} series={self.series} q={self.q} basket={int(self.basket)}")
+        return (f"univ={self.universe} sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
+                f"minspr={self.min_spread} series={self.series} liq24h>={self.min_trades_24h} inv={self.pos_limit} "
+                f"basket={int(self.basket)}")
 
 
 # ---------------------------------------------------------------- pure pieces
@@ -115,6 +120,11 @@ def fills_for_order(side: int, price: int, qty: int, improved: bool, model: str,
         remaining -= f
         used += f
     return out
+
+
+def recent_trades(tt, H: int, window_ns: int = 24 * H_NS) -> int:
+    """Trades in the window (H - window, H]. Causal: never looks past H."""
+    return int(np.searchsorted(tt, H, side="right") - np.searchsorted(tt, H - window_ns, side="right"))
 
 
 def fill_pnl(side: int, price: int, qty: int, result_yes: bool, fee: float):
@@ -177,6 +187,10 @@ def self_test() -> int:
           maker_fee_c(50, 10, True, "2025-05") == 2.5)
     check("maker fee: quadratic from July 2025 (0.0175*10*0.25 = 4.375 -> 5c)",
           maker_fee_c(50, 10, True, "2025-08") == 5)
+    tt = np.array([1, 5, 20, 30]) * H_NS
+    check("liquidity rule: at H=30h only the trades at 20h and 30h are inside (H-24h, H]",
+          recent_trades(tt, 30 * H_NS) == 2)
+    check("liquidity rule never looks ahead: at H=4h only the 1h trade counts", recent_trades(tt, 4 * H_NS) == 1)
     lo, hi = cluster_ci([10, 10, 10, 10], [100, 100, 100, 100], n=200)
     check("cluster CI of identical events collapses to the point (10%)", abs(lo - 10) < 1e-9 and abs(hi - 10) < 1e-9)
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
@@ -185,7 +199,7 @@ def self_test() -> int:
 
 # ---------------------------------------------------------------- data
 
-def load(months):
+def load(months, universe="mece"):
     import polars as pl
     # Prefer the monthly partition (partition_quotes.py) when it is UP TO DATE: every
     # requested month present and newer than every raw download file. Otherwise read
@@ -207,7 +221,8 @@ def load(months):
                  (pl.col("end_ts") < pl.datetime(int(hi[:4]), int(hi[5:]), 1)))
     mem = pl.read_parquet(_REPO / "results/mece/mece_membership.parquet")
     causal = set(mem.filter(pl.col("q_from").is_not_null() & (pl.col("q_from") <= pl.col("leg_created")))["ticker"].to_list())
-    q = q.filter(pl.col("ticker").is_in(list(causal)))
+    if universe == "mece":
+        q = q.filter(pl.col("ticker").is_in(list(causal)))
     tickers = q["ticker"].unique().to_list()
 
     mk = pl.concat([pl.read_parquet(p, columns=["ticker", "event_ticker", "result", "close_time"])
@@ -304,6 +319,8 @@ def simulate(cfg: Config, model: str, legs, events, charged, months):
                     continue
             for tk, (b, a, j) in quotes.items():
                 L = legs[tk]
+                if cfg.min_trades_24h and recent_trades(L["tt"], H) < cfg.min_trades_24h:
+                    continue
                 spread = a - b
                 if spread < cfg.min_spread:
                     continue
@@ -396,17 +413,20 @@ def run_many(tasks, workers):
     """Run tasks, reusing cached ones; data is loaded lazily and only if needed."""
     todo = [t for t in tasks if not (CACHE_DIR / f"{cache_key(*t)}.json").exists()]
     print(f"{len(tasks)} simulations requested; {len(tasks) - len(todo)} cached; {len(todo)} to run on {workers} workers", flush=True)
-    if todo and "legs" not in _G:
-        months = sorted({m for t in todo for m in t[2]})
-        _G["legs"], _G["events"], _G["charged"] = load(months)
-        print(f"loaded {months[0]}..{months[-1]}: {len(_G['legs']):,} legs, {len(_G['events']):,} events", flush=True)
     results = {}
-    if todo:
-        import multiprocessing as mp
+    import multiprocessing as mp
+    for univ in sorted({t[0].universe for t in todo}):
+        sub_t = [t for t in todo if t[0].universe == univ]
+        months = sorted({m for t in sub_t for m in t[2]})
+        _G.clear()
+        _G["legs"], _G["events"], _G["charged"] = load(months, univ)
+        print(f"loaded universe={univ} {months[0]}..{months[-1]}: {len(_G['legs']):,} legs, "
+              f"{len(_G['events']):,} events; running {len(sub_t)} simulations", flush=True)
         with mp.get_context("fork").Pool(workers) as pool:
-            for cfg, model, r, _ in pool.imap_unordered(run_one, todo):
+            for cfg, model, r, _ in pool.imap_unordered(run_one, sub_t):
                 results[(cfg, model)] = r
                 print(f"  done: {model.upper():<4} {cfg.name()} -> ret {r['ret']:+.2f}% ({r['fills']:,} fills)", flush=True)
+        _G.clear()
     for t in tasks:
         if (t[0], t[1]) not in results:
             results[(t[0], t[1])] = json.loads((CACHE_DIR / f"{cache_key(*t)}.json").read_text())
@@ -420,44 +440,59 @@ def fmt(r):
 
 
 def grid_configs():
-    for sides, improve, band, ms, ser, basket in itertools.product(
-            ["both", "bid", "ask"], [0, 1], [(1, 15), (15, 85), (85, 99), (1, 99)], [2, 4],
-            ["all", "taker_only"], [False, True]):
-        if basket and (sides != "bid" or improve):
-            continue          # basket mode is a bid-only, join-the-touch rule
-        yield Config(sides=sides, improve=improve, band_lo=band[0], band_hi=band[1],
-                     min_spread=ms, series=ser, basket=basket)
+    for univ, sides, improve, band, ms, ser, basket, liq, inv in itertools.product(
+            ["mece"], ["both", "bid", "ask"], [0, 1], [(1, 15), (15, 85), (85, 99), (1, 99)], [2, 4],   # A5: MECE only
+            ["all", "taker_only"], [False, True], [0, 5], [50, 25]):
+        if basket and (sides != "bid" or improve or univ != "mece"):
+            continue          # basket mode: bid-only, join-the-touch, MECE baskets only
+        yield Config(universe=univ, sides=sides, improve=improve, band_lo=band[0], band_hi=band[1],
+                     min_spread=ms, series=ser, basket=basket, min_trades_24h=liq, pos_limit=inv)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
-    ap.add_argument("--months", nargs="+", default=DEV_MONTHS)
-    ap.add_argument("--grid", action="store_true", help="development search (refused on test months)")
+    ap.add_argument("--months", nargs="+", default=TRAIN_MONTHS)
+    ap.add_argument("--grid", action="store_true",
+                    help="search on TRAIN months, then select on VALIDATION (shortlist only); refused on val/test months")
     ap.add_argument("--config", help="frozen config JSON for a test run")
     ap.add_argument("--out", default=None)
     ap.add_argument("--workers", type=int, default=6)
     args = ap.parse_args()
     if args.self_test:
         return self_test()
-    if args.grid and max(args.months) >= FIRST_TEST_MONTH:
-        raise SystemExit("REFUSED: --grid on test/confirmation months breaks the protocol (amendment A1).")
+    if args.grid and max(args.months) >= FIRST_VAL_MONTH:
+        raise SystemExit("REFUSED: the search runs on TRAIN months only; validation sees only the "
+                         "shortlist and test sees only the frozen winner (amendment A4).")
 
     if args.grid:
+        # 1. search on TRAIN
         cfgs = list(grid_configs())
         res = run_many([(c, m, args.months) for c in cfgs for m in ("opt", "pess")], args.workers)
         rows = [(c, {"opt": res[(c, "opt")], "pess": res[(c, "pess")]}) for c in cfgs]
         ok = [(c, r) for c, r in rows if r["pess"]["fills"] >= 300 and r["pess"]["events"] >= 30]
         ok.sort(key=lambda cr: (cr[1]["pess"]["ret"], cr[1]["pess"]["fills"]), reverse=True)
-        print(f"\n=== SELECTION on {args.months[0]}..{args.months[-1]} (amendment A1: best pessimistic return, >=300 fills, >=30 events) ===")
-        for c, r in ok[:10]:
+        print(f"\n=== TRAIN {args.months[0]}..{args.months[-1]}: {len(ok)} of {len(rows)} configurations met the "
+              f"minimum-activity rule; {sum(1 for _, r in ok if r['pess']['ret'] > 0)} positive pessimistic ===")
+        for univ in ("mece", "liquid"):
+            for c, r in [(c, r) for c, r in ok if c.universe == univ][:1]:
+                print(f"  best on train, universe={univ}: {c.name()}\n      PESS {fmt(r['pess'])}\n      OPT  {fmt(r['opt'])}")
+        shortlist = [c for c, _ in ok[:SHORTLIST_K]]
+        print(f"\n  shortlist (top {len(shortlist)} by pessimistic train return):")
+        for c, r in ok[:SHORTLIST_K]:
+            print(f"    {c.name()}  train PESS {r['pess']['ret']:+.2f}%")
+        # 2. select on VALIDATION (shortlist only)
+        vres = run_many([(c, m, VAL_MONTHS) for c in shortlist for m in ("opt", "pess")], args.workers)
+        vrows = [(c, {"opt": vres[(c, "opt")], "pess": vres[(c, "pess")]}) for c in shortlist]
+        vok = [(c, r) for c, r in vrows if r["pess"]["fills"] >= 100 and r["pess"]["events"] >= 10]
+        vok.sort(key=lambda cr: (cr[1]["pess"]["ret"], cr[1]["pess"]["fills"]), reverse=True)
+        print(f"\n=== VALIDATION {VAL_MONTHS[0]}..{VAL_MONTHS[-1]} (shortlist only; pick best pessimistic, >=100 fills, >=10 events) ===")
+        for c, r in vrows:
             print(f"  {c.name()}\n      PESS {fmt(r['pess'])}\n      OPT  {fmt(r['opt'])}")
-        print(f"\n  {len(ok)} of {len(rows)} configurations met the minimum-activity rule; "
-              f"{sum(1 for _, r in ok if r['pess']['ret'] > 0)} have positive pessimistic return on development")
-        if ok and args.out:
+        if vok and args.out:
             Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.out).write_text(json.dumps(dataclasses.asdict(ok[0][0]), indent=2))
-            print(f"\nselected config written to {args.out}")
+            Path(args.out).write_text(json.dumps(dataclasses.asdict(vok[0][0]), indent=2))
+            print(f"\nSELECTED (frozen for the single test run): {vok[0][0].name()}\nwritten to {args.out}")
     else:
         cfgs = [("S1 (pre-registered reference)", Config())]
         if args.config:

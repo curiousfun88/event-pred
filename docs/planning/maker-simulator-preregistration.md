@@ -220,3 +220,71 @@ anything.**
   months, simulator version). The development search resumes where it stopped.
 - The selection rule, grid, fill models, fees and verdict rules of A1 are
   unchanged.
+
+## Amendment A3 (2026-09-28, before the development search)
+
+**Disclosure.** The only simulator output seen before this amendment is S1
+(the pre-registered reference) on May–June 2025, a development-only timing
+run: optimistic +0.19% [−0.42, +0.77], pessimistic −2.17% [−2.89, −1.41]. No
+test month has been simulated.
+
+**Objective (student): maximise the honest chance of positive net PnL.** Three
+dimensions are added to the development grid. All are decidable at quoting
+time. Test months remain untouched.
+
+| dimension | values | rationale |
+|---|---|---|
+| **universe** | `mece` (causal membership, as before); `liquid` (every market with downloaded quotes: >=20 trades over the window, about 98% of all trading) | the maker edge in the tape screen is market-wide; about 10x the fill opportunities |
+| **causal liquidity rule** | quote a leg only if it had >= {0, 5} trades in the **previous 24h** | concentrate on active markets. The download scope (>=20 trades over 13 months) is known only after the fact and is **never** used as an eligibility rule |
+| **inventory cap** | {50, 25} contracts net per leg | limits directional exposure built up by adverse selection |
+
+- Basket mode (S3) runs in the `mece` universe only.
+- The selection rule is unchanged (best pessimistic development return, >=300
+  fills, >=30 events), taken over both universes. The best configuration **per
+  universe** is also reported.
+- **Deferred, not implemented: "stop quoting near expiry"** (motivated by
+  Bürgi et al.'s final-day maker losses). The markets file records the
+  *actual* close time, which for early-resolving markets is known only after
+  the fact, so using it would leak outcome timing. It needs each market's
+  *scheduled* close, which the current data lacks.
+- Simulator version bumped to 2 (older cached results are ignored).
+
+## Amendment A4 (2026-09-28, before the development search): train / validation / test
+
+Replaces the development/test/confirmation split of A1–A2.
+
+| split | months | what runs there |
+|---|---|---|
+| **Train** (7) | 2024-11 to 2025-05 | the full grid (A1 + A3). Shortlist = **top 10** by pessimistic train return, among configurations with >=300 fills and >=30 events |
+| **Validation** (2) | 2025-06, 2025-07 | **only the 10 shortlisted configurations**. Selected = best pessimistic validation return with >=100 fills and >=10 events; frozen and committed |
+| **Test** (4) | 2025-08 to 2025-11 | **only the frozen winner** (plus the S1 reference), run **once**. This is the reported result |
+
+- The strategies are fixed rules, so "train" means the months the search runs
+  on. Nothing is fitted.
+- **Verdict** (as A1, on the 4 test months): viable if the winner's
+  pessimistic return is > 0 with the event-cluster CI excluding 0.
+- The simulator refuses the grid on any month from 2025-06 onward.
+- **Disclosure:** the S1 timing run (A3) covered May–June 2025, so the reference
+  strategy was seen on one validation month (June) before this split was set.
+  No shortlisted configuration has been seen anywhere.
+- **S4 (STGAT filter):** the current checkpoints used 2025-07/08 for selection
+  and 2025-09 as their test, so for S4 only 2025-10/11 are clean. S4 is
+  evaluated there, or after the STGAT is retrained or tuned.
+
+## Amendment A5 (2026-09-28, before any search result): MECE universe only
+
+The `liquid` (all-markets) universe added in A3 is **dropped**. The search,
+validation and test cover the **MECE universe only**: legs of causally
+qualified MECE families.
+
+- **Reason:** resources. The all-markets universe needs about 2 more hours of
+  downloading and about 5–6 hours more search on a 7 GB, CPU-only machine.
+  MECE is also where the sum-to-one constraint and the STGAT (S4/S5) apply.
+- **Scope of claims:** results describe market making on Kalshi's **MECE
+  markets** (predominantly weather and sports), not the exchange as a whole.
+- **Realism is unchanged:** tape-driven fills, real quotes, current fees,
+  queue bounds.
+- The grid is now the 448 MECE configurations of A1 + A3. The selection rules
+  of A4 are unchanged.
+- **No result informed this decision.** The only simulator output seen so far
+  is the A3-disclosed S1 timing run.

@@ -1,0 +1,184 @@
+# STGAT on the 13-month window: tuning, 7/2/4 evaluation, and S4
+
+**Status:** pre-registered 2026-09-28, before any cache rebuild, tuning run or result.
+**Approved by supervisor:** the 7/2/4 split (train 7 months, validation 2, test 4).
+
+## 1. Split (shared with the maker simulator, amendment A4)
+
+| split | months | STGAT use |
+|---|---|---|
+| Train | 2024-11 to 2025-05 | fit weights |
+| Validation | 2025-06, 2025-07 | tuning selection, checkpoint selection, early stopping |
+| **Test** | **2025-08 to 2025-11** | **scored once**, after everything is frozen |
+
+Every quantity fitted from data (feature standardisation, the shrinkage-oracle
+alphas used for *selection*) is fitted on train or validation only. The test
+oracles are fitted on the test split, deliberately optimistic, as throughout
+the project.
+
+## 2. Data
+
+`cache_causal/` is extended to all 13 months with the same causal pipeline
+(`run_real_training.py`):
+- no carry-forward past close;
+- `time_to_close` zeroed as an input;
+- ladder edge features zeroed;
+- causal MECE membership in validation and test (curated in train).
+
+The existing May–September bundles are reused as they are. The eight missing
+months are built.
+
+## 3. Tuning (validation only)
+
+**Objective:** minimise validation MECE MSE (`whole_settle`), the metric
+`train_forecast.py` already selects on.
+
+**Search space:**
+
+| hyperparameter | values |
+|---|---|
+| hidden size (`embed_dim`) | 32, 64, 128 |
+| attention heads | 2, 4, 8 (must divide the hidden size) |
+| learning rate | 3e-4, 1e-3, 3e-3 |
+| dropout | 0, 0.1, 0.2 |
+| MECE loss weight | 0.5, 1, 2 |
+
+**Budget-aware procedure (successive halving):**
+1. **Screen:** 16 configurations sampled from the space with a fixed seed,
+   plus the current defaults (hidden 32, 4 heads, lr 1e-3, dropout 0, MECE
+   weight 1). Each is trained **6 epochs** on the full train window, seed 0.
+2. **Promote:** the top 4 by validation MECE continue to **20 epochs**
+   (patience 5, minimum improvement 0.5%; see early stopping below).
+3. **Final:** the single best is trained with **4 seeds** (0–3), up to 40
+   epochs, patience 5, minimum improvement 0.5%, checkpoint = best
+   validation MECE.
+
+If the defaults win the screen, that is reported as the finding ("the
+untuned model was near-optimal within this space").
+
+**Early stopping, to avoid spending time when tuning is not helping:**
+1. **Defaults run first.** Each later screening configuration is checked at
+   epochs 2 and 4. It is stopped (pruned) if its validation MECE is worse
+   than the median of earlier configurations at the same epoch. A controller
+   reads each run's per-epoch `history.csv` and stops the run.
+2. **Early exit from screening:** if none of the first 8 configurations
+   beats the defaults' epoch-4 validation MECE by >= 2%, screening stops,
+   promotion is skipped, and the defaults go to the final run. The same 2%
+   rule applies at the end of screening.
+3. **Within-run early stopping** for promotion and final runs: patience 5
+   (was 8), and an epoch counts as an improvement only if validation MECE
+   falls by >= 0.5% relative to the best so far.
+4. **Not skippable:** the 4-seed final run of the chosen configuration.
+   Existing checkpoints were trained on the 2-month pilot window and cannot
+   stand in for the 7/2/4 test.
+
+**Stop rule, fixed now:** if no screened configuration beats the defaults'
+6-epoch validation MECE by at least 2%, promotion is skipped and the defaults
+go straight to the final 4-seed run. Tuning is then reported as "not
+material".
+
+## 4. Test (once, after freezing)
+
+On 2025-08 to 2025-11, per seed and as the mean and range over 4 seeds, with
+event-cluster CIs and k:
+- MECE model / single-alpha oracle and / persistence (`whole_settle`), split
+  into settled and unsettled;
+- unsettled model / per-series × horizon oracle, the hard baseline;
+- ladder (exploratory, as before).
+
+The same baselines and code as the causal rerun are used. No other metric is
+promoted to headline after the fact.
+
+## 5. S4: the STGAT as a market-making filter
+
+- Base: the maker simulator's **frozen validation winner** (amendment A4).
+- S4 = the base strategy, but a side is **not quoted** at hour H when the
+  tuned STGAT's h=1 forecast, taken from the latest snapshot ending at or
+  before H, predicts a move against it larger than half the quoted spread.
+  For a bid that means a predicted fall; for an ask, a predicted rise.
+- Scored on the **test months (2025-08 to 2025-11)**, both fill models,
+  **paired** against the base on identical quote opportunities, with an
+  event-cluster CI.
+- **Verdict:** the model adds economic value if the pessimistic S4 − base
+  difference is > 0 with the CI excluding 0.
+
+## 6. Predictions (before any run)
+
+- Tuning: a modest gain, 2–8% lower validation MECE MSE, because the current
+  model underfits.
+- Test forecasting: beats persistence clearly. Against the family oracle on
+  unsettled positions, within ±5%.
+- S4 vs base: a small positive difference, probably not significant.
+
+## 6a. Amendment B1 (2026-09-28, before any build or result): quote inputs and a next-hour mid-move head
+
+**Purpose:** give the STGAT its best honest chance on both the forecasting
+comparison and S4. Two findings motivate it:
+- the model sees only trade prints, which are mostly bid/ask bounce (82–87%
+  of apparent basket deviation);
+- S4's decision ("will the quoted mid move against my quote in the next hour?")
+  differs from the current target (basket sums 2–24 h ahead).
+
+**B1.1 Quote features (inputs), strictly causal.** For ticker node *i* at
+snapshot *t*, whose window ends at E_t, use the **latest hourly candle ending at
+or before E_t**. Never a later one.
+
+| feature | definition |
+|---|---|
+| `q_bid`, `q_ask`, `q_mid` | candle close bid, ask, (bid+ask)/2, in [0,1] |
+| `q_spread` | ask − bid |
+| `q_print_minus_mid` | last trade price in the window − `q_mid` (print side) |
+| `q_no_bid`, `q_no_ask` | 1 if bid = 0 / ask = 1 (one-sided book) |
+| `q_age_h` | (E_t − candle end) in hours, capped at 24 |
+| `q_has` | 1 if any candle exists at or before E_t, else 0 (all other q_* = 0) |
+
+- Basket hubs get causal aggregates over their linked legs: Σ`q_mid` − 1,
+  Σ`q_bid`, Σ`q_ask`, and the share of legs quoted.
+- Standardisation is fitted on train only, as for all features.
+- **Known-answer test (required before any training):** planted candles at
+  E_t − 1h, E_t and E_t + 1h. The feature must use the E_t candle; with that
+  candle removed it must use E_t − 1h, with age 1h; it must never use E_t + 1h.
+
+**B1.2 Next-hour mid-move head (auxiliary output).** An extra linear head on
+the backbone predicts, for ticker node *i* at E_t:
+    y = q_mid(candle ending E_t + 1h) − q_mid(candle ending E_t)
+- The target is defined only when both candles exist and are two-sided;
+  otherwise it is masked. The target uses only quotes after E_t, and it is
+  never an input.
+- The loss is the existing loss + `w_mid` × MSE(head, y).
+- Test report: head MSE vs the zero-move baseline and vs a shrinkage oracle,
+  with an event-cluster CI.
+- The basket-sum forecasting objective is unchanged, so the §4 comparison
+  stays valid (multi-task, not a replacement).
+
+**B1.3 Tuning dimensions added to §3:**
+- `quote_features` {off, on};
+- `w_mid` {0.5, 1, 2}.
+The defaults entry has quote features off, `w_mid` = 1, and the head always
+present (S4 needs it).
+
+**B1.4 Ablation.** If the winning configuration has `quote_features = on`, the
+best configuration with `quote_features = off` is also trained with 4 seeds and
+tested, so the thesis reports whether the book helps. That run happens only if
+the screen shows quote features winning by at least 2%, to save time.
+
+**B1.5 S4 rule (replaces the §5 rule).** At hour H, using the latest snapshot
+ending at or before H: skip the bid if the predicted next-hour mid move is less
+than −½·spread; skip the ask if it is more than +½·spread. Everything else in
+§5 is unchanged: test months, paired comparison, verdict.
+
+**B1.6 Predictions.**
+- Quote features win the screen.
+- The mid-move head beats the zero-move baseline on test, but by a small
+  margin.
+- The S4 − base difference is positive; whether its CI excludes 0 is
+  uncertain (roughly a 25–35% chance).
+
+## 7. Known constraints
+
+- CPU only and 7 GB of RAM, so one job runs at a time. Estimated cost:
+  cache ~1–2 h, screen ~4–6 h, promotion ~3–4 h, final 4 seeds ~10–14 h.
+- `train_forecast.py` currently takes its train/val/test boundaries from
+  `data_windows.py` (pilot split). The boundaries must become the 7/2/4 split,
+  with a check that the printed split matches §1 exactly before any training
+  starts.
