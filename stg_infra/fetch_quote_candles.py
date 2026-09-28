@@ -232,6 +232,14 @@ def run(args) -> int:
         rng = leg_ranges(cache if cache.is_absolute() else _REPO_ROOT / cache, args.months)
     elif args.legs == "all":
         rng, n_trades = leg_ranges_all(args.months)
+        if args.min_trades > 1:
+            # DOWNLOAD SCOPE ONLY. Total trade count is known only after the fact, so it
+            # must never be used as a strategy's eligibility rule (the simulator decides
+            # causally, from trades before the quote).
+            keep = {t for t, n in n_trades.items() if n >= args.min_trades}
+            share = sum(n_trades[t] for t in keep) / max(sum(n_trades.values()), 1)
+            print(f"--min-trades {args.min_trades}: {len(keep):,} of {len(rng):,} tickers, {share:.1%} of all trades")
+            rng = {t: v for t, v in rng.items() if t in keep}
     else:
         rng = leg_ranges_membership(args.months)
     priority = n_trades if args.legs == "all" else {}
@@ -338,6 +346,8 @@ def main():
     ap.add_argument("--out", default="data/quotes/candles_1h_2025-07_09.parquet")
     ap.add_argument("--rate", type=float, default=10.0, help="requests per second, all workers combined (Basic tier ~20)")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--min-trades", type=int, default=1,
+                    help="with --legs all: download only tickers with at least this many trades in the window")
     ap.add_argument("--legs", choices=["cache", "membership", "all"], default="cache",
                     help="cache: legs on MECE edges of a graph cache; membership: causal MECE membership + trades (any window)")
     args = ap.parse_args()
