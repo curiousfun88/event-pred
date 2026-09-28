@@ -178,7 +178,14 @@ def run(args) -> int:
         for s, e in split_range(utc_ts(lo) - 2 * H, utc_ts(hi) + H):
             for attempt in range(5):
                 time.sleep(1.0 / args.rate)
-                r = sess.get(BASE.format(tk), params={"start_ts": s, "end_ts": e, "period_interval": 60}, timeout=30)
+                try:
+                    r = sess.get(BASE.format(tk), params={"start_ts": s, "end_ts": e, "period_interval": 60}, timeout=30)
+                except requests.exceptions.RequestException as exc:
+                    # network-level failure (timeout, reset): back off and retry,
+                    # rather than killing a long resumable run
+                    print(f"  {tk}: {type(exc).__name__}, retry {attempt + 1}/5")
+                    time.sleep(2 ** attempt)
+                    continue
                 n_req += 1
                 if r.status_code == 200:
                     rows += parse_candles(tk, r.json())
