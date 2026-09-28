@@ -199,3 +199,24 @@ backtest:
 That is at most 3 × 2 × 4 × 2 × 2 × 2 = 192 configurations. The model filter
 (S4) is evaluated only as an add-on to the selected configuration, on September
 (clean for the STGAT).
+
+## Amendment A2 (2026-09-28, before any simulator result)
+
+**Scale to the full 13-month dataset (2024-11 to 2025-11) without re-running
+anything.**
+
+| role | months (was) | months (now) |
+|---|---|---|
+| Development (strategy search) | 2025-05, 2025-06 | **2024-11 to 2025-06** (8 months; covers winter and summer) |
+| Test (scored once) | 2025-07 to 2025-09 | unchanged |
+| Confirmation (never used) | 2025-10, 2025-11 | unchanged |
+
+- **Universe:** legs of **causally qualified** MECE families (membership
+  `q_from <= leg_created`, so no hindsight), with hourly quotes. Legs are now
+  found from the membership file and the trade tape, not from a graph cache, so
+  any window works.
+- **No re-runs:** quotes are fetched only for legs and time ranges not already
+  on disk. Every simulation is cached under a key of (config, fill model,
+  months, simulator version). The development search resumes where it stopped.
+- The selection rule, grid, fill models, fees and verdict rules of A1 are
+  unchanged.

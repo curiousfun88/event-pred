@@ -54,11 +54,12 @@ H_NS = 3_600_000_000_000
 MAKER_SWITCH = "2025-07"
 MAKER_FEE_TYPES = {"quadratic_with_maker_fees", "quadratic_with_combo_maker_fees"}
 FIRST_TEST_MONTH = "2025-07"
-QUOTE_FILES = {"2025-05": "data/quotes/candles_1h_2025-05_06.parquet",
-               "2025-06": "data/quotes/candles_1h_2025-05_06.parquet",
-               "2025-07": "data/quotes/candles_1h_2025-07_09.parquet",
-               "2025-08": "data/quotes/candles_1h_2025-07_09.parquet",
-               "2025-09": "data/quotes/candles_1h_2025-07_09.parquet"}
+DEV_MONTHS = ["2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06"]
+TEST_MONTHS = ["2025-07", "2025-08", "2025-09"]
+CONFIRM_MONTHS = ["2025-10", "2025-11"]
+# Bump when simulation logic changes: cached results from older logic are then ignored.
+SIM_VERSION = "1"
+CACHE_DIR = _REPO / "runs/maker/cache"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -186,18 +187,22 @@ def self_test() -> int:
 
 def load(months):
     import polars as pl
-    qfiles = sorted({QUOTE_FILES[m] for m in months})
-    q = pl.concat([pl.read_parquet(_REPO / f) for f in qfiles]).unique(["ticker", "end_ts"])
+    # every quote file on disk (finished files and in-progress parts), de-duplicated
+    qfiles = sorted((_REPO / "data/quotes").glob("*.parquet")) + sorted((_REPO / "data/quotes").glob("*.parts/*.parquet"))
+    q = pl.concat([pl.read_parquet(f) for f in qfiles]).unique(["ticker", "end_ts"])
     q = q.with_columns(pl.col("end_ts").cast(pl.Datetime("ns")).cast(pl.Int64).alias("e"))
     lo = min(months)
     y, mo = map(int, max(months).split("-"))
     hi = f"{y + (mo == 12)}-{(mo % 12) + 1:02d}"
     q = q.filter((pl.col("end_ts") >= pl.datetime(int(lo[:4]), int(lo[5:]), 1)) &
                  (pl.col("end_ts") < pl.datetime(int(hi[:4]), int(hi[5:]), 1)))
+    mem = pl.read_parquet(_REPO / "results/mece/mece_membership.parquet")
+    causal = set(mem.filter(pl.col("q_from").is_not_null() & (pl.col("q_from") <= pl.col("leg_created")))["ticker"].to_list())
+    q = q.filter(pl.col("ticker").is_in(list(causal)))
     tickers = q["ticker"].unique().to_list()
 
     mk = pl.concat([pl.read_parquet(p, columns=["ticker", "event_ticker", "result", "close_time"])
-                    for p in sorted((_REPO / "data/markets").glob("*/markets_2025-*.parquet"))]).unique("ticker")
+                    for p in sorted((_REPO / "data/markets").glob("*/markets_*.parquet"))]).unique("ticker")
     mk = mk.filter(pl.col("ticker").is_in(tickers) & pl.col("result").is_in(["yes", "no"]))
 
     def tfile(m):
@@ -351,6 +356,54 @@ def summarise(fills):
             "markout_c_per_contract": (sum(mk) / qty_mk) if qty_mk else float("nan")}
 
 
+def cache_key(cfg: Config, model: str, months) -> str:
+    import hashlib
+    blob = json.dumps({"cfg": dataclasses.asdict(cfg), "model": model, "months": sorted(months), "v": SIM_VERSION}, sort_keys=True)
+    return hashlib.sha1(blob.encode()).hexdigest()[:16]
+
+
+_G = {}   # data shared with forked workers (copy-on-write)
+
+
+def run_one(task):
+    """Simulate one (config, model), or reuse the cached result. Saves every fill."""
+    cfg, model, months = task
+    key = cache_key(cfg, model, months)
+    summ_f = CACHE_DIR / f"{key}.json"
+    if summ_f.exists():
+        return cfg, model, json.loads(summ_f.read_text()), True
+    fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months)
+    r = summarise(fills)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    import polars as pl
+    if fills:
+        pl.DataFrame(fills, schema=["event", "ticker", "side", "price", "qty", "fee_c", "net_c", "capital_c", "markout_c"],
+                     orient="row").write_parquet(CACHE_DIR / f"{key}.fills.parquet")
+    summ_f.write_text(json.dumps({**r, "config": dataclasses.asdict(cfg), "model": model, "months": months}))
+    return cfg, model, r, False
+
+
+def run_many(tasks, workers):
+    """Run tasks, reusing cached ones; data is loaded lazily and only if needed."""
+    todo = [t for t in tasks if not (CACHE_DIR / f"{cache_key(*t)}.json").exists()]
+    print(f"{len(tasks)} simulations requested; {len(tasks) - len(todo)} cached; {len(todo)} to run on {workers} workers", flush=True)
+    if todo and "legs" not in _G:
+        months = sorted({m for t in todo for m in t[2]})
+        _G["legs"], _G["events"], _G["charged"] = load(months)
+        print(f"loaded {months[0]}..{months[-1]}: {len(_G['legs']):,} legs, {len(_G['events']):,} events", flush=True)
+    results = {}
+    if todo:
+        import multiprocessing as mp
+        with mp.get_context("fork").Pool(workers) as pool:
+            for cfg, model, r, _ in pool.imap_unordered(run_one, todo):
+                results[(cfg, model)] = r
+                print(f"  done: {model.upper():<4} {cfg.name()} -> ret {r['ret']:+.2f}% ({r['fills']:,} fills)", flush=True)
+    for t in tasks:
+        if (t[0], t[1]) not in results:
+            results[(t[0], t[1])] = json.loads((CACHE_DIR / f"{cache_key(*t)}.json").read_text())
+    return results
+
+
 def fmt(r):
     return (f"ret {r['ret']:+7.2f}%  CI95 [{r['lo']:+7.2f}, {r['hi']:+7.2f}]  net ${r['net_c'] / 100:>9,.2f}  "
             f"fills {r['fills']:>6,}  contracts {r['contracts']:>7,}  events {r['events']:>5,}  "
@@ -370,30 +423,28 @@ def grid_configs():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
-    ap.add_argument("--months", nargs="+", default=["2025-05", "2025-06"])
+    ap.add_argument("--months", nargs="+", default=DEV_MONTHS)
     ap.add_argument("--grid", action="store_true", help="development search (refused on test months)")
     ap.add_argument("--config", help="frozen config JSON for a test run")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--workers", type=int, default=6)
     args = ap.parse_args()
     if args.self_test:
         return self_test()
     if args.grid and max(args.months) >= FIRST_TEST_MONTH:
         raise SystemExit("REFUSED: --grid on test/confirmation months breaks the protocol (amendment A1).")
 
-    legs, events, charged = load(args.months)
-    print(f"months {args.months}: {len(legs):,} legs with quotes and a settled result, {len(events):,} events")
-
     if args.grid:
-        rows = []
-        for cfg in grid_configs():
-            r = {m: summarise(simulate(cfg, m, legs, events, charged, args.months)) for m in ("opt", "pess")}
-            rows.append((cfg, r))
-            print(f"{cfg.name()}\n    OPT  {fmt(r['opt'])}\n    PESS {fmt(r['pess'])}", flush=True)
+        cfgs = list(grid_configs())
+        res = run_many([(c, m, args.months) for c in cfgs for m in ("opt", "pess")], args.workers)
+        rows = [(c, {"opt": res[(c, "opt")], "pess": res[(c, "pess")]}) for c in cfgs]
         ok = [(c, r) for c, r in rows if r["pess"]["fills"] >= 300 and r["pess"]["events"] >= 30]
         ok.sort(key=lambda cr: (cr[1]["pess"]["ret"], cr[1]["pess"]["fills"]), reverse=True)
-        print("\n=== SELECTION (amendment A1: best pessimistic return, >=300 fills, >=30 events) ===")
+        print(f"\n=== SELECTION on {args.months[0]}..{args.months[-1]} (amendment A1: best pessimistic return, >=300 fills, >=30 events) ===")
         for c, r in ok[:10]:
             print(f"  {c.name()}\n      PESS {fmt(r['pess'])}\n      OPT  {fmt(r['opt'])}")
+        print(f"\n  {len(ok)} of {len(rows)} configurations met the minimum-activity rule; "
+              f"{sum(1 for _, r in ok if r['pess']['ret'] > 0)} have positive pessimistic return on development")
         if ok and args.out:
             Path(args.out).parent.mkdir(parents=True, exist_ok=True)
             Path(args.out).write_text(json.dumps(dataclasses.asdict(ok[0][0]), indent=2))
@@ -402,9 +453,10 @@ def main():
         cfgs = [("S1 (pre-registered reference)", Config())]
         if args.config:
             cfgs.insert(0, ("SELECTED (frozen)", Config(**json.loads(Path(args.config).read_text()))))
+        res = run_many([(c, m, args.months) for _, c in cfgs for m in ("opt", "pess")], args.workers)
         for label, cfg in cfgs:
             for m in ("opt", "pess"):
-                print(f"{label:<30} {m.upper():<4} {fmt(summarise(simulate(cfg, m, legs, events, charged, args.months)))}")
+                print(f"{label:<30} {m.upper():<4} {fmt(res[(cfg, m)])}")
     print("\nexit: 0")
     return 0
 
