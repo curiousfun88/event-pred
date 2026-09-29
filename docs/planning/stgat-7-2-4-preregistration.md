@@ -275,6 +275,37 @@ corrected, so the running tuning is unchanged. All other targets (horizon,
 MECE, settlement) are built inside split-homogeneous chunks and never cross
 a boundary.
 
+## 6d. Amendment B3 (2026-09-29, after the screen, BEFORE any quote-on final run or test result)
+
+**Observation (validation only).** The screen's early-exit rule fired: none of
+the first 8 configurations beat the defaults by 2% on val MECE, so the defaults
+(quote inputs OFF, w_mid 1) went to FINAL. The three sampled quote-on configs
+were paired with unfavourable settings (lr 3e-4 / 3e-3, dropout 0.2, w_mid 2),
+so the screen does not isolate the effect of quote inputs. The defaults' mid-move
+head scores ~1.00x the zero-move baseline on validation: it must forecast QUOTE
+moves from trade features alone.
+
+**Problem.** One selection (on val MECE, the basket-forecasting metric) was
+made for two jobs. S4/S5 use the mid-move head, which nothing selected for.
+
+**Change: two jobs, each selected on its own validation metric.**
+- **Forecasting model (A):** the tuned defaults, quote inputs off, 4 final
+  seeds. Unchanged; every basket-forecasting result comes from A.
+- **Signal model candidate (B):** the identical configuration and command with
+  `--quote-features` added (nothing else differs), 4 seeds (0-3), 40 epochs,
+  same early stopping and checkpoint rule (val MECE). Dirs
+  `runs/tune/b3_quotes_s{0..3}`.
+- **Rule (`select_signal_model.py`, self-tested):** per run, val_mid_ratio
+  (head MSE / zero-move MSE, validation) at the epoch saved as best.pt;
+  seed means compared. B supplies the S4/S5 signal if mean(B) <= 0.98 x
+  mean(A); otherwise A does. Written to `runs/tune/signal_model.json`, and the
+  signal export uses exactly those checkpoints.
+- Also reported (exploratory, no decision): B's val MECE vs A's, as a clean
+  one-factor test of whether quote inputs help basket forecasting.
+- Order: A's finals -> B's 4 seeds -> selection -> maker A10 -> single test run.
+- B1.4's ablation is not triggered (the winner has quote inputs off) and is
+  superseded by B.
+
 ## 7. Known constraints
 
 - CPU only and 7 GB of RAM, so one job runs at a time. Estimated cost:
