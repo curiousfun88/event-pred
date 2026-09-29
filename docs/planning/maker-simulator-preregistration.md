@@ -367,3 +367,23 @@ verdict rule are unchanged. No test month has been simulated.
   a strategy has no fills contributes 0 net and 0 capital to it. Verdicts as
   A6.3, on the pessimistic model.
 - S5's configuration is fixed in code as `S5_CONFIG` and matches A6.3.
+
+## Amendment A9 (2026-09-29, BEFORE any test-month simulation or STGAT result)
+
+**S4/S5 use only a fresh signal.** STGAT snapshots are 2 h windows ending on
+even UTC hours, and the mid-move head at a snapshot ending at E predicts the
+quoted-mid move over (E, E+1h]. Under A6.3/A8 as written, at an odd quoting
+hour H the latest snapshot ends at H-1h, so m_hat forecasts a move that has
+already happened (and is visible in the quote at H), not the hour (H, H+1h]
+the order is exposed to.
+- **Change:** m_hat is used only when a snapshot ends **exactly at H**. At any
+  other hour there is no signal, and the A8 no-signal rules apply: S4 posts
+  the base order unchanged; S5 posts nothing.
+- **Secondary report (added now):** S4 - base and S5 - base restricted to
+  fills from quotes posted at signal hours (H on the 2 h grid), under all
+  three fill models, same event resampling. The all-hours comparison stays
+  the primary verdict; the restricted one shows the effect where the filter
+  operated, without dilution by hours it could not act on.
+- Unchanged: the base, thresholds, S5 configuration, fill models, verdicts.
+- Rationale is timing correctness, decided before any result; the effect on
+  S4/S5 P&L is unknown in sign.

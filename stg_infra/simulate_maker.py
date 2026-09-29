@@ -60,7 +60,7 @@ TEST_MONTHS = ["2025-08", "2025-09", "2025-10", "2025-11"]
 FIRST_VAL_MONTH = VAL_MONTHS[0]
 SHORTLIST_K = 10
 # Bump when simulation logic changes: cached results from older logic are then ignored.
-SIM_VERSION = "2"
+SIM_VERSION = "3"   # 3: fills record hour_ns (A9); results unchanged
 CACHE_DIR = _REPO / "runs/maker/cache"
 
 
@@ -150,15 +150,25 @@ def fill_pnl(side: int, price: int, qty: int, result_yes: bool, fee: float):
     return gross - fee, capital
 
 
+SIGNAL_GRID_NS = 2 * H_NS   # STGAT snapshots: 2 h windows ending on even UTC hours
+
+
 def signal_at(signal, ticker, H):
-    """A6.3: m_hat (cents) from the latest snapshot whose window ends at or
-    before H, or None. ``signal[ticker] = (end_ns sorted, m_hat_c)``."""
+    """A9: m_hat (cents) from the snapshot whose window ends EXACTLY at H, or
+    None. A snapshot ending at H - 1h forecasts (H - 1h, H], an hour already
+    over at H, so it is not a signal for an order posted at H.
+    ``signal[ticker] = (end_ns sorted, m_hat_c)``."""
     rec = signal.get(ticker) if signal else None
     if rec is None:
         return None
     e, m = rec
-    j = np.searchsorted(e, H, side="right") - 1
-    return float(m[j]) if j >= 0 else None
+    j = np.searchsorted(e, H, side="left")
+    return float(m[j]) if j < len(e) and e[j] == H else None
+
+
+def is_signal_hour(H) -> bool:
+    """A9 secondary report: quoting hours on the 2 h snapshot grid."""
+    return int(H) % SIGNAL_GRID_NS == 0
 
 
 def stgat_sides(mode, want_bid, want_ask, m_hat, spread):
@@ -261,9 +271,11 @@ def self_test() -> int:
     check("cluster CI of identical events collapses to the point (10%)", abs(lo - 10) < 1e-9 and abs(hi - 10) < 1e-9)
     # A6.3 signal and gating
     sig = {"A": (np.array([10, 12]) * H_NS, np.array([3.0, -5.0]))}
-    check("signal: latest snapshot ending <= H (H=11h -> the 10h one)", signal_at(sig, "A", 11 * H_NS) == 3.0)
-    check("signal: a snapshot ending exactly at H is used", signal_at(sig, "A", 12 * H_NS) == -5.0)
+    check("A9: a snapshot ending exactly at H is used (10h, 12h)",
+          signal_at(sig, "A", 10 * H_NS) == 3.0 and signal_at(sig, "A", 12 * H_NS) == -5.0)
+    check("A9: stale snapshot (ended H-1h) is no signal (H=11h -> none)", signal_at(sig, "A", 11 * H_NS) is None)
     check("signal never looks ahead (H=9h -> none)", signal_at(sig, "A", 9 * H_NS) is None)
+    check("signal hours are the even UTC hours", is_signal_hour(10 * H_NS) and not is_signal_hour(11 * H_NS))
     check("signal: unknown ticker -> none", signal_at(sig, "B", 11 * H_NS) is None)
     check("S4 skips the ask when m_hat > +s/2 (3 > 2)", stgat_sides("s4", False, True, 3.0, 4) == (False, False))
     check("S4 keeps the ask at m_hat = +s/2 exactly", stgat_sides("s4", False, True, 2.0, 4) == (False, True))
@@ -371,7 +383,7 @@ def month_of(ns: int) -> str:
 # ---------------------------------------------------------------- simulation
 
 def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None):
-    fills = []   # (event, ticker, side, price, qty, fee, net, capital, markout)
+    fills = []   # (event, ticker, side, price, qty, fee, net, capital, markout, hour_ns)
     mset = set(months)
     for ev, tks in events.items():
         pos = {tk: 0 for tk in tks}
@@ -451,7 +463,7 @@ def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None
                         fee = maker_fee_c(price, f, charged(L["series"], mo), mo)
                         net, cap = fill_pnl(side, price, f, L["yes"], fee)
                         mk = (side * (mid_next - price) * f) if mid_next is not None else np.nan
-                        fills.append((ev, tk, side, price, f, fee, net, cap, mk))
+                        fills.append((ev, tk, side, price, f, fee, net, cap, mk, H))
     return fills
 
 
@@ -529,7 +541,7 @@ def run_one(task):
                             event=np.array(cols[0], dtype=object), ticker=np.array(cols[1], dtype=object),
                             side=np.array(cols[2]), price=np.array(cols[3]), qty=np.array(cols[4]),
                             fee_c=np.array(cols[5]), net_c=np.array(cols[6]), capital_c=np.array(cols[7]),
-                            markout_c=np.array(cols[8], dtype=float))
+                            markout_c=np.array(cols[8], dtype=float), hour_ns=np.array(cols[9], dtype=np.int64))
     summ_f.write_text(json.dumps({**r, "config": dataclasses.asdict(cfg), "model": model, "months": months}))
     return cfg, model, r, False
 
@@ -564,18 +576,27 @@ def load_signal(path):
     """export_mid_signal.py output -> {ticker: (end_ns sorted, m_hat cents)}."""
     import polars as pl
     df = pl.read_parquet(path).sort(["ticker", "end_ns"])
+    off = df.filter(pl.col("end_ns") % SIGNAL_GRID_NS != 0).height
+    if off:
+        raise SystemExit(f"{off} signal rows are not on the 2 h grid: A9's signal hours would be wrong")
     return {tk: (g["end_ns"].to_numpy(), g["m_hat_c"].to_numpy())
             for (tk,), g in df.group_by(["ticker"], maintain_order=True)}
 
 
-def event_totals(cfg: Config, model: str, months) -> dict:
-    """{event: (net_c, capital_c)} from a run's saved fills (empty if none)."""
+def event_totals(cfg: Config, model: str, months, signal_hours_only=False) -> dict:
+    """{event: (net_c, capital_c)} from a run's saved fills (empty if none).
+    ``signal_hours_only`` (A9 secondary): fills from quotes posted on the 2 h grid."""
     f = CACHE_DIR / f"{cache_key(cfg, model, months)}.fills.npz"
     if not f.exists():
         return {}
     z = np.load(f, allow_pickle=True)
+    keep = np.ones(len(z["net_c"]), bool)
+    if signal_hours_only:
+        if "hour_ns" not in z.files:
+            raise SystemExit(f"{f.name} predates A9 (no hour_ns); delete it and rerun")
+        keep = (z["hour_ns"] % SIGNAL_GRID_NS) == 0
     out = {}
-    for e, n, c in zip(z["event"], z["net_c"], z["capital_c"]):
+    for e, n, c in zip(z["event"][keep], z["net_c"][keep], z["capital_c"][keep]):
         a = out.setdefault(str(e), [0.0, 0.0])
         a[0] += float(n)
         a[1] += float(c)
@@ -667,6 +688,14 @@ def main():
             for label, cfg in cfgs[-2:]:
                 for m in ("pess", "opt", "strict"):
                     ev_s, ev_b = event_totals(cfg, m, args.months), event_totals(base, m, args.months)
+                    pt, lo, hi = paired_diff_ci(ev_s, ev_b)
+                    print(f"  {label:<26} - base  {m.upper():<6} {pt:+7.2f}pp  CI95 [{lo:+7.2f}, {hi:+7.2f}]  "
+                          f"(k={len(set(ev_s) | set(ev_b)):,} events)")
+            print("\nA9 secondary (fills from quotes at signal hours only, H on the 2 h grid):")
+            for label, cfg in cfgs[-2:]:
+                for m in ("pess", "opt", "strict"):
+                    ev_s = event_totals(cfg, m, args.months, signal_hours_only=True)
+                    ev_b = event_totals(base, m, args.months, signal_hours_only=True)
                     pt, lo, hi = paired_diff_ci(ev_s, ev_b)
                     print(f"  {label:<26} - base  {m.upper():<6} {pt:+7.2f}pp  CI95 [{lo:+7.2f}, {hi:+7.2f}]  "
                           f"(k={len(set(ev_s) | set(ev_b)):,} events)")
