@@ -48,9 +48,17 @@ SCREEN_EPOCHS, PROMOTE_EPOCHS, FINAL_EPOCHS = 6, 20, 40
 N_SAMPLED, EARLY_EXIT_AFTER, PRUNE_EPOCHS = 16, 8, (2, 4)
 MIN_GAIN = 0.02            # 2% better than the defaults
 PATIENCE, MIN_DELTA = 5, 0.005
-DEFAULTS = {"embed_dim": 32, "n_heads": 4, "lr": 1e-3, "dropout": 0.0, "w_mece": 1.0}
-SPACE = {"embed_dim": [32, 64, 128], "n_heads": [2, 4, 8], "lr": [3e-4, 1e-3, 3e-3],
-         "dropout": [0.0, 0.1, 0.2], "w_mece": [0.5, 1.0, 2.0]}
+# Amendment B1.3: quote inputs {off, on} and the mid-move weight join the
+# space. The defaults entry has quote inputs off, w_mid 1, and the mid-move
+# head always present (S4 needs it).
+DEFAULTS = {"embed_dim": 32, "n_heads": 4, "lr": 1e-3, "dropout": 0.0, "w_mece": 1.0,
+            "quote_features": False, "w_mid": 1.0}
+# Amendment B2: embed_dim {16, 32}, not {32, 64, 128}. Measured peak for one
+# train step on the largest train chunk (2025-05, N=8,816): d32 4.6GB, d48
+# 6.1GB, d64/d128 killed at the 5.8GB cap (est. ~8/~14GB) on a 7.8GB VM.
+SPACE = {"embed_dim": [16, 32], "n_heads": [2, 4, 8], "lr": [3e-4, 1e-3, 3e-3],
+         "dropout": [0.0, 0.1, 0.2], "w_mece": [0.5, 1.0, 2.0],
+         "quote_features": [False, True], "w_mid": [0.5, 1.0, 2.0]}
 
 
 # ---------------------------------------------------------------- pure pieces
@@ -72,7 +80,8 @@ def sample_configs(n: int, seed: int = 0):
 
 
 def name_of(c: dict) -> str:
-    return f"d{c['embed_dim']}_h{c['n_heads']}_lr{c['lr']:g}_do{c['dropout']:g}_wm{c['w_mece']:g}"
+    return (f"d{c['embed_dim']}_h{c['n_heads']}_lr{c['lr']:g}_do{c['dropout']:g}_wm{c['w_mece']:g}"
+            f"_q{int(c['quote_features'])}_wmid{c['w_mid']:g}")
 
 
 def should_prune(val_at_epoch: float, earlier_at_epoch: list) -> bool:
@@ -108,6 +117,7 @@ def command(c: dict, epochs: int, seed: int, run_dir: Path):
             "--epochs", str(epochs), "--patience", str(PATIENCE), "--min-delta", str(MIN_DELTA),
             "--seed", str(seed), "--embed-dim", str(c["embed_dim"]), "--n-heads", str(c["n_heads"]),
             "--lr", str(c["lr"]), "--dropout", str(c["dropout"]), "--w-mece", str(c["w_mece"]),
+            "--w-mid", str(c["w_mid"]), *(["--quote-features"] if c["quote_features"] else []),
             "--checkpoint-dir", str(run_dir)]
 
 
@@ -125,6 +135,17 @@ def record(r: dict):
     OUT.mkdir(parents=True, exist_ok=True)
     with open(OUT / "results.jsonl", "a") as fh:
         fh.write(json.dumps(r) + "\n")
+
+
+def ablation_config(screened):
+    """B1.4: the best quote-OFF configuration from the screen, or None unless
+    the best quote-ON screened run beats the best quote-OFF one by >= 2%."""
+    ok = [r for r in screened if r.get("best_val") is not None and r.get("status") == "done"]
+    on = sorted((r for r in ok if r["config"].get("quote_features")), key=lambda r: r["best_val"])
+    off = sorted((r for r in ok if not r["config"].get("quote_features")), key=lambda r: r["best_val"])
+    if on and off and beats(on[0]["best_val"], off[0]["best_val"]):
+        return off[0]["config"]
+    return None
 
 
 def run(c, epochs, seed, stage, prune_ref=None, dry=False):
@@ -209,8 +230,20 @@ def main_run(dry: bool):
     # ---- 3. FINAL
     print(f"\n== FINAL: {name_of(winner)} x 4 seeds", flush=True)
     finals = [run(winner, FINAL_EPOCHS, s, "final", dry=dry) for s in range(4)]
+    # ---- 4. B1.4 ABLATION: does the book help? Only if the winner uses quote
+    # inputs AND the screen shows them winning by >= 2%.
+    ablation = None
+    if not dry and winner.get("quote_features"):
+        off = ablation_config(screened)
+        if off is not None:
+            print(f"\n== ABLATION (B1.4): best quote-off config {name_of(off)} x 4 seeds", flush=True)
+            ablation = [run(off, FINAL_EPOCHS, s, "ablation") for s in range(4)]
+        else:
+            print("\n== ABLATION (B1.4) skipped: quote inputs did not win the screen by 2%", flush=True)
     if not dry:
-        (OUT / "winner.json").write_text(json.dumps({"config": winner, "runs": [f["run"] for f in finals]}, indent=2))
+        (OUT / "winner.json").write_text(json.dumps(
+            {"config": winner, "runs": [f["run"] for f in finals],
+             "ablation_runs": [a["run"] for a in ablation] if ablation else None}, indent=2))
         print(f"\nwinner and final checkpoints recorded in {OUT / 'winner.json'}")
     print("exit: 0")
 
@@ -237,6 +270,21 @@ def self_test() -> int:
     months = cmd[cmd.index("--months") + 1: cmd.index("--split")]
     check("training is never given a test month (>= 2025-08)", max(months) == "2025-07" and "2025-08" not in months)
     check("split flag matches the 7/2/4 design", cmd[cmd.index("--split") + 1] == "2025-05,2025-07")
+    check("defaults: quote inputs off, w_mid 1 (head present)",
+          "--quote-features" not in cmd and cmd[cmd.index("--w-mid") + 1] == "1.0")
+    qc = dict(DEFAULTS, quote_features=True, w_mid=2.0)
+    qcmd = command(qc, 6, 0, Path("x"))
+    check("quote-on config passes --quote-features and its w_mid",
+          "--quote-features" in qcmd and qcmd[qcmd.index("--w-mid") + 1] == "2.0")
+    check("both quote settings appear in the 16 sampled configs",
+          {c["quote_features"] for c in s} == {False, True})
+    check("run names distinguish quote on/off", name_of(qc) != name_of(dict(qc, quote_features=False)))
+
+    def R(q, v):
+        return {"config": dict(DEFAULTS, quote_features=q, lr=v), "best_val": v, "status": "done"}
+    check("B1.4 ablation when quote-on wins the screen by >= 2%",
+          ablation_config([R(True, 0.0049), R(False, 0.0050)])["quote_features"] is False)
+    check("no ablation when the margin is < 2%", ablation_config([R(True, 0.00495), R(False, 0.0050)]) is None)
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
 

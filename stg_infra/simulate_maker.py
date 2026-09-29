@@ -78,11 +78,18 @@ class Config:
     event_limit: int = 200
     universe: str = "mece"       # mece | liquid
     min_trades_24h: int = 0      # causal liquidity rule: trades in (H-24h, H]
+    stgat: str = ""              # A6.3: "" (no model) | "s4" (filter) | "s5" (model-led); needs --signal
 
     def name(self):
         return (f"univ={self.universe} sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
                 f"minspr={self.min_spread} series={self.series} liq24h>={self.min_trades_24h} inv={self.pos_limit} "
-                f"basket={int(self.basket)}")
+                f"basket={int(self.basket)}" + (f" stgat={self.stgat}" if self.stgat else ""))
+
+
+# A6.3 S5, fixed before the base test: all MECE legs, 1-99c, spread >= 4c,
+# inventory 25, improve by 1c (when spread >= 3c), both sides, model-gated.
+S5_CONFIG = Config(sides="both", improve=1, band_lo=1, band_hi=99, min_spread=4,
+                   pos_limit=25, universe="mece", stgat="s5")
 
 
 # ---------------------------------------------------------------- pure pieces
@@ -141,6 +148,52 @@ def fill_pnl(side: int, price: int, qty: int, result_yes: bool, fee: float):
         gross = (price - (100 if result_yes else 0)) * qty
         capital = (100 - price) * qty
     return gross - fee, capital
+
+
+def signal_at(signal, ticker, H):
+    """A6.3: m_hat (cents) from the latest snapshot whose window ends at or
+    before H, or None. ``signal[ticker] = (end_ns sorted, m_hat_c)``."""
+    rec = signal.get(ticker) if signal else None
+    if rec is None:
+        return None
+    e, m = rec
+    j = np.searchsorted(e, H, side="right") - 1
+    return float(m[j]) if j >= 0 else None
+
+
+def stgat_sides(mode, want_bid, want_ask, m_hat, spread):
+    """A6.3 / B1.5 order gating by the predicted next-hour mid move m_hat (cents).
+    s4: the base, minus an ask when m_hat > +s/2 and a bid when m_hat < -s/2;
+        no signal -> the base order stands.
+    s5: a bid only if m_hat > +s/2, an ask only if m_hat < -s/2; no signal -> nothing."""
+    if mode == "s4":
+        if m_hat is None:
+            return want_bid, want_ask
+        return want_bid and not (m_hat < -spread / 2), want_ask and not (m_hat > spread / 2)
+    if mode == "s5":
+        if m_hat is None:
+            return False, False
+        return want_bid and m_hat > spread / 2, want_ask and m_hat < -spread / 2
+    return want_bid, want_ask
+
+
+def paired_diff_ci(ev_a, ev_b, n=2000, seed=0):
+    """(point, lo, hi) of ret(A) - ret(B), percent, resampling the union of
+    events so both strategies see the same draw. ev_* = {event: (net_c, capital_c)}."""
+    keys = sorted(set(ev_a) | set(ev_b))
+    if len(keys) < 2:
+        return float("nan"), float("nan"), float("nan")
+    a = np.array([ev_a.get(k, (0.0, 0.0)) for k in keys], float)
+    b = np.array([ev_b.get(k, (0.0, 0.0)) for k in keys], float)
+
+    def ret(x, idx=None):
+        x = x if idx is None else x[idx]
+        return x[..., 0].sum(-1) / np.maximum(x[..., 1].sum(-1), 1e-9) * 100
+
+    point = float(ret(a) - ret(b))
+    idx = np.random.default_rng(seed).integers(0, len(keys), (n, len(keys)))
+    d = ret(a, idx) - ret(b, idx)
+    return point, float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
 
 
 def cluster_ci(net_by_event, cap_by_event, n=2000, seed=0):
@@ -206,6 +259,30 @@ def self_test() -> int:
     check("liquidity rule never looks ahead: at H=4h only the 1h trade counts", recent_trades(tt, 4 * H_NS) == 1)
     lo, hi = cluster_ci([10, 10, 10, 10], [100, 100, 100, 100], n=200)
     check("cluster CI of identical events collapses to the point (10%)", abs(lo - 10) < 1e-9 and abs(hi - 10) < 1e-9)
+    # A6.3 signal and gating
+    sig = {"A": (np.array([10, 12]) * H_NS, np.array([3.0, -5.0]))}
+    check("signal: latest snapshot ending <= H (H=11h -> the 10h one)", signal_at(sig, "A", 11 * H_NS) == 3.0)
+    check("signal: a snapshot ending exactly at H is used", signal_at(sig, "A", 12 * H_NS) == -5.0)
+    check("signal never looks ahead (H=9h -> none)", signal_at(sig, "A", 9 * H_NS) is None)
+    check("signal: unknown ticker -> none", signal_at(sig, "B", 11 * H_NS) is None)
+    check("S4 skips the ask when m_hat > +s/2 (3 > 2)", stgat_sides("s4", False, True, 3.0, 4) == (False, False))
+    check("S4 keeps the ask at m_hat = +s/2 exactly", stgat_sides("s4", False, True, 2.0, 4) == (False, True))
+    check("S4 skips a bid when m_hat < -s/2", stgat_sides("s4", True, True, -3.0, 4) == (False, True))
+    check("S4 without a signal = the base", stgat_sides("s4", False, True, None, 4) == (False, True))
+    check("S5 bids only when m_hat > +s/2", stgat_sides("s5", True, True, 3.0, 4) == (True, False))
+    check("S5 asks only when m_hat < -s/2", stgat_sides("s5", True, True, -3.0, 4) == (False, True))
+    check("S5 posts nothing inside the band", stgat_sides("s5", True, True, 1.0, 4) == (False, False))
+    check("S5 without a signal posts nothing", stgat_sides("s5", True, True, None, 4) == (False, False))
+    check("no model: sides unchanged", stgat_sides("", True, False, 9.0, 4) == (True, False))
+    ev = {"e1": (10.0, 100.0), "e2": (-5.0, 50.0), "e3": (3.0, 30.0)}
+    pt, lo, hi = paired_diff_ci(ev, ev, n=200)
+    check("paired CI of a strategy against itself is exactly 0", pt == 0 and lo == 0 and hi == 0)
+    pt, lo, hi = paired_diff_ci({"e1": (20.0, 100.0), "e2": (10.0, 100.0)}, {"e1": (10.0, 100.0), "e2": (0.0, 100.0)}, n=200)
+    check("paired CI: +10pp on every event -> point and CI exactly +10", abs(pt - 10) < 1e-9 and abs(lo - 10) < 1e-9 and abs(hi - 10) < 1e-9)
+    check("S5 config matches A6.3", (S5_CONFIG.band_lo, S5_CONFIG.band_hi, S5_CONFIG.min_spread, S5_CONFIG.pos_limit,
+                                     S5_CONFIG.improve, S5_CONFIG.sides, S5_CONFIG.universe) == (1, 99, 4, 25, 1, "both", "mece"))
+    check("configs without a model keep their old cache keys",
+          "stgat" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(stgat="s4"))["stgat"] == "s4")
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
 
@@ -293,7 +370,7 @@ def month_of(ns: int) -> str:
 
 # ---------------------------------------------------------------- simulation
 
-def simulate(cfg: Config, model: str, legs, events, charged, months):
+def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None):
     fills = []   # (event, ticker, side, price, qty, fee, net, capital, markout)
     mset = set(months)
     for ev, tks in events.items():
@@ -340,6 +417,9 @@ def simulate(cfg: Config, model: str, legs, events, charged, months):
                 orders = []
                 want_bid = cfg.basket or cfg.sides in ("both", "bid")
                 want_ask = (not cfg.basket) and cfg.sides in ("both", "ask")
+                if cfg.stgat:
+                    want_bid, want_ask = stgat_sides(cfg.stgat, want_bid, want_ask,
+                                                     signal_at(signal, tk, H), spread)
                 imp = cfg.improve and spread >= 3 and not cfg.basket
                 if want_bid:
                     orders.append((+1, b + (1 if imp else 0), b))
@@ -405,10 +485,26 @@ def data_fingerprint(months) -> str:
     return hashlib.sha1("|".join(f"{f.name}:{f.stat().st_size}" for f in files).encode()).hexdigest()[:12]
 
 
+def _cfg_key_dict(cfg: Config) -> dict:
+    """Config as hashed into the cache key. ``stgat`` is left out when unset,
+    so every configuration cached before A6.3 keeps its key."""
+    d = dataclasses.asdict(cfg)
+    if not d["stgat"]:
+        d.pop("stgat")
+    return d
+
+
+SIGNAL_PATH = None   # set by --signal; its fingerprint enters the key of model-gated runs
+
+
 def cache_key(cfg: Config, model: str, months) -> str:
     import hashlib
-    blob = json.dumps({"cfg": dataclasses.asdict(cfg), "model": model, "months": sorted(months), "v": SIM_VERSION,
-                       "data": data_fingerprint(months)}, sort_keys=True)
+    blob = {"cfg": _cfg_key_dict(cfg), "model": model, "months": sorted(months), "v": SIM_VERSION,
+            "data": data_fingerprint(months)}
+    if cfg.stgat:
+        st = Path(SIGNAL_PATH).stat()
+        blob["signal"] = f"{Path(SIGNAL_PATH).name}:{st.st_size}:{int(st.st_mtime)}"
+    blob = json.dumps(blob, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:16]
 
 
@@ -422,7 +518,7 @@ def run_one(task):
     summ_f = CACHE_DIR / f"{key}.json"
     if summ_f.exists():
         return cfg, model, json.loads(summ_f.read_text()), True
-    fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months)
+    fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months, _G.get("signal"))
     r = summarise(fills)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     # NO polars in forked workers: polars' thread pool can deadlock after fork()
@@ -449,6 +545,8 @@ def run_many(tasks, workers):
         months = sorted({m for t in sub_t for m in t[2]})
         _G.clear()
         _G["legs"], _G["events"], _G["charged"] = load(months, univ)
+        if any(t[0].stgat for t in sub_t):
+            _G["signal"] = load_signal(SIGNAL_PATH)
         print(f"loaded universe={univ} {months[0]}..{months[-1]}: {len(_G['legs']):,} legs, "
               f"{len(_G['events']):,} events; running {len(sub_t)} simulations", flush=True)
         with mp.get_context("fork").Pool(workers) as pool:
@@ -460,6 +558,28 @@ def run_many(tasks, workers):
         if (t[0], t[1]) not in results:
             results[(t[0], t[1])] = json.loads((CACHE_DIR / f"{cache_key(*t)}.json").read_text())
     return results
+
+
+def load_signal(path):
+    """export_mid_signal.py output -> {ticker: (end_ns sorted, m_hat cents)}."""
+    import polars as pl
+    df = pl.read_parquet(path).sort(["ticker", "end_ns"])
+    return {tk: (g["end_ns"].to_numpy(), g["m_hat_c"].to_numpy())
+            for (tk,), g in df.group_by(["ticker"], maintain_order=True)}
+
+
+def event_totals(cfg: Config, model: str, months) -> dict:
+    """{event: (net_c, capital_c)} from a run's saved fills (empty if none)."""
+    f = CACHE_DIR / f"{cache_key(cfg, model, months)}.fills.npz"
+    if not f.exists():
+        return {}
+    z = np.load(f, allow_pickle=True)
+    out = {}
+    for e, n, c in zip(z["event"], z["net_c"], z["capital_c"]):
+        a = out.setdefault(str(e), [0.0, 0.0])
+        a[0] += float(n)
+        a[1] += float(c)
+    return {k: tuple(v) for k, v in out.items()}
 
 
 def fmt(r):
@@ -487,9 +607,16 @@ def main():
     ap.add_argument("--config", help="frozen config JSON for a test run")
     ap.add_argument("--out", default=None)
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--signal", default=None,
+                    help="A6.3: seed-averaged STGAT mid-move signal (export_mid_signal.py). With --config, "
+                         "adds S4 (base + filter) and S5 (model-led) and reports S4 - base and S5 - base.")
     args = ap.parse_args()
     if args.self_test:
         return self_test()
+    if args.signal and (args.grid or not args.config):
+        raise SystemExit("--signal runs S4/S5 beside the frozen base: it needs --config and no --grid.")
+    global SIGNAL_PATH
+    SIGNAL_PATH = args.signal
     if args.grid and max(args.months) >= FIRST_VAL_MONTH:
         raise SystemExit("REFUSED: the search runs on TRAIN months only; validation sees only the "
                          "shortlist and test sees only the frozen winner (amendment A4).")
@@ -524,12 +651,25 @@ def main():
             print(f"\nSELECTED (frozen for the single test run): {vok[0][0].name()}\nwritten to {args.out}")
     else:
         cfgs = [("S1 (pre-registered reference)", Config())]
+        base = None
         if args.config:
-            cfgs.insert(0, ("SELECTED (frozen)", Config(**json.loads(Path(args.config).read_text()))))
+            base = Config(**json.loads(Path(args.config).read_text()))
+            cfgs.insert(0, ("SELECTED (frozen)", base))
+        if args.signal:
+            cfgs += [("S4 (base + STGAT filter)", dataclasses.replace(base, stgat="s4")),
+                     ("S5 (STGAT-led)", S5_CONFIG)]
         res = run_many([(c, m, args.months) for _, c in cfgs for m in ("opt", "pess", "strict")], args.workers)
         for label, cfg in cfgs:
             for m in ("opt", "pess", "strict"):
                 print(f"{label:<30} {m.upper():<4} {fmt(res[(cfg, m)])}")
+        if args.signal:
+            print("\nA6.3 comparisons against the frozen base (event-resampled, same draw for both):")
+            for label, cfg in cfgs[-2:]:
+                for m in ("pess", "opt", "strict"):
+                    ev_s, ev_b = event_totals(cfg, m, args.months), event_totals(base, m, args.months)
+                    pt, lo, hi = paired_diff_ci(ev_s, ev_b)
+                    print(f"  {label:<26} - base  {m.upper():<6} {pt:+7.2f}pp  CI95 [{lo:+7.2f}, {hi:+7.2f}]  "
+                          f"(k={len(set(ev_s) | set(ev_b)):,} events)")
     print("\nexit: 0")
     return 0
 

@@ -183,6 +183,87 @@ than −½·spread; skip the ask if it is more than +½·spread. Everything else
 - The S4 − base difference is positive; whether its CI excludes 0 is
   uncertain (roughly a 25–35% chance).
 
+## 6b. B1 implementation notes (2026-09-29, before any tuning run or result)
+
+Recorded when B1 was implemented. No STGAT has been trained on `cache_724/`,
+and no quote-feature or mid-move output has been seen.
+
+- **Attached at load time, not built into the cache.** `model/quote_features.py`
+  joins the quote partitions (`data/quotes/by_month/`) to each chunk as it is
+  materialised, using the bundle's `timestamps` and `node_ids`. `cache_724/`
+  is unchanged (F = 10 on disk), so no month is rebuilt for B1.
+- **Layout.** The 9-slot block is inserted before the node-type slot (width
+  10 -> 19), so existing slots keep their indices (time_to_close stays slot 8,
+  still zeroed) and the type indicator stays last. On hubs, slots 0-3 of the
+  block hold the four B1.1 aggregates; the rest are 0.
+- **Definitions fixed where B1.1 left room:**
+  - `q_print_minus_mid` uses the window's last trade (slot 0) only when the
+    leg traded in the window (volume > 0); otherwise it is 0, because a
+    carried-forward print is not "the last trade in the window".
+  - Hub aggregates sum over legs linked to the hub in that snapshot and having
+    a candle (`q_has` = 1); the share quoted is over linked legs.
+  - The lookup reaches back to the start of the previous month. Candles are
+    hourly while a market is listed, so this does not bind for live legs.
+  - Quote inputs are 0 wherever the node is unobserved (mask false), as for
+    all inputs.
+- **B1.2 target:** requires candles ending **exactly** at E_t and E_t + 1h,
+  both two-sided (bid > 0, ask < 1), on an observed ticker. It is in
+  dollars, and the zero-move baseline is scored on the same positions.
+- **Head:** one zero-initialised linear layer. It is constructed outside the
+  RNG stream, so `--w-mid 0` without `--quote-features` reproduces earlier
+  runs exactly. With `--w-mid > 0`, history.csv gains `val_mid`,
+  `val_mid_zero`, `val_mid_ratio` and `val_mid_n`.
+- **B1.4 rule in code:** the ablation runs when the winner has quote inputs on
+  and the best quote-on **screened** run beats the best quote-off screened
+  run by >= 2% (validation MECE).
+- **Known-answer test:** `python stg_infra/model/quote_features.py --self-test`
+  (24 checks, all pass), including the three planted candles B1.1 requires.
+
+## 6c. Amendment B2 (2026-09-29, before any tuning run or result)
+
+No tuning run has started and no STGAT has been trained on `cache_724/`
+beyond one-epoch smoke runs used only to check memory and plumbing.
+
+**B2.1 Search space: `embed_dim` {16, 32}, replacing {32, 64, 128}.** Measured
+peak for one training step (forward + backward) on the largest train chunk
+(2025-05, N = 8,816 nodes, T = 142), quote inputs on, under a 5.8 GB cgroup
+cap on the 7.8 GB WSL VM:
+
+| embed_dim | peak | fits? |
+|---|---|---|
+| 32 | 4.6 GB | yes |
+| 48 | 6.1 GB | at the cap, no headroom |
+| 64 | killed (est. ~8 GB) | no |
+| 128 | killed (est. ~14 GB) | no, even at 12 GB |
+
+Two-thirds of the old space would have been OOM-killed and recorded as failed
+runs with partial histories, which biases the screen. {16, 32} keeps a model
+size dimension that fits with headroom. All other dimensions are unchanged.
+The defaults entry (d32) is unchanged, so the 2% rule compares against the
+same baseline.
+
+**B2.2 Temporal attention node batch = min(512, 2048 / n_heads).** An 8-head
+model at 512 doubled the attention transient. Attention is per node, so this
+changes memory, not results: h <= 4 keeps 512 exactly; at h = 8 (256) outputs
+and gradients match 512 to float rounding (checked on random inputs).
+
+**B2.3 Test-time scoring, fixed now (`score_forecast.py`).**
+- B1.2 report: head MSE vs zero move and vs a one-parameter shrinkage oracle
+  y_hat = alpha * x, where x is the **previous-hour quoted-mid move**,
+  mid(E_t) - mid(E_t - 1h), from candles ending exactly at those times and
+  both two-sided (else x = 0). alpha is fitted on the scored split
+  (optimistic), as for the other oracles.
+- 95% CIs resample **events** (ticker minus its last `-` segment, e.g.
+  `KXHIGHNY-25JUN08-T81` -> `KXHIGHNY-25JUN08`), alpha refit per resample;
+  k is printed beside every CI.
+- The S4/S5 signal (`export_mid_signal.py`): m_hat in cents on observed
+  ticker nodes, keyed by window end E_t, averaged over the 4 final seeds;
+  seeds must cover identical positions or the export fails.
+
+**B2.4 Data note.** The raw trades for 2025-11 end on 2025-11-25 at about
+19:50 UTC, so the 2025-11 test month has 296 snapshots (to 11-25 18:00), not
+a full month. Known before any test result.
+
 ## 7. Known constraints
 
 - CPU only and 7 GB of RAM, so one job runs at a time. Estimated cost:

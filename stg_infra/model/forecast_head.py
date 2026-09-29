@@ -107,3 +107,22 @@ class ResidualForecastHead(nn.Module):
         inspect when asking whether it has learned anything beyond
         persistence, for which every delta would be 0."""
         return self.net(h_final)
+
+class MidMoveHead(nn.Module):
+    """Amendment B1.2: next-hour change in the QUOTED mid, per ticker node,
+    in dollars. One linear layer on h_final, as pre-registered.
+
+    Zero-initialised, so it starts as the zero-move baseline it is scored
+    against. It is constructed inside torch.random.fork_rng() by the
+    trainer, so adding it does not shift the RNG stream the backbone and
+    forecast head were initialised from: a run with --w-mid 0 and no quote
+    inputs reproduces an earlier run exactly."""
+
+    def __init__(self, embed_dim: int):
+        super().__init__()
+        self.lin = nn.Linear(embed_dim, 1)
+        nn.init.zeros_(self.lin.weight)
+        nn.init.zeros_(self.lin.bias)
+
+    def forward(self, h_final: torch.Tensor) -> torch.Tensor:
+        return self.lin(h_final).squeeze(-1)             # (T, N)

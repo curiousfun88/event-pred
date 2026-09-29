@@ -58,12 +58,13 @@ sys.path.insert(0, str(_THIS_DIR))
 sys.path.insert(0, str(_THIS_DIR / "examples"))
 
 from model.chunking import build_split_ranges, chunk_ranges, describe_chunks  # noqa: E402
-from model.forecast_head import ResidualForecastHead  # noqa: E402
+from model.forecast_head import MidMoveHead, ResidualForecastHead  # noqa: E402
 from model.forecast_objective import (  # noqa: E402
     MechanismForecastObjective, format_horizons, format_mechanisms, format_strata,
     _shrinkage_mse,
 )
 from model.month_store import MonthlyBundleStore, build_month_paths  # noqa: E402
+from model.quote_features import N_QUOTE, QuoteAttacher  # noqa: E402
 from model.run_guards import (  # noqa: E402
     BaselineFingerprint, check_drop_edges, check_history_columns, check_hub_slot,
     check_ladder_persistence_decomposition, check_month_schema,
@@ -157,7 +158,7 @@ def _mece_context(ct, features):
 
 
 def _chunk_loss(model, head, objective, ct, label="", supervise="active",
-                drop_edges=()):
+                drop_edges=(), mid_head=None, w_mid=0.0, keep_mid=False):
     """One chunk: backbone -> head -> horizon loss. Shared by train and
     val so the two cannot drift apart in what they compute.
 
@@ -191,11 +192,43 @@ def _chunk_loss(model, head, objective, ct, label="", supervise="active",
     # supervision of the derived quantity (gap, basket sum). The first
     # teaches the model the relationship; the second makes it optimise the
     # number the strategy is actually read from.
-    return objective.compute_loss(
+    out = objective.compute_loss(
         pred, prices, mask_sup, eligible,
         ladder_adj=adj.get("ladder_monotonic"),
         mece_adj=adj.get("mece_leg_to_basket"),
         mece_ctx=_mece_context(ct, features))
+    # Amendment B1.2: next-hour quoted-mid move, an auxiliary term added to
+    # the unchanged objective. Scored against the zero-move baseline on the
+    # same positions. The target is built from quotes after E_t only and is
+    # never an input (model/quote_features.py).
+    if mid_head is not None and "mid_target" in ct:
+        m = ct["mid_mask"]
+        n_mid = int(m.sum())
+        if n_mid:
+            y = ct["mid_target"][m]
+            err = mid_head(h_final)[m] - y
+            mse = (err ** 2).mean()
+            out["mid"] = {"n": n_mid, "sse": float((err ** 2).sum().detach()),
+                          "sse_zero": float((y ** 2).sum())}
+            if keep_mid:
+                # score_forecast.py only: per-position rows for the oracle and
+                # the event-cluster bootstrap.
+                out["mid"]["rows"] = {
+                    "pred": (err + y).detach().double().numpy(), "y": y.double().numpy(),
+                    "x": ct["mid_prev"][m].double().numpy(),
+                    "node": m.nonzero()[:, 1].numpy()}
+            if w_mid > 0:
+                out["loss"] = out["loss"] + w_mid * mse
+        else:
+            out["mid"] = {"n": 0, "sse": 0.0, "sse_zero": 0.0}
+    return out
+
+
+def _accum_mid(dst, out):
+    d = out.get("mid")
+    if d:
+        for k in ("n", "sse", "sse_zero"):
+            dst[k] = dst.get(k, 0) + d[k]
 
 
 def _accum(dst, src, key_n="n"):
@@ -312,6 +345,15 @@ def main():
                          "this RELATIVE amount (0.005 = 0.5%%). Default 0 reproduces earlier runs")
     ap.add_argument("--split", default=None,
                     help="'TRAIN_END,VAL_END' (e.g. 2025-05,2025-07 for the 7/2/4 design). Default: data_windows constants")
+    ap.add_argument("--quote-features", action="store_true",
+                    help="Amendment B1.1: add quoted top-of-book inputs (model/quote_features.py), "
+                         "attached per chunk from --quotes-dir. Default off, so earlier runs reproduce.")
+    ap.add_argument("--w-mid", type=float, default=0.0,
+                    help="Amendment B1.2: weight on the next-hour quoted-mid-move head. With a value "
+                         "> 0 the head is trained and scored against the zero-move baseline every "
+                         "epoch. Default 0 (and no quote loading), so earlier runs reproduce.")
+    ap.add_argument("--quotes-dir", default="data/quotes/by_month",
+                    help="monthly quote partitions (partition_quotes.py), used by --quote-features / --w-mid")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
     ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default="whole_settle",
@@ -341,6 +383,18 @@ def main():
     store = MonthlyBundleStore(build_month_paths(months, cache_dir), verbose=True)
     print(store.summary(), flush=True)
     check_month_schema(store)
+    use_quotes = args.quote_features or args.w_mid > 0
+    if use_quotes:
+        qdir = Path(args.quotes_dir)
+        if not qdir.is_absolute():
+            qdir = _REPO_ROOT / qdir
+        src = QuoteAttacher(store, qdir, WINDOW, with_inputs=args.quote_features)
+        print(f"Quotes (amendment B1) from {qdir}: inputs {'ON' if args.quote_features else 'off'} "
+              f"(+{N_QUOTE if args.quote_features else 0} slots before the type slot), "
+              f"mid-move head w_mid={args.w_mid}", flush=True)
+    else:
+        src = store
+    feature_width = src.feature_width
 
     cfg = TrainingConfig(embed_dim=args.embed_dim, n_heads=args.n_heads,
                          chunk_len=args.chunk_len, lr=args.lr, epochs=args.epochs,
@@ -372,7 +426,7 @@ def main():
         raise SystemExit(f"--chunk-len {cfg.chunk_len} must exceed the longest horizon "
                          f"({max_h}), or no position can be supervised.")
 
-    model = STGATBackbone(padded_feature_width=store.feature_width,
+    model = STGATBackbone(padded_feature_width=feature_width,
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
                           max_len=cfg.chunk_len, zero_input_slots=cfg.zero_input_slots,
                           zero_ladder_edge_features=cfg.zero_ladder_edge_features)
@@ -382,12 +436,17 @@ def main():
     print("Fitting feature standardization on TRAIN chunks only ...", flush=True)
     t0 = time.time()
     feat_mean, feat_std, n_obs = _compute_train_feature_stats(
-        store.materialize_chunk, train_chunks, store.feature_width)
+        src.materialize_chunk, train_chunks, feature_width)
     model.fit_standardization(feat_mean, feat_std)
     print(f"  fitted on {n_obs:,} observed positions in {time.time() - t0:.1f}s", flush=True)
 
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=args.horizons,
                                 dropout=args.dropout)
+    # Built outside the RNG stream (see MidMoveHead): runs without it reproduce.
+    mid_head = None
+    if use_quotes:
+        with torch.random.fork_rng():
+            mid_head = MidMoveHead(cfg.embed_dim)
     objective = MechanismForecastObjective(
         horizons=args.horizons, huber_beta=args.huber,
         w_node=args.w_node, w_ladder=args.w_ladder, w_mece=args.w_mece,
@@ -399,7 +458,7 @@ def main():
     # against the hand-written argparse choices list -- those are different
     # things and only the first is evidence. Same probe chunk also checks the
     # basket hub's leg-count slot, which every coverage fraction divides by.
-    _probe = store.materialize_chunk(train_chunks[0])
+    _probe = src.materialize_chunk(train_chunks[0])
     check_drop_edges(args.drop_edges, _probe["adjacency_by_type"].keys())
     check_hub_slot(_probe, SLOT_LEGS_TOTAL)
     del _probe
@@ -407,8 +466,10 @@ def main():
           f"mece={args.w_mece} | supervise={args.supervise} "
           f"| select_on={args.select_on} "
           f"| monitor_unweighted={args.monitor_unweighted}\n", flush=True)
-    optimizer = torch.optim.Adam(list(model.parameters()) + list(head.parameters()),
-                                 lr=cfg.lr)
+    params = list(model.parameters()) + list(head.parameters())
+    if mid_head is not None and args.w_mid > 0:
+        params += list(mid_head.parameters())
+    optimizer = torch.optim.Adam(params, lr=cfg.lr)
 
     ckpt_dir = Path(args.checkpoint_dir)
     if not ckpt_dir.is_absolute():
@@ -459,22 +520,25 @@ def main():
 
         model.train()
         head.train()
+        if mid_head is not None:
+            mid_head.train()
+        mid_tr, mid_va = {}, {}
         tr_l, tr_p, tr_n = 0.0, 0.0, 0
         acc_h, acc_m, acc_s = {}, {}, {}
         tr_node, tr_node_p = 0.0, 0.0
         for pos, idx in enumerate(order):
             c = train_chunks[idx]
             lbl = f"e{epoch} train {pos + 1}/{len(order)}"
-            ct = store.materialize_chunk(c)
+            ct = src.materialize_chunk(c)
             out = _chunk_loss(model, head, objective, ct, lbl, args.supervise,
-                              drop_edges=tuple(args.drop_edges))
+                              drop_edges=tuple(args.drop_edges),
+                              mid_head=mid_head, w_mid=args.w_mid)
             if out["n"] == 0:
                 del ct
                 continue
             optimizer.zero_grad()
             out["loss"].backward()
-            torch.nn.utils.clip_grad_norm_(
-                list(model.parameters()) + list(head.parameters()), 1.0)
+            torch.nn.utils.clip_grad_norm_(params, 1.0)
             optimizer.step()
             tr_l += float(out["loss"].detach()) * out["n"]
             tr_p += out["persistence"] * out["n"]
@@ -482,6 +546,7 @@ def main():
             _accum(acc_h, out["per_horizon"])
             _accum(acc_m, out.get("mechanisms", {}))
             _accum(acc_s, out.get("strata", {}))
+            _accum_mid(mid_tr, out)
             tr_node += out["node_loss"] * out["n"]
             tr_node_p += out["persistence"] * out["n"]
             print(f"  [{lbl}] n={out['n']:,} loss={float(out['loss'].detach()):.5f} "
@@ -491,15 +556,19 @@ def main():
 
         model.eval()
         head.eval()
+        if mid_head is not None:
+            mid_head.eval()
         va_l, va_p, va_n = 0.0, 0.0, 0
         vacc_h, vacc_m, vacc_s = {}, {}, {}
         va_node, va_node_p = 0.0, 0.0
         with torch.no_grad():
             for pos, c in enumerate(val_chunks):
-                ct = store.materialize_chunk(c)
+                ct = src.materialize_chunk(c)
                 out = _chunk_loss(model, head, objective, ct,
                                   f"e{epoch} val {pos + 1}", args.supervise,
-                                  drop_edges=tuple(args.drop_edges))
+                                  drop_edges=tuple(args.drop_edges),
+                                  mid_head=mid_head, w_mid=args.w_mid)
+                _accum_mid(mid_va, out)
                 if out["n"]:
                     va_l += float(out["loss"]) * out["n"]
                     va_p += out["persistence"] * out["n"]
@@ -581,6 +650,13 @@ def main():
             print(f"  >>> beating persistence on {_hl_n}: {_hl_r:.3f}x (n={_n_moved:,}). "
                   f"Pooled node ratio is {va_ratio:.3f}x only because {_flat_pct:.0f}% of "
                   f"positions do not move, and persistence is exact on those.")
+        if mid_head is not None:
+            for _lab, _d in (("train", mid_tr), ("val", mid_va)):
+                if _d.get("n"):
+                    print(f"  mid-move head ({_lab}): MSE {_d['sse'] / _d['n']:.6f} vs zero-move "
+                          f"{_d['sse_zero'] / _d['n']:.6f} = "
+                          f"{_d['sse'] / _d['sse_zero'] if _d['sse_zero'] else float('nan'):.3f}x "
+                          f"(n={_d['n']:,})")
         print(flush=True)
 
         def _m(name, field, default=float("nan")):
@@ -613,6 +689,15 @@ def main():
                 v = _m(mech, field, 0 if field == "n" else float("nan"))
                 row[f"val_{mech}{suffix}"] = (f"{v:.0f}" if field == "n"
                                               else f"{float(v):.6f}")
+        # Mid-move columns only when the head exists, so runs without it
+        # keep the exact history.csv layout they always had.
+        if mid_head is not None:
+            _n = mid_va.get("n", 0)
+            _mm = mid_va["sse"] / _n if _n else float("nan")
+            _mz = mid_va["sse_zero"] / _n if _n else float("nan")
+            row["val_mid"], row["val_mid_zero"] = f"{_mm:.8f}", f"{_mz:.8f}"
+            row["val_mid_ratio"] = f"{_mm / _mz if _mz else float('nan'):.6f}"
+            row["val_mid_n"] = f"{_n}"
         row["seconds"] = f"{secs:.1f}"
 
         if epoch == 0 or not hist_path.exists():
@@ -628,6 +713,11 @@ def main():
             "objective": "horizon_forecast_residual",
             "split": list(__import__("data_windows").active_split()),
             "drop_edges": list(args.drop_edges),
+            # Amendment B1. A scorer must attach the same quote block (and
+            # use this width) before it can read a quote_features model.
+            "quote_features": bool(args.quote_features), "w_mid": args.w_mid,
+            "feature_width": feature_width,
+            "mid_head": mid_head.state_dict() if mid_head is not None else None,
         }
         # Save unconditionally: an earlier version of the reconstruction
         # trainer wrote nothing when a run had no val split, and a

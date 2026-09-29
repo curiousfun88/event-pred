@@ -350,3 +350,20 @@ implemented, tuning done, 4 final seeds trained. Reason: 2025-08..11 are also
 the STGAT's test months, and seeing the base result first could influence the
 B1 implementation or tuning. The base config, the fill models, S4/S5 and every
 verdict rule are unchanged. No test month has been simulated.
+
+## Amendment A8 (2026-09-29, BEFORE any test-month simulation or STGAT result)
+
+**S4/S5 implementation choices where A6.3 left room** (`simulate_maker.py
+--signal`, self-tested):
+- **Signal lookup:** m_hat from the latest snapshot with window end E_t <= H
+  (a snapshot ending exactly at H is used; never a later one).
+- **No signal for a leg at H** (not an observed node, or no snapshot yet):
+  S4 posts the base order unchanged; S5 posts nothing.
+- **Ties:** the thresholds are strict. S4 skips the ask only if
+  m_hat > +s/2; S5 bids only if m_hat > +s/2 and asks only if m_hat < -s/2.
+- **Comparisons:** S4 - base and S5 - base in percentage points of return,
+  under the optimistic, pessimistic and strict models. The 95% CI resamples
+  the union of events, with the same draw for both strategies; an event where
+  a strategy has no fills contributes 0 net and 0 capital to it. Verdicts as
+  A6.3, on the pessimistic model.
+- S5's configuration is fixed in code as `S5_CONFIG` and matches A6.3.

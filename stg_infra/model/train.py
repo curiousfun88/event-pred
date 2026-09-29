@@ -130,7 +130,12 @@ class STGATBackbone(nn.Module):
         self.projection = TypeSpecificProjection(padded_feature_width, embed_dim)
         self.spatial = TwoChannelSpatialAttention(embed_dim, n_heads=n_heads,
                                                    ladder_edge_feature_dim=ladder_edge_feature_dim)
-        self.temporal = TemporalAttention(embed_dim, n_heads=n_heads, max_len=max_len)
+        # Node batch sized so batch * heads stays at the 512 * 4 the default was
+        # measured for: an 8-head model at 512 doubled the attention transient
+        # and OOM-killed a 7.8GB machine. Attention is per node, so the batch
+        # size changes memory, not the result; h <= 4 keeps 512 exactly.
+        self.temporal = TemporalAttention(embed_dim, n_heads=n_heads, max_len=max_len,
+                                          node_batch_size=min(512, 2048 // n_heads))
         self.mece_head = MeceOutputHead(embed_dim)
         self.ladder_head = LadderOutputHead(embed_dim)
 
