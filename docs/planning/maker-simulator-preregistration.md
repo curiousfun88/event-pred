@@ -341,3 +341,12 @@ under the optimistic, pessimistic and strict models, beside the S1 reference.
 - The strict model is reported for both.
 - **No parameter of S4/S5 (thresholds s/2, bands, caps) may be changed after
   the base test result is seen.**
+
+## Amendment A7 (2026-09-29, BEFORE any test-month simulation)
+
+**A6.2 timing: the base test is deferred.** It is no longer run "now". It runs
+in the same session as S4/S5 (A6.3), once the 7/2/4 STGAT is frozen: B1
+implemented, tuning done, 4 final seeds trained. Reason: 2025-08..11 are also
+the STGAT's test months, and seeing the base result first could influence the
+B1 implementation or tuning. The base config, the fill models, S4/S5 and every
+verdict rule are unchanged. No test month has been simulated.
