@@ -79,11 +79,13 @@ class Config:
     universe: str = "mece"       # mece | liquid
     min_trades_24h: int = 0      # causal liquidity rule: trades in (H-24h, H]
     stgat: str = ""              # A6.3: "" (no model) | "s4" (filter) | "s5" (model-led); needs --signal
+    min_ttc_h: int = 0           # A10: no quote on a leg within this many hours of its close
 
     def name(self):
         return (f"univ={self.universe} sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
                 f"minspr={self.min_spread} series={self.series} liq24h>={self.min_trades_24h} inv={self.pos_limit} "
-                f"basket={int(self.basket)}" + (f" stgat={self.stgat}" if self.stgat else ""))
+                f"basket={int(self.basket)}" + (f" stgat={self.stgat}" if self.stgat else "")
+                + (f" min_ttc={self.min_ttc_h}h" if self.min_ttc_h else ""))
 
 
 # A6.3 S5, fixed before the base test: all MECE legs, 1-99c, spread >= 4c,
@@ -206,6 +208,37 @@ def paired_diff_ci(ev_a, ev_b, n=2000, seed=0):
     return point, float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))
 
 
+DEV_MONTHS = TRAIN_MONTHS + VAL_MONTHS
+A10_MIN_FILLS, A10_MIN_EVENTS, A10_MIN_ACTIVE_MONTHS, A10_MIN_STRICT_POS_MONTHS = 300, 30, 7, 6
+
+
+def robust_select(rows, n_months):
+    """A10 selection rule, fixed before any test-month simulation.
+    rows: dicts with cfg, pess (summary), strict (summary), pess_active_months
+    (months with >= 1 pessimistic fill) and strict_monthly_ret ({month: ret%}).
+    Eligible: >= 300 pessimistic fills, >= 30 events, fills in >= 7 of the months.
+    Qualifies: pooled pessimistic return > 0 AND strict return > 0 in >= 6 months
+    (a month without strict fills is not positive).
+    Winner: highest pooled strict return; ties -> more pessimistic fills. None if none qualify."""
+    need_active = A10_MIN_ACTIVE_MONTHS if n_months >= 9 else max(1, round(n_months * 7 / 9))
+    need_pos = A10_MIN_STRICT_POS_MONTHS if n_months >= 9 else max(1, round(n_months * 6 / 9))
+    ok = [r for r in rows
+          if r["pess"]["fills"] >= A10_MIN_FILLS and r["pess"]["events"] >= A10_MIN_EVENTS
+          and r["pess_active_months"] >= need_active
+          and r["pess"]["ret"] == r["pess"]["ret"] and r["pess"]["ret"] > 0
+          and sum(1 for v in r["strict_monthly_ret"].values() if v == v and v > 0) >= need_pos
+          and r["strict"]["ret"] == r["strict"]["ret"]]
+    ok.sort(key=lambda r: (r["strict"]["ret"], r["pess"]["fills"]), reverse=True)
+    return (ok[0] if ok else None), ok
+
+
+def robust_grid_configs():
+    """A10 space: the A1-A5 grid x min_ttc_h {0, 24}."""
+    for c in grid_configs():
+        yield c
+        yield dataclasses.replace(c, min_ttc_h=24)
+
+
 def cluster_ci(net_by_event, cap_by_event, n=2000, seed=0):
     net, cap = np.asarray(net_by_event, float), np.asarray(cap_by_event, float)
     if len(net) < 2 or cap.sum() <= 0:
@@ -293,6 +326,29 @@ def self_test() -> int:
     check("paired CI: +10pp on every event -> point and CI exactly +10", abs(pt - 10) < 1e-9 and abs(lo - 10) < 1e-9 and abs(hi - 10) < 1e-9)
     check("S5 config matches A6.3", (S5_CONFIG.band_lo, S5_CONFIG.band_hi, S5_CONFIG.min_spread, S5_CONFIG.pos_limit,
                                      S5_CONFIG.improve, S5_CONFIG.sides, S5_CONFIG.universe) == (1, 99, 4, 25, 1, "both", "mece"))
+    # A10
+    def row(ret_p, ret_s, fills=400, events=40, active=9, pos=9, tag=""):
+        return {"cfg": tag, "pess": {"ret": ret_p, "fills": fills, "events": events}, "strict": {"ret": ret_s},
+                "pess_active_months": active,
+                "strict_monthly_ret": {f"m{i}": (1.0 if i < pos else -1.0) for i in range(9)}}
+    w, ok = robust_select([row(5, 2, tag="a"), row(5, 3, tag="b"), row(9, 1, tag="c")], 9)
+    check("A10: highest pooled STRICT return wins (not highest pessimistic)", w["cfg"] == "b")
+    w, _ = robust_select([row(5, 3, pos=5, tag="a"), row(5, 1, pos=6, tag="b")], 9)
+    check("A10: strict positive in only 5 of 9 months is excluded", w["cfg"] == "b")
+    w, _ = robust_select([row(-1, 9, tag="a"), row(2, 1, tag="b")], 9)
+    check("A10: pooled pessimistic return must be > 0", w["cfg"] == "b")
+    w, _ = robust_select([row(5, 9, fills=299, tag="a"), row(5, 9, events=29, tag="b"),
+                          row(5, 9, active=6, tag="c"), row(5, 1, tag="d")], 9)
+    check("A10: eligibility (300 fills, 30 events, 7 active months)", w["cfg"] == "d")
+    w, _ = robust_select([row(5, 2, fills=500, tag="a"), row(5, 2, fills=400, tag="b")], 9)
+    check("A10: ties broken by more fills", w["cfg"] == "a")
+    w, ok = robust_select([row(-1, -1, tag="a")], 9)
+    check("A10: nothing qualifies -> None (A6 winner stays)", w is None and ok == [])
+    r0 = row(5, 2); r0["strict_monthly_ret"] = {f"m{i}": (float("nan") if i < 4 else 1.0) for i in range(9)}
+    check("A10: a month without strict fills is not positive", robust_select([r0], 9)[0] is None)
+    check("A10 grid doubles the A1-A5 grid", sum(1 for _ in robust_grid_configs()) == 2 * sum(1 for _ in grid_configs()))
+    check("A10: min_ttc_h=0 keeps old cache keys; 24 enters the key",
+          "min_ttc_h" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(min_ttc_h=24))["min_ttc_h"] == 24)
     check("configs without a model keep their old cache keys",
           "stgat" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(stgat="s4"))["stgat"] == "s4")
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
@@ -399,6 +455,8 @@ def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None
                     continue
                 if L["close"] is not None and H >= L["close"]:
                     continue
+                if cfg.min_ttc_h and L["close"] is not None and L["close"] - H < cfg.min_ttc_h * H_NS:
+                    continue
                 b, a = L["bid"][j], L["ask"][j]
                 if b is None or a is None or np.isnan(b) or np.isnan(a):
                     continue
@@ -501,8 +559,9 @@ def _cfg_key_dict(cfg: Config) -> dict:
     """Config as hashed into the cache key. ``stgat`` is left out when unset,
     so every configuration cached before A6.3 keeps its key."""
     d = dataclasses.asdict(cfg)
-    if not d["stgat"]:
-        d.pop("stgat")
+    for k in ("stgat", "min_ttc_h"):      # added later (A6.3, A10): unset -> old key
+        if not d[k]:
+            d.pop(k)
     return d
 
 
@@ -603,6 +662,23 @@ def event_totals(cfg: Config, model: str, months, signal_hours_only=False) -> di
     return {k: tuple(v) for k, v in out.items()}
 
 
+def monthly_returns(cfg: Config, model: str, months) -> dict:
+    """{month: return %} from a run's saved fills, by the month of the quoting hour."""
+    f = CACHE_DIR / f"{cache_key(cfg, model, months)}.fills.npz"
+    out = {m: float("nan") for m in months}
+    if not f.exists():
+        return out
+    z = np.load(f, allow_pickle=True)
+    if "hour_ns" not in z.files:
+        raise SystemExit(f"{f.name} predates hour_ns; delete it and rerun")
+    mon = np.array([month_of(h) for h in z["hour_ns"]])
+    for m in months:
+        k = mon == m
+        cap = float(z["capital_c"][k].sum())
+        out[m] = 100 * float(z["net_c"][k].sum()) / cap if cap > 0 else float("nan")
+    return out
+
+
 def fmt(r):
     return (f"ret {r['ret']:+7.2f}%  CI95 [{r['lo']:+7.2f}, {r['hi']:+7.2f}]  net ${r['net_c'] / 100:>9,.2f}  "
             f"fills {r['fills']:>6,}  contracts {r['contracts']:>7,}  events {r['events']:>5,}  "
@@ -628,12 +704,24 @@ def main():
     ap.add_argument("--config", help="frozen config JSON for a test run")
     ap.add_argument("--out", default=None)
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--robust", action="store_true",
+                    help="A10: re-select the base on ALL development months (2024-11..2025-07) by the "
+                         "fixed robustness rule; refused on test months")
+    ap.add_argument("--secondary", default=None,
+                    help="A10: a second frozen config reported beside --config on the test run (not primary)")
     ap.add_argument("--signal", default=None,
                     help="A6.3: seed-averaged STGAT mid-move signal (export_mid_signal.py). With --config, "
                          "adds S4 (base + filter) and S5 (model-led) and reports S4 - base and S5 - base.")
     args = ap.parse_args()
     if args.self_test:
         return self_test()
+    if args.robust:
+        if args.grid or args.config or args.signal:
+            raise SystemExit("--robust runs alone")
+        if args.months == TRAIN_MONTHS:
+            args.months = DEV_MONTHS
+        if max(args.months) >= TEST_MONTHS[0]:
+            raise SystemExit("REFUSED: A10 re-selection uses development months only (<= 2025-07).")
     if args.signal and (args.grid or not args.config):
         raise SystemExit("--signal runs S4/S5 beside the frozen base: it needs --config and no --grid.")
     global SIGNAL_PATH
@@ -642,7 +730,30 @@ def main():
         raise SystemExit("REFUSED: the search runs on TRAIN months only; validation sees only the "
                          "shortlist and test sees only the frozen winner (amendment A4).")
 
-    if args.grid:
+    if args.robust:
+        cfgs = list(robust_grid_configs())
+        res = run_many([(c, m, args.months) for c in cfgs for m in ("pess", "strict")], args.workers)
+        rows = []
+        for c in cfgs:
+            pm = monthly_returns(c, "pess", args.months)
+            rows.append({"cfg": c, "pess": res[(c, "pess")], "strict": res[(c, "strict")],
+                         "pess_active_months": sum(1 for v in pm.values() if v == v),
+                         "strict_monthly_ret": monthly_returns(c, "strict", args.months)})
+        win, ok = robust_select(rows, len(args.months))
+        print(f"\n=== A10 ROBUST RE-SELECTION on {args.months[0]}..{args.months[-1]} "
+              f"({len(cfgs)} configs): {len(ok)} qualify ===")
+        for r in ok[:10]:
+            npos = sum(1 for v in r["strict_monthly_ret"].values() if v == v and v > 0)
+            print(f"  {r['cfg'].name()}\n      PESS {fmt(r['pess'])}\n      STRICT {fmt(r['strict'])}"
+                  f"  strict>0 in {npos}/{len(args.months)} months")
+        if win is None:
+            print("\nNo configuration qualifies: the A6 winner stays the primary base (A10).")
+        elif args.out:
+            Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.out).write_text(json.dumps(dataclasses.asdict(win["cfg"]), indent=2))
+            print(f"\nA10 WINNER (frozen as the PRIMARY base for the single test run): {win['cfg'].name()}"
+                  f"\nwritten to {args.out}")
+    elif args.grid:
         # 1. search on TRAIN
         cfgs = list(grid_configs())
         res = run_many([(c, m, args.months) for c in cfgs for m in ("opt", "pess")], args.workers)
@@ -675,7 +786,9 @@ def main():
         base = None
         if args.config:
             base = Config(**json.loads(Path(args.config).read_text()))
-            cfgs.insert(0, ("SELECTED (frozen)", base))
+            cfgs.insert(0, ("PRIMARY base (frozen)", base))
+        if args.secondary:
+            cfgs.insert(1, ("SECONDARY base (A6 winner)", Config(**json.loads(Path(args.secondary).read_text()))))
         if args.signal:
             cfgs += [("S4 (base + STGAT filter)", dataclasses.replace(base, stgat="s4")),
                      ("S5 (STGAT-led)", S5_CONFIG)]

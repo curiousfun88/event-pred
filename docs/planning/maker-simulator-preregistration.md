@@ -387,3 +387,40 @@ the order is exposed to.
 - Unchanged: the base, thresholds, S5 configuration, fill models, verdicts.
 - Rationale is timing correctness, decided before any result; the effect on
   S4/S5 P&L is unknown in sign.
+
+## Amendment A10 (2026-09-29, BEFORE any test-month simulation): robust re-selection of the base
+
+**Why.** The A6 winner was the best pessimistic return on train (448
+configurations), then the best of a 10-config shortlist on validation. That
+two-stage selection flatters its figures, and on validation it fails the
+strict (competing makers also improve) fill model: -4.60%. A10 re-selects for
+robustness on development data only.
+
+- **Data:** the 9 development months 2024-11..2025-07, pooled. No test month
+  is loaded (`simulate_maker.py --robust` refuses months >= 2025-08).
+- **Space:** the A1-A5 grid x `min_ttc_h` {0, 24} (no quote on a leg within
+  24 h of its close; losses come from favourites failing near resolution):
+  896 configurations, each simulated once over the 9 months under the
+  pessimistic and strict models. Monthly returns come from each fill's
+  quoting hour.
+- **Eligible:** >= 300 pessimistic fills, >= 30 events, fills in >= 7 of 9
+  months.
+- **Qualifies:** pooled pessimistic return > 0 AND strict return > 0 in >= 6 of
+  9 months (a month without strict fills is not positive).
+- **Winner:** highest pooled strict return; ties -> more pessimistic fills.
+  Written to `runs/maker/selected_a10.json`. If none qualifies, the A6 winner
+  stays the primary base and A10 is reported as "no robust alternative".
+- **Test run (still once), designated now:**
+  - **Primary:** the A10 winner. Verdict as A6.2: pessimistic return > 0 with
+    the event-cluster CI excluding 0; strict and optimistic reported as bounds.
+  - **Secondary:** the A6 winner (`runs/maker/selected.json`), reported beside
+    it whatever it shows.
+  - S4 (A6.3/A8/A9) is built on the primary base; S5 unchanged.
+  - Command: `--config runs/maker/selected_a10.json --secondary
+    runs/maker/selected.json --signal <seed-averaged signal> --months 2025-08
+    2025-09 2025-10 2025-11`.
+- **Caveats, stated in advance:** the validation months have already been used
+  once for selection, and the best of 896 is still optimistic, so the test is
+  expected to come in below development. A10 improves robustness; it does not
+  guarantee a positive test.
+- Runs after the STGAT tuning finishes (CPU/RAM), before any test run.
