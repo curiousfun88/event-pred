@@ -264,6 +264,17 @@ and gradients match 512 to float rounding (checked on random inputs).
 19:50 UTC, so the 2025-11 test month has 296 snapshots (to 11-25 18:00), not
 a full month. Known before any test result.
 
+**B2.5 Known boundary effect (recorded during tuning, before any result).**
+The B1.2 target at a split's last snapshot uses the candle ending one hour
+into the next split: the last train snapshot (2025-05-31 22:00, E = 06-01
+00:00) is labelled from the 06-01 01:00 candle (validation), and the last
+validation snapshot from the 08-01 01:00 candle (test). That is 1 of 2,135
+train and 1 of 610 validation snapshots, one hour of quotes, on an auxiliary
+head not used for selection (selection is on val MECE). Negligible; not
+corrected, so the running tuning is unchanged. All other targets (horizon,
+MECE, settlement) are built inside split-homogeneous chunks and never cross
+a boundary.
+
 ## 7. Known constraints
 
 - CPU only and 7 GB of RAM, so one job runs at a time. Estimated cost:
