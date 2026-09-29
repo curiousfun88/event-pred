@@ -258,6 +258,11 @@ def _build_one_month(month: str, cache_path: Path):
               .filter(pl.col("_close").is_null() | (pl.col("created_time") < pl.col("_close")))
               .drop("_close"))
     print(f"  dropped {n_before - trades.height:,d} trade row(s) timestamped at/after their market's close_time")
+    # trade_id and _fetched_at are never read by the node/edge builders, but
+    # slicing holds the frame, a sorted copy and the per-window copies at
+    # once; on 2025-11 (9.4M trades) that peak alone exceeded the WSL VM.
+    trades = trades.drop([c for c in ("trade_id", "_fetched_at") if c in trades.columns])
+    gc.collect()
     mece_mode = "hindsight" if split_for(month) == "train" else "causal"
     mece_leg_prices = pl.read_parquet(MECE_MEMBERSHIP_PATH)
     ladder_pairs = pl.read_parquet(LADDER_PAIRS_PATH)
@@ -267,6 +272,14 @@ def _build_one_month(month: str, cache_path: Path):
     stg = build_combined_graph(trades, markets, mece_leg_prices, ladder_pairs,
                                node_markets_df=node_meta, mece_mode=mece_mode)
     print(f"Built graph for {month}: {stg.summary()}")
+
+    # Free the raw frames BEFORE densifying: to_torch_bundle allocates the
+    # (T, N, F) tensor, and on the largest month (2025-10, 8.7M trades) the
+    # frames plus that tensor exceeded the 7.8GB WSL VM and crashed it twice.
+    # node_meta is still needed below for close times and settlement.
+    del trades, markets, mece_leg_prices, ladder_pairs
+    gc.collect()
+    print(f"Freed raw frames before bundling: RSS {_rss_mb():.0f}MB", flush=True)
 
     bundle = to_torch_bundle(stg)
     print(f"Bundle {month}: T={len(bundle.timestamps)}  N={len(bundle.node_ids)}  "
@@ -287,7 +300,7 @@ def _build_one_month(month: str, cache_path: Path):
     print(f"Cached to {cache_path}")
 
     before = _rss_mb()
-    del stg, bundle, trades, markets, mece_leg_prices, ladder_pairs, node_meta
+    del stg, bundle, node_meta
     gc.collect()
     print(f"Freed build state for {month}: RSS {before:.0f}MB -> {_rss_mb():.0f}MB", flush=True)
 
