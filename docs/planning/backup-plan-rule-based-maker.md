@@ -72,3 +72,13 @@ revisited, first run a dev-only diagnostic (about 1-2 h). Take favourites
 at 85-99¢ more than 24 h from close, and check whether a GBM on simple
 features beats price plus a calibration curve at predicting upsets, with
 event-grouped CV. If it does not, drop the route.
+
+## STGAT-for-trading routes: status (2026-09-30)
+
+| route | status |
+|---|---|
+| Next-hour mid-move signal (S4/S5) | tested on test months: no skill (S4 = base; S5 49 fills, CI [-37, +91]) |
+| Settlement-danger filter ("S6"; re-proposed 2026-09-30 as "#1") | **dropped 2026-09-29** after a validation check (session bc8a4f00, 10:41-10:49): the A6 maker had no large near-resolution losses (10 worst fills -$15 total); the losing activity was 881 fills at 6-24 h (small losses each); the model's settlement skill would at best reproduce a time-to-close rule, which A10's 24 h cut-off now implements. The only new angle (early resolution before the scheduled close) has no support: A10 test fills show a +5.0c/contract 1 h markout, not adverse |
+| Upset-risk filter | KIV; 1-2 h dev-only GBM diagnostic first |
+| Weather forecasts + STGAT | low prior (Crosier 2026: market beats forecasts and leads them); 2-3 h dev-only check that market + forecast beats market alone on the settled bracket |
+| Parlays (KXMVE) | not feasible before the deadline (RFQ one-offs, text-only legs, no data before 2025-10); future work |
