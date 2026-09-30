@@ -63,3 +63,12 @@ route found so far is an **upset-risk filter**. Train on a settle-YES
 target and compare the model's probability with the market price, so as
 to skip favourites the model rates riskier than their price implies (A10's
 losses come from upsets). It is untested and would need a fresh-data test.
+
+**Upset-risk filter: KIV (2026-09-30).** Judged low-prior: the test showed
+no skill beyond price (unsettled 1.09x the family oracle; mid-move 1.03x
+zero-move); within a MECE basket the other legs are already in the price;
+and the favourite-longshot pattern needs only a calibration curve. If
+revisited, first run a dev-only diagnostic (about 1-2 h). Take favourites
+at 85-99¢ more than 24 h from close, and check whether a GBM on simple
+features beats price plus a calibration curve at predicting upsets, with
+event-grouped CV. If it does not, drop the route.
