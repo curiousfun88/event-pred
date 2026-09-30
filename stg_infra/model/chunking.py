@@ -196,7 +196,22 @@ def _remap_edges_to_chunk_local(edges_t, active_sorted: torch.Tensor):
     return replace(edges_t, edge_index=local)
 
 
-def slice_bundle_chunk(bundle, chunk: TemporalChunk, validate: bool = True) -> dict:
+def excluded_node_mask(bundle, exclude_prefixes) -> torch.Tensor:
+    """(N,) bool, True for nodes whose ticker starts with one of the prefixes
+    (e.g. "KXMVE", Kalshi's multivariate parlays, which appear from 2025-10).
+    Cached on the bundle per prefix tuple."""
+    key = tuple(sorted(exclude_prefixes))
+    cache = bundle.__dict__.setdefault("_excluded_node_cache", {})
+    if key not in cache:
+        ids = getattr(bundle, "node_ids", None)
+        if ids is None:
+            raise ValueError("exclude_prefixes needs bundle.node_ids")
+        cache[key] = torch.tensor([str(n).startswith(key) for n in ids], dtype=torch.bool)
+    return cache[key]
+
+
+def slice_bundle_chunk(bundle, chunk: TemporalChunk, validate: bool = True,
+                       exclude_prefixes=()) -> dict:
     """Slices every T-indexed field of a TorchGraphBundle down to one
     chunk's [start:end) snapshots, AND compacts the node axis down to
     only the nodes actually active somewhere in that chunk.
@@ -263,6 +278,16 @@ def slice_bundle_chunk(bundle, chunk: TemporalChunk, validate: bool = True) -> d
             features_chunk, mask_chunk, adjacency_chunk,
         )
 
+    # Optional node exclusion (default off). Excluded nodes are made inactive,
+    # so they drop out of the chunk exactly like a node that never traded.
+    # An edge touching an excluded node makes _remap_edges_to_chunk_local
+    # raise: the filter can only remove nodes that no other node attends to.
+    n_excluded = 0
+    if exclude_prefixes:
+        excl = excluded_node_mask(bundle, exclude_prefixes)
+        n_excluded = int((mask_chunk.any(dim=0) & excl).sum())
+        mask_chunk = mask_chunk & ~excl[None, :]
+
     active = mask_chunk.any(dim=0).nonzero(as_tuple=True)[0]        # (n_active,) global, sorted ascending
 
     out = {
@@ -276,6 +301,7 @@ def slice_bundle_chunk(bundle, chunk: TemporalChunk, validate: bool = True) -> d
         "active_node_idx": active,
         "node_ids": [bundle.node_ids[i] for i in active.tolist()] if getattr(bundle, "node_ids", None) else None,
         "validation_stats": stats,
+        "n_excluded": n_excluded,
     }
     # Settlement data for TARGETS only (see MechanismForecastObjective's
     # mece_rule). Present on bundles built after 2026-09-27; absent before.

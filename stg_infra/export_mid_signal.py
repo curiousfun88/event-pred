@@ -67,7 +67,8 @@ def average_seeds(per_seed):
                .select("ticker", "end_ns", "m_hat_c").sort(["ticker", "end_ns"]))
 
 
-def predict_checkpoint(ck_path: Path, cache: Path, months, split: str, quotes_dir: Path):
+def predict_checkpoint(ck_path: Path, cache: Path, months, split: str, quotes_dir: Path,
+                       exclude_prefixes=()):
     from model.chunking import build_split_ranges, chunk_ranges
     from model.forecast_head import MidMoveHead
     from model.month_store import MonthlyBundleStore, build_month_paths
@@ -82,7 +83,8 @@ def predict_checkpoint(ck_path: Path, cache: Path, months, split: str, quotes_di
         from data_windows import set_split
         set_split(*ck["split"])
     cfg = ck["config"]
-    store = MonthlyBundleStore(build_month_paths(months, cache), verbose=False)
+    store = MonthlyBundleStore(build_month_paths(months, cache), verbose=False,
+                               exclude_prefixes=exclude_prefixes)
     src = QuoteAttacher(store, quotes_dir, WINDOW, with_inputs=bool(ck.get("quote_features")))
     if ck.get("feature_width") is not None and ck["feature_width"] != src.feature_width:
         raise SystemExit(f"feature width {src.feature_width} != checkpoint's {ck['feature_width']}")
@@ -154,6 +156,7 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--checkpoints", nargs="+")
     ap.add_argument("--cache", default="cache_724")
+    ap.add_argument("--exclude-series-prefix", nargs="*", default=[], help="drop nodes whose ticker starts with any of these prefixes (e.g. KXMVE, Kalshi's multivariate parlays, absent before 2025-10). Default: none. An excluded node with an edge is an error.")
     ap.add_argument("--months", nargs="+")
     ap.add_argument("--split", choices=["train", "val", "test"], default="test")
     ap.add_argument("--quotes-dir", default="data/quotes/by_month")
@@ -164,7 +167,10 @@ def main():
     if not (args.checkpoints and args.months and args.out):
         raise SystemExit("--checkpoints, --months and --out are required")
     root = lambda p: Path(p) if Path(p).is_absolute() else _REPO_ROOT / p
-    per_seed = [predict_checkpoint(root(c), root(args.cache), args.months, args.split, root(args.quotes_dir))
+    if args.exclude_series_prefix:
+        print(f"EXCLUDED node prefixes: {args.exclude_series_prefix}")
+    per_seed = [predict_checkpoint(root(c), root(args.cache), args.months, args.split, root(args.quotes_dir),
+                                   args.exclude_series_prefix)
                 for c in args.checkpoints]
     out = average_seeds(per_seed)
     Path(root(args.out)).parent.mkdir(parents=True, exist_ok=True)

@@ -351,7 +351,10 @@ def run(args) -> int:
     if not cache.is_absolute():
         cache = _REPO_ROOT / cache
     months = args.months or PILOT_MONTHS
-    store = MonthlyBundleStore(build_month_paths(months, cache), verbose=False)
+    store = MonthlyBundleStore(build_month_paths(months, cache), verbose=False,
+                               exclude_prefixes=args.exclude_series_prefix)
+    if args.exclude_series_prefix:
+        print(f"  EXCLUDED node prefixes: {args.exclude_series_prefix}")
     chunks = [c for c in chunk_ranges(build_split_ranges(store.timestamps),
                                       chunk_len=cfg.chunk_len, min_chunk_len=4)
               if c.split == args.split]
@@ -568,6 +571,7 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--checkpoint")
     ap.add_argument("--cache", default="cache_causal")
+    ap.add_argument("--exclude-series-prefix", nargs="*", default=[], help="drop nodes whose ticker starts with any of these prefixes (e.g. KXMVE, Kalshi's multivariate parlays, absent before 2025-10). Default: none. An excluded node with an edge is an error.")
     ap.add_argument("--split", choices=["val", "test"])
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--bid-source", choices=["prints", "quotes"], default="prints")

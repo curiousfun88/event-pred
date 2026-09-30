@@ -161,6 +161,7 @@ def main():
     ap.add_argument("--split", choices=["train", "val", "test"], default="test")
     ap.add_argument("--months", nargs="+", default=None)
     ap.add_argument("--cache", default="cache")
+    ap.add_argument("--exclude-series-prefix", nargs="*", default=[], help="drop nodes whose ticker starts with any of these prefixes (e.g. KXMVE, Kalshi's multivariate parlays, absent before 2025-10). Default: none. An excluded node with an edge is an error.")
     ap.add_argument("--supervise", choices=["active", "all"], default="active")
     ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default=None,
                     help="default: the rule the checkpoint was trained under "
@@ -211,7 +212,9 @@ def main():
     if not cache.is_absolute():
         cache = _REPO_ROOT / cache
     store = MonthlyBundleStore(build_month_paths(args.months or PILOT_MONTHS, cache),
-                               verbose=False)
+                               verbose=False, exclude_prefixes=args.exclude_series_prefix)
+    if args.exclude_series_prefix:
+        print(f"  EXCLUDED node prefixes: {args.exclude_series_prefix}")
     ranges = build_split_ranges(store.timestamps)
     chunks = [c for c in chunk_ranges(ranges, chunk_len=cfg.chunk_len, min_chunk_len=4)
               if c.split == args.split]

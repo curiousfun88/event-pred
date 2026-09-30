@@ -344,3 +344,40 @@ the same strata once.
   `data_windows.py` (pilot split). The boundaries must become the 7/2/4 split,
   with a check that the printed split matches §1 exactly before any training
   starts.
+
+## 6f. Amendment B4 (2026-09-30, after an OOM in the first test step, BEFORE any test figure was printed)
+
+**What happened.** The first test run (`stg_infra/run_test_724.sh`) was
+killed by the memory cap in `score_forecast.py` on seed 0, during the
+backbone's first pass. That was before any loss, ratio or CI was computed or
+printed (`logs/v2_forecast/test_724/forecast_s0.oom.log`). Nothing about the
+test result has been seen.
+
+**Cause.** From 2025-10 Kalshi lists multivariate parlays (series prefix
+`KXMVE`, e.g. `KXMVENFLMULTIGAMEEXTENDED`, `KXMVENFLSINGLEGAME`). Traded
+tickers per month: 10,978 (2025-06), 18,236 (2025-09), 122,691 (2025-10,
+about 99k of them `KXMVE`), 176,225 (2025-11). Every traded ticker is a
+node, so test chunks carry about 5x the nodes of any training chunk. The
+`cache_724` bundles for 2025-10/11 are 1.9-2.2 GB, against 0.06-0.29 GB for
+the other months. Parlays belong to no MECE basket or ladder, and none
+exist in train or validation.
+
+**Change.** Test scoring and the signal export drop nodes whose ticker
+starts with `KXMVE` (`--exclude-series-prefix KXMVE`). This is implemented
+in `slice_bundle_chunk` by marking them inactive, and is off by default.
+An excluded node that has any edge makes the chunk remap raise, so the
+filter can only remove nodes no other node attends to.
+
+**Check, on validation (planted exclusion; dev data only).** Excluding all
+1,011 edge-free series on validation (35% of node rows) leaves the MECE,
+ladder and ladder_moved lines of `score_forecast.py` byte-identical to the
+unfiltered run for seed 0. That covers loss, persistence, oracle alpha and
+n. Only the pooled node figure moves, as expected. Temporal attention is
+per node, and spatial attention runs along edges only.
+
+**Consequences, stated before scoring.** MECE (headline, settled/unsettled,
+family oracle), ladder, and the maker (MECE universe; the signal is only
+read for MECE legs) are unaffected. The pooled node figure and the B1.2
+mid-move report are on the non-parlay node set. Parlays are also a
+coverage limitation to record in the thesis: the model cannot score a
+market type that appeared after training.
