@@ -1,0 +1,32 @@
+DEVELOPMENT MONTHS ONLY; 40 matched MECE events; one row per leg-hour (overlapping, NOT independent trades)
+leg-hours 11,418; |gap| quantiles: 50% 1.0c  90% 2.7c  99% 9.0c
+
+Realised PM move TOWARD Kalshi (cents, signed by gap), on PM's price series (no spread, no fees):
+ |gap| >=  leg-hours  events   share |            +1h  [CI95]              +6h  [CI95]
+       1c      5,922      40   51.9% |  +0.44 [+0.32,+0.64]   +0.63 [+0.42,+0.93]  mean|gap| 2.3c
+       2c      2,473      40   21.7% |  +0.90 [+0.65,+1.34]   +1.27 [+0.86,+2.01]  mean|gap| 3.8c
+       3c      1,088      39    9.5% |  +1.78 [+1.20,+2.79]   +2.48 [+1.52,+4.45]  mean|gap| 5.8c
+       5c        330      34    2.9% |  +4.36 [+3.06,+6.18]   +6.32 [+4.08,+10.24]  mean|gap| 10.8c
+      10c        104      25    0.9% | +11.15 [+8.16,+14.04]  +16.25 [+10.93,+21.52]  mean|gap| 20.5c
+
+STALENESS of PM's price at large gaps (hours since PM's hourly price last changed)
+  |gap|>= 3c: n= 1098  PM price unchanged >=1h: 41%  >=3h: 22%  >=6h: 10%   (all hours: >=1h 48%, >=3h 24%)
+  |gap|>= 5c: n=  339  PM price unchanged >=1h: 33%  >=3h: 15%  >=6h: 5%   (all hours: >=1h 48%, >=3h 24%)
+  |gap|>=10c: n=  113  PM price unchanged >=1h: 26%  >=3h: 12%  >=6h: 2%   (all hours: >=1h 48%, >=3h 24%)
+
+Catch-up at |gap|>=3c, split by PM staleness (cents toward Kalshi):
+  PM moved in last hour (fresh)    n=  644 events= 32  mean|gap|  6.7c  +1h +2.73c  +6h +4.06c   Kalshi spread median 3c
+  stale 1-2h                       n=  212 events= 34  mean|gap|  5.2c  +1h +0.56c  +6h +0.97c   Kalshi spread median 5c
+  stale >=3h                       n=  242 events= 25  mean|gap|  4.5c  +1h +0.29c  +6h +0.31c   Kalshi spread median 5c
+
+WHO OPENED THE GAP? |gap| >= 3c, last hour (cents toward Kalshi afterwards)
+  Kalshi moved (PM hasn't followed)    n= 284 ev=35 mean|gap|  6.7c | +1h +3.14 [+2.23,+4.25]  +6h +3.24 [+1.74,+5.29]  | PM gives back nan% of its jump in 1h
+  PM moved away (Kalshi still)         n= 146 ev=18 mean|gap|  5.8c | +1h +2.37 [+1.04,+5.11]  +6h +3.91 [+2.28,+7.31]  | PM gives back 42% of its jump in 1h
+  both moved                           n=  78 ev=20 mean|gap|  8.4c | +1h +6.08 [+3.04,+9.65]  +6h +8.83 [+3.92,+14.17]  | PM gives back 238% of its jump in 1h
+  neither moved (old gap)              n= 580 ev=31 mean|gap|  4.9c | +1h +0.38 [+0.18,+0.75]  +6h +0.90 [+0.09,+2.84]  | PM gives back nan% of its jump in 1h
+
+PM price-history values between 5c and 95c: 10,788 points (all matched legs)
+  on a whole cent (x.0): 35.9%
+  on a half cent (x.5) : 54.3%
+  other                : 9.7%
+  -> a 1c-tick market can TRADE only on whole cents; half cents are midpoints of a 1c book
