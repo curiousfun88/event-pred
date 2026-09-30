@@ -80,6 +80,8 @@ class Config:
     min_trades_24h: int = 0      # causal liquidity rule: trades in (H-24h, H]
     stgat: str = ""              # A6.3: "" (no model) | "s4" (filter) | "s5" (model-led); needs --signal
     min_ttc_h: int = 0           # A10: no quote on a leg within this many hours of its close
+    policy: str = ""             # A12: learned policy scores (parquet: ticker, hour_ns, side, pred); "" = off
+    policy_t: float = 1.0        # A12: post an order only if its predicted P&L per contract > policy_t
 
     def name(self):
         return (f"univ={self.universe} sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
@@ -438,7 +440,11 @@ def month_of(ns: int) -> str:
 
 # ---------------------------------------------------------------- simulation
 
-def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None):
+def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None, policy_scores=None, record=None):
+    """record: if a list, append every candidate order (event, ticker, H, side, price, bid, ask) after all
+    quoting filters and simulate NO fills (used to score candidates with the simulator's own logic).
+    policy_scores: {(ticker, H, side): predicted c/contract}; with cfg.policy set, only orders scoring
+    > cfg.policy_t are posted (A12). Inventory limits and fills are then simulated as usual."""
     fills = []   # (event, ticker, side, price, qty, fee, net, capital, markout, hour_ns)
     mset = set(months)
     for ev, tks in events.items():
@@ -496,6 +502,12 @@ def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None
                 if want_ask:
                     orders.append((-1, a - (1 if imp else 0), a))
                 orders = [(s, p, o) for s, p, o in orders if cfg.band_lo <= p <= cfg.band_hi]
+                if record is not None:
+                    record.extend((ev, tk, H, s, p, b, a) for s, p, o in orders)
+                    continue
+                if cfg.policy:
+                    orders = [(s, p, o) for s, p, o in orders
+                              if policy_scores.get((tk, H, s), -np.inf) > cfg.policy_t]
                 if not orders:
                     continue
                 lo_i = np.searchsorted(L["tt"], H, side="right")
@@ -562,6 +574,8 @@ def _cfg_key_dict(cfg: Config) -> dict:
     for k in ("stgat", "min_ttc_h"):      # added later (A6.3, A10): unset -> old key
         if not d[k]:
             d.pop(k)
+    if not d["policy"]:                   # A12: no policy -> old key
+        d.pop("policy"); d.pop("policy_t")
     return d
 
 
@@ -575,6 +589,9 @@ def cache_key(cfg: Config, model: str, months) -> str:
     if cfg.stgat:
         st = Path(SIGNAL_PATH).stat()
         blob["signal"] = f"{Path(SIGNAL_PATH).name}:{st.st_size}:{int(st.st_mtime)}"
+    if cfg.policy:
+        st = Path(cfg.policy).stat()
+        blob["policy_file"] = f"{Path(cfg.policy).name}:{st.st_size}:{int(st.st_mtime)}"
     blob = json.dumps(blob, sort_keys=True)
     return hashlib.sha1(blob.encode()).hexdigest()[:16]
 
@@ -589,7 +606,8 @@ def run_one(task):
     summ_f = CACHE_DIR / f"{key}.json"
     if summ_f.exists():
         return cfg, model, json.loads(summ_f.read_text()), True
-    fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months, _G.get("signal"))
+    fills = simulate(cfg, model, _G["legs"], _G["events"], _G["charged"], months, _G.get("signal"),
+                     _G.get("policy", {}).get(cfg.policy) if cfg.policy else None)
     r = summarise(fills)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     # NO polars in forked workers: polars' thread pool can deadlock after fork()
@@ -618,6 +636,7 @@ def run_many(tasks, workers):
         _G["legs"], _G["events"], _G["charged"] = load(months, univ)
         if any(t[0].stgat for t in sub_t):
             _G["signal"] = load_signal(SIGNAL_PATH)
+        _G["policy"] = {pth: load_policy(pth) for pth in {t[0].policy for t in sub_t if t[0].policy}}
         print(f"loaded universe={univ} {months[0]}..{months[-1]}: {len(_G['legs']):,} legs, "
               f"{len(_G['events']):,} events; running {len(sub_t)} simulations", flush=True)
         with mp.get_context("fork").Pool(workers) as pool:
@@ -629,6 +648,14 @@ def run_many(tasks, workers):
         if (t[0], t[1]) not in results:
             results[(t[0], t[1])] = json.loads((CACHE_DIR / f"{cache_key(*t)}.json").read_text())
     return results
+
+
+def load_policy(path):
+    """A12 policy scores parquet -> {(ticker, hour_ns, side): pred c/contract}."""
+    import polars as pl
+    df = pl.read_parquet(path)
+    return {(tk, int(h), int(sd)): float(pr) for tk, h, sd, pr in
+            zip(df["ticker"].to_list(), df["hour_ns"].to_list(), df["side"].to_list(), df["pred"].to_list())}
 
 
 def load_signal(path):

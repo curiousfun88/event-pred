@@ -1,0 +1,37 @@
+Wed Sep 30 23:06:05 +08 2026 1. identity check (June 2025)
+  2025-06: candidates 90,246; fills without policy 25,987
+  [PASS] allow-all policy reproduces the no-policy fills exactly
+  [PASS] deny-all policy gives zero fills (0)
+Wed Sep 30 23:06:17 +08 2026 2. feature identity vs offline
+  [PASS] shared features == offline features on 2000 sampled June fills (mismatches: 0)
+Wed Sep 30 23:06:28 +08 2026 3. train G (2024-11..2025-05 only)
+  2024-11: 18,790 training fills
+  2024-12: 44,219 training fills
+  2025-01: 69,510 training fills
+  2025-02: 91,788 training fills
+  2025-03: 115,854 training fills
+  2025-04: 139,731 training fills
+  2025-05: 163,128 training fills
+trained G on 163,128 fills; saved policy_G_model.pkl sha1 e39cc4ca97bbebd4
+Wed Sep 30 23:07:22 +08 2026 4. score candidates 2025-06..07
+  2025-06: 90,246 candidate orders scored; 26.1% above t=1c
+  2025-07: 118,770 candidate orders scored; 25.8% above t=1c
+-> /home/fyp/event-pred/runs/maker/policy_G_scores_2025-06_2025-07.parquet (209,016 scored orders; model sha1 e39cc4ca97bbebd4)
+Wed Sep 30 23:07:47 +08 2026 5. in-simulator validation
+9 simulations requested; 0 cached; 9 to run on 3 workers
+loaded universe=mece 2025-06..2025-07: 6,524 legs, 1,710 events; running 9 simulations
+
+A12 VALIDATION GATE (in-simulator, 2025-06..07, development months)
+  model sha1 e39cc4ca97bbebd4, trained on 2024-11..2025-05 (163,128 fills), t = 1c
+  quote everything (BROAD)   OPT    ret   -0.20%  CI95 [  -0.75,   +0.38]  net $  -411.30  fills  61,926  events   889  markout +0.67c/ct
+  quote everything (BROAD)   PESS   ret   -0.36%  CI95 [  -1.01,   +0.29]  net $  -652.77  fills  55,518  events   889  markout +0.62c/ct
+  quote everything (BROAD)   STRICT ret   -3.35%  CI95 [  -4.12,   -2.61]  net $ -4425.60  fills  36,203  events   884  markout -0.69c/ct
+  G (learned policy)         OPT    ret   +3.60%  CI95 [  +2.34,   +4.83]  net $ +2428.91  fills  18,073  events   770  markout +2.04c/ct
+  G (learned policy)         PESS   ret   +3.73%  CI95 [  +2.43,   +5.03]  net $ +2400.34  fills  17,391  events   764  markout +2.09c/ct
+  G (learned policy)         STRICT ret   +0.20%  CI95 [  -1.24,   +1.77]  net $   +89.45  fills  11,396  events   701  markout +0.36c/ct
+  A10 (rules)                OPT    ret +105.27%  CI95 [ +34.65, +430.04]  net $  +153.34  fills      82  events    24  markout +4.54c/ct
+  A10 (rules)                PESS   ret +105.27%  CI95 [ +34.65, +430.04]  net $  +153.34  fills      82  events    24  markout +4.54c/ct
+  A10 (rules)                STRICT ret +110.78%  CI95 [ +26.93, +534.10]  net $   +77.26  fills      32  events    14  markout +1.79c/ct
+
+  GATE (pessimistic return > 0): PASS -> proceed to the test months
+Wed Sep 30 23:08:07 +08 2026 QUEUE DONE
