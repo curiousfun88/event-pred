@@ -1,0 +1,488 @@
+% ---------------------------------------------------------------------------
+% Paper-format draft, version 2 (1 Oct 2026). Single file; compiles on
+% Overleaf with pdflatex (run twice for references). Supersedes
+% paper_draft.tex for the results sections: adds the pre-registered 7/2/4
+% STGAT test and the market-making study.
+%
+% Provenance: every number comes from committed logs on branch
+% fix/post-close-carry-forward (logs/v2_forecast/, runs/README.md,
+% docs/RESEARCH_LOG.md, docs/planning/*preregistration*.md).
+% "Exploratory" marks results that were not pre-registered.
+% "Pilot" marks results from the May--Sep 2025 pilot window (paper_draft.tex).
+%
+% LaTeX notes carried over from data_window_memo.tex:
+%   1. \textcent is text-mode only; use \cent (defined below) in maths.
+%   2. Maths inside \textbf{} is not bolded; use \bm{} or \boldmath.
+%   3. Check WARNINGS as well as errors when building.
+% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=black, citecolor=blue!50!black, urlcolor=blue!60!black}
+
+\newcommand{\cent}{\text{\textcent}}
+\newcommand{\x}{\ensuremath{\times}}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\setlist[itemize]{itemsep=2pt, topsep=4pt}
+\setlist[enumerate]{itemsep=2pt, topsep=4pt}
+\setlength{\emergencystretch}{3em}
+
+\title{\textbf{When Does a Learned Model Beat a No-Arbitrage Constraint?}\\[4pt]
+\large Forecasting and Market Making in Kalshi Event Contracts}
+\author{Justyn\\[2pt]
+\small Final Year Project --- draft for supervisor review}
+\date{1 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Mutually exclusive, collectively exhaustive (MECE) baskets of event contracts must be priced to sum to \$1. This
+no-arbitrage constraint gives free structure that a learned model could exploit. We ask where a spatio-temporal graph
+attention network (STGAT) whose graph encodes the constraint adds value over the constraint itself, both as a
+forecaster and as the basis of a trading strategy, using Kalshi trades and hourly top-of-book quotes from November
+2024 to November 2025 with a pre-registered 7/2/4-month train/validation/test split.
+(i) \emph{Baskets are priced coherently at quoted prices}: where every leg has a two-sided quote, the mid-price sum
+is within $0.34\cent$ of \$1, and apparent dislocations in last-trade prices are mostly bid/ask print side.
+(ii) \emph{The STGAT forecasts basket prices well}: on the held-out test months it has $0.635\x$ the error of
+persistence and $0.922\x$ that of an optimal constraint-based shrinkage forecast. The margin comes from anticipating
+settlement convergence; on unsettled baskets it does not beat a per-family constraint baseline.
+(iii) \emph{Its forecasts do not translate into trading profit}: it cannot forecast next-hour quote moves, and it
+does not improve a market maker whose profit is decided at settlement.
+(iv) \emph{A learned market-making policy is profitable out of sample}: a gradient-boosted model that selects which
+maker quotes to post earns $+3.55\%$ net of fees on the test months (95\% CI $+2.51\%$ to $+4.60\%$, 34{,}086
+simulated fills) under a pessimistic fill model, while posting every quote loses money. The edge is not significant
+under a strict model in which competing makers also improve their prices. Adding the STGAT's forecasts to the policy
+reduces its return by 0.65 percentage points. We conclude that the learned graph model adds value in forecasting how
+basket prices evolve, while the tradable edge lies in execution, which a model on simple market features captures.
+\end{abstract}
+
+% ===========================================================================
+\section{Introduction}
+% ===========================================================================
+
+Prediction markets list contracts whose payoffs are tied together by construction. In a MECE basket, such as
+``Which range will New York's high temperature fall in tomorrow?'', exactly one leg pays \$1, so the legs' prices
+should sum to \$1. This no-arbitrage constraint is known exactly, before any data is seen.
+
+That makes event contracts an unusual test bed for learned models. In most financial settings a model must discover
+cross-asset structure from noisy data. Here the structure is given, and the research question becomes sharp:
+\begin{quote}
+\emph{Where does a learned model add value over the constraint itself, and where does the constraint suffice?}
+\end{quote}
+
+We study this on Kalshi, a CFTC-regulated exchange, with a spatio-temporal graph attention network (STGAT) whose
+graph encodes the constraint: basket legs are linked through a basket hub. We evaluate it in two ways. First, as a
+\emph{forecaster} of basket prices against baselines that use the constraint alone. Second, as the basis of a
+\emph{trading strategy}, using a tape-driven market-making simulator with bounded fill assumptions and Kalshi's fee
+schedule. Every evaluation reported as a test result was pre-registered and run once.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item \textbf{A coherence measurement.} At quoted top-of-book prices, Kalshi baskets are coherent; the apparent
+    dislocation in last-trade prices is microstructure (Section~\ref{sec:res-coherence}).
+  \item \textbf{A pre-registered forecasting test.} The STGAT beats persistence and an optimal constraint-based
+    shrinkage forecast on four held-out months; we locate the margin in settlement convergence
+    (Section~\ref{sec:res-forecast}).
+  \item \textbf{A diagnosis of why forecasting skill does not become trading profit.} A maker's profit is decided at
+    settlement, a horizon at which no model beats the market price (Sections~\ref{sec:res-rule} and
+    \ref{sec:res-settle}).
+  \item \textbf{A learned market-making policy that is profitable out of sample} under pessimistic fills, with its
+    limits stated, and a measurement of what the STGAT adds to it (Section~\ref{sec:res-policy}).
+  \item \textbf{Negative results with mechanisms} for five further routes: cross-venue lead--lag, live weather
+    observations, fill prediction, streaming data and a rule-based maker (Section~\ref{sec:res-other}).
+\end{enumerate}
+
+% ===========================================================================
+\section{Background}
+% ===========================================================================
+
+\paragraph{Prediction markets.} Prices of binary event contracts are commonly read as probabilities
+\cite{wolfers2004}. They are generally informative but show systematic biases, most prominently the
+favourite--longshot bias \cite{snowberg2010}. On Kalshi, makers earn higher returns than takers, and high-priced
+contracts win slightly more often than their price implies \cite{burgi2025}.
+
+\paragraph{Basket dislocations and cross-venue pricing.} Saguillo et al.\ \cite{saguillo2025} estimate about \$40M
+of realised arbitrage profit on Polymarket from April 2024 to April 2025, including MECE baskets priced away from
+\$1; Polymarket was largely fee-free over that period. Across venues, Polymarket led price discovery for the 2024 US
+presidential election \cite{aktug2026}. Kalshi's weather prices beat public numerical forecasts and lead them
+\cite{crosier2026}, and frontier language-model agents lost money trading Kalshi in 2026 \cite{predictionarena2026}.
+
+\paragraph{Market microstructure.} A trade executes at the bid or the ask, so trade prices ``bounce'' across the
+spread even when the efficient price does not move \cite{roll1984}. Market makers earn the spread but lose to better
+informed traders (adverse selection) \cite{glosten1985} and manage inventory risk \cite{avellaneda2008}. Replay
+simulators for prediction markets must make assumptions about queue position and fees \cite{arora2026}.
+
+\paragraph{Learning methods.} Graph attention \cite{velickovic2018} and spatio-temporal graph models
+\cite{yu2018stgcn} combine cross-sectional structure with temporal dynamics; in microstructure, deep models usually
+forecast \emph{changes} in a reference price rather than levels \cite{zhang2019deeplob}. For tabular data,
+gradient-boosted trees \cite{ke2017lightgbm} remain competitive with, and often better than, deep networks
+\cite{grinsztajn2022}.
+
+% ===========================================================================
+\section{Motivation}
+% ===========================================================================
+
+\subsection{From pairs trading to structural constraints}
+The project began as a statistical pairs-trading study. A correlation- and half-life-based baseline on October 2025
+data returned a Sharpe ratio of 5.52, but most selected pairs were economically unrelated, and the result is best
+explained by multiple testing over tens of thousands of candidate pairs. Estimated relationships fit event contracts
+poorly: most contracts live days or hours, binary payoffs have no stationary spread to revert to, and screening
+millions of tickers guarantees spurious pairs. The scope therefore moved to relationships that need no estimation:
+the MECE constraint, which is exact, known in advance and enforced at settlement.
+
+\subsection{Why early positive results did not stand}
+In the pilot window (May--September 2025), a model trained on last-trade prices first appeared to beat an optimal
+constraint-based forecast by 15\% and to find tradeable dislocations. Both claims failed under scrutiny:
+\begin{itemize}
+  \item \textbf{Last-trade basket sums are dominated by microstructure.} 68.7\% of basket trade prints are ask-side;
+    with a half-spread of $2.8\cent$ this predicts a $+6.3\cent$ excess on a 6-leg basket, against $+5.25\cent$
+    measured. A model forecasting last-trade sums may be forecasting which side the next prints land on.
+  \item \textbf{Pipeline leaks inflated the result:} resolved markets replayed after close, time-to-close from
+    after-the-fact close times, basket membership chosen with hindsight, and baskets scored on a subset of legs.
+\end{itemize}
+We therefore rebuilt the pipeline causally, pre-registered every evaluation, scored against constraint-based
+baselines rather than only persistence, and measured executable prices directly from quotes.
+
+\subsection{From forecasting to trading}
+A forecasting result alone does not show economic value. Taker strategies that trade basket dislocations were
+unprofitable after fees at quoted prices in the pilot. Since makers, not takers, earn on Kalshi \cite{burgi2025},
+we asked whether the STGAT can improve a \emph{market-making} strategy, and whether any model can make one
+profitable out of sample.
+
+% ===========================================================================
+\section{Method}
+% ===========================================================================
+
+\subsection{Population and graph}
+Contracts are nodes on a 2-hour snapshot grid. A \emph{MECE basket} is an event whose legs partition the outcome
+space; membership is decided causally (a family qualifies only on instances known to have resolved at least 24h
+earlier, and an event's own outcome is never used). Each basket has a hub node linked to its legs in both
+directions. Node features summarise each 2-hour window (last price, VWAP, return, volatility, volume, order flow and
+hub leg counts). Time-to-close is zeroed as an input.
+
+\subsection{The STGAT}
+The model has four parts: a type-specific input projection; a two-channel spatial attention layer (MECE hub--leg and
+ladder); per-node \emph{causal} temporal self-attention over the snapshot sequence; and a residual forecast head
+$\hat p_{t+h} = p_t + \Delta_h$ at horizons $h\in\{1,2,3,6,12\}$ snapshots (2--24 hours), with its final layer
+zero-initialised so training starts exactly at persistence. An auxiliary head predicts the next-hour change in the
+quoted mid. The loss combines per-node error with a basket-sum term; checkpoints are selected on validation MECE
+error.
+
+\subsection{Forecasting targets and baselines}
+For basket $b$ with legs $L_b$, let $S_t=\sum_{i\in L_b} p_{i,t}$. A basket is scored only if every listed leg is
+present; a leg that settles by $t+h$ is valued at its settlement (0 or 1). Baselines:
+\begin{itemize}
+  \item \textbf{Persistence:} $\hat S_{t+h}=S_t$.
+  \item \textbf{Constraint oracle:} $\hat S_{t+h}=1+\alpha(S_t-1)$, with the single $\alpha$ that minimises squared
+    error \emph{on the scored split}; deliberately optimistic.
+  \item \textbf{Family oracle:} the same with one $\alpha$ per series \x\ horizon.
+\end{itemize}
+
+\subsection{Market-making simulator}
+The simulator replays Kalshi's trade tape and hourly best bid/ask for MECE legs. At each hour it may post a bid
+and/or an ask on a leg (10 contracts, improving the best price by $1\cent$ when the spread allows), cancels unfilled
+orders after one hour, and holds every fill to settlement. Kalshi's maker fees are applied from the historical fee
+schedule, with inventory limits of 50 contracts per leg and 200 per event. Whether a historical trade would have
+filled our order depends on queue position, which a replay cannot observe, so every result is reported under three
+fill models:
+\begin{itemize}
+  \item \textbf{Optimistic:} any trade at our price fills us.
+  \item \textbf{Pessimistic} (the pre-registered verdict): a trade must go \emph{through} our price.
+  \item \textbf{Strict:} competing makers also improve their price, so fills are rarer and more adverse.
+\end{itemize}
+Confidence intervals resample events (clusters).
+
+\subsection{Strategies}
+\begin{itemize}
+  \item \textbf{Quote everything:} post both sides on every eligible leg (prices 1--99$\cent$, spread $\ge 2\cent$).
+  \item \textbf{A10 (rules):} the most robust of 896 rule configurations searched on the development months:
+    favourites only (order price 85--99$\cent$), spread $\ge 4\cent$, taker-only series, no quotes within 24h of
+    close.
+  \item \textbf{S4 / S5 (STGAT signal):} A10 with quotes skipped when the STGAT predicts an adverse move of more than
+    half the spread (S4), or quoting only where the STGAT predicts a move (S5).
+  \item \textbf{G (learned policy):} a gradient-boosted regressor predicts, for each candidate quote of ``quote
+    everything'', its net P\&L per contract at settlement after fees; the quote is posted only if the prediction
+    exceeds $1\cent$. The model is scikit-learn's \texttt{HistGradient\allowbreak{}Boosting\allowbreak{}Regressor}
+    \cite{pedregosa2011} (400 iterations, learning rate 0.03, 31 leaves, at least 300 samples per leaf, L2 penalty
+    1.0), with 14 features known at the quoting hour: order side and price, price relative to mid, spread, mid,
+    trades in the last 24h, 24h mid change, basket size, legs quoted, basket sum of mids, best other leg's mid, hour,
+    maker-fee status and category. Time-to-close is excluded because for sports markets the recorded close time is
+    the actual match end.
+  \item \textbf{G+S:} G plus six STGAT outputs at the quoting hour (the mid-move head and the forecast head's
+    predicted change at each horizon, seed-averaged), from the latest snapshot no more than 2h old.
+\end{itemize}
+
+% ===========================================================================
+\section{Experimental Setup}
+% ===========================================================================
+
+\begin{itemize}
+  \item \textbf{Data.} Kalshi trades, market metadata and hourly quote candles, November 2024 to November 2025
+    (November ends on the 25th). Earlier months have too few basket trades to be usable.
+  \item \textbf{Split.} Strictly forward, 7/2/4 months: train November 2024--May 2025, validation June--July 2025,
+    test August--November 2025.
+  \item \textbf{STGAT tuning.} A pre-registered screen on validation MECE error selected the default configuration
+    (embedding 32, 4 heads, learning rate $10^{-3}$, no dropout); four seeds were then trained. A variant with quote
+    inputs was rejected by a pre-registered rule on validation.
+  \item \textbf{Pre-registration.} Every test result below was specified in the repository before the test months
+    were scored, and run once. The learned policies' models are hash-checked before scoring. Test months already
+    used for the rule-based maker were reused for the learned policies; this is disclosed, and no design choice for
+    the learned policies used them.
+  \item \textbf{Parlays.} From October 2025 Kalshi lists multi-game parlays (about 99{,}000 tickers that month).
+    They belong to no basket; they were excluded from test scoring after a verified check that excluding edge-free
+    nodes leaves MECE results byte-identical.
+  \item \textbf{Leak checks for G.} With shuffled training labels the edge disappears; it survives removing
+    time-to-close, fee status and category, and excluding sports series. An allow-all policy reproduces the
+    no-policy simulation exactly.
+\end{itemize}
+
+% ===========================================================================
+\section{Results}
+% ===========================================================================
+
+\subsection{Baskets are coherent at quoted prices (pilot)}\label{sec:res-coherence}
+
+\begin{table}[htbp]
+\centering
+\caption{Basket sums on the pilot test month (September 2025): whole baskets with every leg live.}
+\label{tab:coherence}
+\begin{tabular}{lcc}
+\toprule
+ & all baskets ($n=7{,}532$) & every leg two-sided (69\%) \\
+\midrule
+Sum of last trades & $1.0405$ & $1.0261$ \\
+Sum of quoted mids & $1.0185$ & $\bm{1.0034}$ \\
+Sum of bids / asks & $0.944$ / $1.093$ & $0.967$ / $1.039$ \\
+Selling at bids beats \$1 & 1.8\% of snapshots ($\approx 2\cent$) & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Where every leg has a two-sided quote, the mid-price sum is within $0.34\cent$ of \$1 (Table~\ref{tab:coherence}).
+In these baskets, 82--87\% of the last-trade excess is print side; the rest of the pooled excess sits in legs with no
+bid. Executable dislocation is rare and small: selling at the bids beats \$1 in 1.8\% of snapshots by about
+$2\cent$, before a taker fee of $1.3$--$5.8\cent$ per 6-leg basket.
+
+\subsection{The STGAT forecasts basket prices}\label{sec:res-forecast}
+
+\begin{table}[htbp]
+\centering
+\caption{Pre-registered test (August--November 2025): basket-sum forecast error relative to baselines. Four seeds,
+mean (range); $n=109{,}642$ basket-horizon positions in $k=1{,}025$ events. Lower is better.}
+\label{tab:forecast}
+\begin{tabular}{lcc}
+\toprule
+Comparison & test & validation \\
+\midrule
+STGAT vs persistence & $\bm{0.635\x}$ ($0.567$--$0.683$) & $0.585\x$ \\
+STGAT vs constraint oracle (single $\alpha=0.566$) & $\bm{0.922\x}$ ($0.824$--$0.991$) & $0.904\x$ \\
+\quad seeds whose 95\% CI excludes 1 & 1 of 4 & --- \\
+Unsettled baskets (80.1\%): vs single-$\alpha$ oracle & $0.991\x$ ($0.871$--$1.087$) & $0.916\x$ \\
+Unsettled baskets: vs family oracle & $1.09\x$ ($0.959$--$1.196$) & $0.970\x$ \\
+Next-hour mid-move head vs zero move & $1.03\x$ ($1.015$--$1.041$) & $1.007\x$ \\
+Ladder pairs vs oracle (exploratory) & $0.991\x$ ($0.984$--$0.997$) & $0.994\x$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{The STGAT beats persistence clearly and the constraint oracle on average} (Table~\ref{tab:forecast}),
+    but only one seed's CI excludes 1 against the oracle.
+  \item \textbf{The margin comes from settlement convergence.} Baskets that settle within the horizon have a target
+    of exactly \$1, which the model anticipates although time-to-close is not an input. On unsettled baskets it
+    matches the single-$\alpha$ oracle and loses to the family oracle, the same pattern as in the pilot.
+  \item \textbf{It cannot forecast next-hour quote moves}: every seed is worse than predicting no move.
+\end{itemize}
+
+\subsection{The STGAT cannot improve a rule-based maker}\label{sec:res-rule}
+
+\begin{table}[htbp]
+\centering
+\caption{Pre-registered maker test (August--November 2025), pessimistic fills.}
+\label{tab:rule}
+\begin{tabular}{lcccc}
+\toprule
+Strategy & return & 95\% CI & net & fills / events \\
+\midrule
+A10 (rules) & $+1.80\%$ & $-48.5\%$ to $+62.4\%$ & $+\$1.87$ & 83 / 29 \\
+A6 (rules, no 24h cut-off) & $-10.6\%$ & $-32.7\%$ to $+13.4\%$ & $-\$96.63$ & 1{,}852 / 754 \\
+S4 (A10 + STGAT filter) & \multicolumn{4}{c}{identical to A10: the filter never fired} \\
+S5 (STGAT-led) & $+24.2\%$ & $-36.7\%$ to $+90.7\%$ & $+\$14.94$ & 49 / 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The rule-based maker A10 was positive on test but far from significant (Table~\ref{tab:rule}). Its development
+return of $+21.7\%$ did not carry over, partly because its eligible opportunities collapsed from about 63 leg-days per
+development month to 5--7 per month by October--November 2025. The STGAT did not change a single A10 trade. A
+post-test diagnosis explains why: A10's profit is decided at settlement, not in the next hour. Its losing fills
+earned $+\$62.59$ in their first hour on development data and lost $\$162.11$ by settlement. Skipping every fill with
+an adverse first hour (perfect next-hour foresight) would have moved test P\&L only from $+\$1.87$ to $+\$3.07$,
+whereas perfect foresight of the outcome would have given $+\$49.86$.
+
+\subsection{Settlement outcomes are not forecastable beyond the price (exploratory)}\label{sec:res-settle}
+
+If a maker's profit is decided at settlement, the useful forecast is the outcome itself. On all MECE legs in the
+development months (validation: 9{,}790 leg-days, 891 events), no forecast beat the market price
+(Table~\ref{tab:settle}). A gradient-boosted model with price, basket context and market features matched it; the
+basket-normalised price (the constraint alone) was clearly worse, because the overround is not spread evenly across
+legs.
+
+\begin{table}[htbp]
+\centering
+\caption{Forecasting whether a leg settles YES (validation, exploratory). Lower is better.}
+\label{tab:settle}
+\begin{tabular}{lcc}
+\toprule
+Forecast & log-loss & Brier \\
+\midrule
+Market price (mid/100) & $\bm{0.4577}$ & $\bm{0.1498}$ \\
+Price with isotonic calibration & $0.4603$ & $0.1507$ \\
+Basket-normalised price, calibrated & $0.4758$ & $0.1579$ \\
+Gradient-boosted model & $0.4589$ & $0.1500$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{A learned market-making policy is profitable out of sample}\label{sec:res-policy}
+
+\begin{table}[htbp]
+\centering
+\caption{Pre-registered test (August--November 2025) of the learned policies, with validation (June--July 2025) in
+brackets. Returns are net of fees on capital; CIs resample events.}
+\label{tab:policy}
+\small
+\begin{tabularx}{\textwidth}{L c c c c c}
+\toprule
+Strategy & \shortstack{return,\\pessimistic} & 95\% CI & net & \shortstack{return,\\strict} & fills / events \\
+\midrule
+\textbf{G (learned policy)} & $\bm{+3.55\%}$ [$+3.73\%$] & $+2.51\%$ to $+4.60\%$ & $+\$3{,}748$ & $+0.39\%$ & 34{,}086 / 1{,}325 \\
+G+S (with STGAT features) & $+2.90\%$ [$+3.38\%$] & $+1.88\%$ to $+3.85\%$ & $+\$3{,}235$ & $+0.01\%$ & 35{,}759 / 1{,}313 \\
+Quote everything & $-0.34\%$ [$-0.36\%$] & $-0.77\%$ to $+0.10\%$ & $-\$1{,}133$ & $-3.07\%$ & 110{,}867 / 1{,}609 \\
+A10 (rules) & $+1.80\%$ [$+105\%$] & $-48.5\%$ to $+62.4\%$ & $+\$1.87$ & $+28.5\%$ & 83 / 29 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{The learned policy passed its pre-registered verdict} (pessimistic return above 0 with the CI
+    excluding 0): $+3.55\%$, $+\$3{,}748$ over 34{,}086 fills in 1{,}325 events (Table~\ref{tab:policy}). The same
+    candidate quotes posted without the model lose money.
+  \item \textbf{It held up out of sample}: $+3.73\%$ on validation and $+3.55\%$ on test, under both the optimistic
+    ($+3.56\%$) and pessimistic models.
+  \item \textbf{The edge is not significant under strict fills} ($+0.39\%$, CI $-0.96\%$ to $+1.78\%$): if competing
+    makers also improve their prices, the policy's best fills are crowded out.
+  \item \textbf{The STGAT does not help.} G+S minus G is $-0.65$ percentage points on test (CI $-1.40$ to $+0.09$)
+    and $-0.35$ on validation, although STGAT features were available for 90.9\% of training fills. The STGAT's
+    forecasts correlate $0.062$ with subsequent quote moves on its own training months but only $0.025$ on
+    validation and $0.016$ on test: the policy learned to trust an in-sample-inflated signal whose out-of-sample
+    information is near zero.
+\end{itemize}
+
+\subsection{Other routes}\label{sec:res-other}
+
+\begin{table}[htbp]
+\centering
+\caption{Further routes to trading profit. ``Pre-reg.'' = pre-registered; otherwise exploratory, development data.}
+\label{tab:other}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.2cm} L}
+\toprule
+Route & Outcome \\
+\midrule
+Kalshi $\rightarrow$ Polymarket catch-up (pre-reg., 2026 data, 768 matched soccer events)
+  & Kalshi leads: {\boldmath $+0.70\cent$} per contract (CI $+0.47$ to $+0.97$, 4{,}320 trades), but Polymarket's sports
+    taker fees turn it into $-0.53$ to $-1.35\cent$. On 2025 development data Polymarket did not lead Kalshi. \\
+Weather brackets vs live station observations
+  & Brackets made impossible by observed temperatures are repriced within the hour: at the first quote after,
+    99.2\% bid below $2\cent$. \\
+Predicting complete basket fills
+  & Fills are predictable (AUC 0.91), but the predictable fills lose money: adverse selection. \\
+Spotify \#1-song markets vs streaming data
+  & Not testable: no free daily history for 2024--25. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Every route that relied on knowing more than the market failed (Table~\ref{tab:other}); the only lasting edge was in
+execution.
+
+% ===========================================================================
+\section{Discussion and Limitations}
+% ===========================================================================
+
+\paragraph{Answer to the research question.} The learned graph model adds value in forecasting how basket prices
+evolve, chiefly by anticipating settlement convergence, and the graph is what makes it competitive with the
+constraint. It does not add value for trading. Kalshi prices are coherent at quoted prices, calibrated to outcomes,
+and quick to absorb public information, so a model that forecasts prices finds nothing an execution strategy can use.
+The profitable policy's edge is structural: which quotes are worth posting given the spread, the favourite--longshot
+pattern and when informed traders are active. A gradient-boosted model on simple market features captures that,
+consistent with evidence that boosted trees remain strong on tabular data \cite{grinsztajn2022}.
+
+\paragraph{Limitations.}
+\begin{itemize}
+  \item \textbf{Fill assumptions.} Profitability holds under optimistic and pessimistic fills but not under strict
+    competition; live queue position cannot be observed from the tape.
+  \item \textbf{Backtest, not live trading.} Market impact, faster competitors and larger order sizes are not
+    modelled; the simulator re-quotes hourly.
+  \item \textbf{Reused test months.} August--November 2025 were used for the rule-based maker before the learned
+    policies were designed; disclosed, and no learned-policy choice used them.
+  \item \textbf{Short window.} Thirteen months of one fast-growing market; the population is concentrated in weather,
+    crypto ranges and sports.
+  \item \textbf{In-sample STGAT features.} G+S used STGAT outputs that are in-sample on the training months, a caveat
+    stated before the run; out-of-fold features could remove the harm but, given the out-of-sample correlations,
+    are unlikely to add value.
+\end{itemize}
+
+\paragraph{Next steps.} A pre-registered model benchmark on the same policy task (CatBoost, a modern deep tabular
+model, and the STGAT itself as the policy), tuned on validation and run once on test.
+
+% ===========================================================================
+\section{Conclusion}
+% ===========================================================================
+A no-arbitrage constraint is a strong forecaster of basket prices, and a graph model built on it improves on it by
+learning how baskets converge at settlement. That skill does not become trading profit, because the prices a trader
+faces are already coherent and calibrated. Profit came instead from a learned execution policy, which is positive out
+of sample under pessimistic fills but not under strict competition, and which the graph model's forecasts do not
+improve.
+
+% ===========================================================================
+{\raggedright
+\begin{thebibliography}{99}
+% ===========================================================================
+\bibitem{aktug2026} E.~Aktu\u{g} and O.~Torul. Price Discovery Across Political Prediction Markets: Evidence from the 2024 U.S. Presidential Election. Working paper, June 2026.
+\bibitem{arora2026} A.~Arora and S.~Malpani. PredictionMarketBench: A SWE-bench-style framework for backtesting trading agents on prediction markets. arXiv:2602.00133, 2026.
+\bibitem{avellaneda2008} M.~Avellaneda and S.~Stoikov. High-frequency trading in a limit order book. \emph{Quantitative Finance}, 8(3):217--224, 2008.
+\bibitem{burgi2025} C.~B\"urgi, W.~Deng and K.~Whelan. Makers and Takers: The Economics of the Kalshi Prediction Market. CESifo / CEPR Discussion Paper DP20631, 2025.
+\bibitem{crosier2026} A.~W.~Crosier. Prediction Markets Beat the Weather Forecast on Tomorrow's High Temperature. arXiv:2609.23969, 2026.
+\bibitem{glosten1985} L.~R.~Glosten and P.~R.~Milgrom. Bid, ask and transaction prices in a specialist market with heterogeneously informed traders. \emph{Journal of Financial Economics}, 14(1):71--100, 1985.
+\bibitem{grinsztajn2022} L.~Grinsztajn, E.~Oyallon and G.~Varoquaux. Why do tree-based models still outperform deep learning on typical tabular data? In \emph{NeurIPS Datasets and Benchmarks Track}, 2022.
+\bibitem{ke2017lightgbm} G.~Ke, Q.~Meng, T.~Finley, T.~Wang, W.~Chen, W.~Ma, Q.~Ye and T.-Y.~Liu. LightGBM: A highly efficient gradient boosting decision tree. In \emph{NeurIPS}, 2017.
+\bibitem{pedregosa2011} F.~Pedregosa et al. Scikit-learn: Machine learning in Python. \emph{Journal of Machine Learning Research}, 12:2825--2830, 2011.
+\bibitem{predictionarena2026} Prediction Arena: Benchmarking AI models on real-world prediction markets. arXiv:2604.07355, 2026.
+\bibitem{roll1984} R.~Roll. A simple implicit measure of the effective bid-ask spread in an efficient market. \emph{Journal of Finance}, 39(4):1127--1139, 1984.
+\bibitem{saguillo2025} O.~Saguillo, V.~Ghafouri, L.~Kiffer and G.~Suarez-Tangil. Unravelling the Probabilistic Forest: Arbitrage in Prediction Markets. In \emph{Advances in Financial Technologies (AFT)}, LIPIcs, 2025. arXiv:2508.03474.
+\bibitem{snowberg2010} E.~Snowberg and J.~Wolfers. Explaining the favorite-longshot bias: Is it risk-love or misperceptions? \emph{Journal of Political Economy}, 118(4):723--746, 2010.
+\bibitem{velickovic2018} P.~Veli\v{c}kovi\'c, G.~Cucurull, A.~Casanova, A.~Romero, P.~Li\`o and Y.~Bengio. Graph attention networks. In \emph{ICLR}, 2018.
+\bibitem{wolfers2004} J.~Wolfers and E.~Zitzewitz. Prediction markets. \emph{Journal of Economic Perspectives}, 18(2):107--126, 2004.
+\bibitem{yu2018stgcn} B.~Yu, H.~Yin and Z.~Zhu. Spatio-temporal graph convolutional networks: A deep learning framework for traffic forecasting. In \emph{IJCAI}, 2018.
+\bibitem{zhang2019deeplob} Z.~Zhang, S.~Zohren and S.~Roberts. DeepLOB: Deep convolutional neural networks for limit order books. \emph{IEEE Transactions on Signal Processing}, 67(11):3001--3012, 2019.
+\end{thebibliography}
+}
+
+\end{document}
