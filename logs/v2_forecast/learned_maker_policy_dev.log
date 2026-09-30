@@ -1,0 +1,25 @@
+  2024-11: features for 18,790 fills
+  2024-12: features for 44,219 fills
+  2025-01: features for 69,510 fills
+  2025-02: features for 91,788 fills
+  2025-03: features for 115,854 fills
+  2025-04: features for 139,731 fills
+  2025-05: features for 163,128 fills
+  2025-06: features for 189,043 fills
+  2025-07: features for 218,550 fills
+
+DEVELOPMENT MONTHS ONLY. broad-config fills with features: train 163,128, validation 55,422
+
+VALIDATION (Jun-Jul 2025): policy = keep fills with predicted P&L per contract > t
+  policy                       fills  events     net $ ret on cap c/contract   CI95 (c/contract, by event)
+  quote everything (broad)    55,422     889   -638.73     -0.35%      -0.01   [-0.37, +0.38]
+  learned policy, t=0c        23,699     796  +2950.59     +3.38%      +2.22   [+1.51, +2.90]
+  learned policy, t=1c        16,310     772  +2632.99     +4.38%      +2.91   [+1.97, +3.81]
+  learned policy, t=2c        11,481     740  +2586.70     +6.30%      +3.82   [+2.62, +5.01]
+  learned policy, t=3c         8,424     711  +2250.79     +7.56%      +4.65   [+3.22, +6.10]
+  learned policy, t=5c         4,677     618  +1754.67    +10.99%      +6.49   [+4.60, +8.39]
+  A10 (hand-set rules)            82      24   +153.88   +106.04%     +36.30   [+16.41, +66.27]
+
+  feature importance proxy: validation c/contract of kept fills by side (t=1):
+    bid (buy YES)    kept  4,817  mean +3.07c
+    ask (sell YES)   kept 11,493  mean +2.85c
