@@ -60,6 +60,13 @@ def attempts_for_month(month):
             mo = month
             ch = charged(legs[tks[0]]["series"], mo)
             liquid = all(s.recent_trades(legs[t]["tt"], Hh, 3 * H) > 0 for t in tks)
+            # features known at H (columns 14+, added for the fill-prediction check)
+            tr3 = [s.recent_trades(legs[t]["tt"], Hh, 3 * H) for t in tks]
+            closes = [legs[t]["close"] for t in tks if legs[t]["close"] is not None]
+            ttc_h = (min(closes) - Hh) / H if closes else np.nan
+            hour_utc = (Hh // H) % 24
+            sum_spread = sum(q[t][1] - q[t][0] for t in tks)
+            max_price = max(q[t][1] for t in tks)
             for side in (-1, +1):
                 filled, px, rest = [], {}, []
                 for t in tks:
@@ -101,10 +108,12 @@ def attempts_for_month(month):
                 else:
                     cond = comp if comp == comp else naked
                 # columns 11+ (added for the per-category breakdown; 0-10 unchanged):
-                # series, completion possible at H+1h, locked-in value if completed
+                # series, completion possible at H+1h, locked-in value if completed;
+                # 14+: hour_utc, hours to first close, min/mean trades per leg in (H-3h, H], sum spread, max ask
                 rows.append((ev, month, side, len(tks), liquid, edge, len(filled), len(winners), naked,
                              comp if comp == comp else naked, cond,
-                             legs[tks[0]]["series"], bool(can), lock))
+                             legs[tks[0]]["series"], bool(can), lock,
+                             hour_utc, ttc_h, min(tr3), float(np.mean(tr3)), sum_spread, max_price))
     return rows
 
 
