@@ -1,0 +1,269 @@
+================================================================================================
+BID-SIDE RE-SCORE: final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s1/best.pt ON TEST
+================================================================================================
+  checkpoint epoch 8, horizons [1, 2, 3, 6, 12], supervise active, rule whole_settle
+  Held-out split, scored once under the pre-registered protocol. No retry.
+  EXCLUDED node prefixes: ['KXMVE']
+  split months ['2025-08', '2025-09', '2025-10', '2025-11']; bid prints loaded from ['2025-07', '2025-08', '2025-09', '2025-10', '2025-11']
+  BID SOURCE = QUOTED top of book (data/quotes/candles_1h_2024-11_2025-11.parquet); 24,494 tickers
+
+  backbone drops edge types: none
+    [backbone] projection done  T=168 N=8298  0.20s  rss=2799MB
+      [spatial] t=   0/168  active=  447  mece_edges=  178  ladder_edges=   11  elapsed=   0.0s
+      [spatial] t=  20/168  active=  517  mece_edges=  230  ladder_edges=   66  elapsed=   0.0s
+      [spatial] t=  40/168  active=  549  mece_edges=  216  ladder_edges=   49  elapsed=   0.1s
+      [spatial] t=  60/168  active=  518  mece_edges=  230  ladder_edges=   51  elapsed=   0.1s
+      [spatial] t=  80/168  active=  653  mece_edges=  294  ladder_edges=   89  elapsed=   0.1s
+      [spatial] t= 100/168  active=  317  mece_edges=  144  ladder_edges=   73  elapsed=   0.2s
+      [spatial] t= 120/168  active=  598  mece_edges=  280  ladder_edges=   58  elapsed=   0.2s
+      [spatial] t= 140/168  active=  767  mece_edges=  308  ladder_edges=  100  elapsed=   0.2s
+      [spatial] t= 160/168  active=  377  mece_edges=  158  ladder_edges=   71  elapsed=   0.3s
+      [spatial] t= 167/168  active=  726  mece_edges=  346  ladder_edges=   86  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=768 (at t=165)  total_elapsed=0.3s
+    [backbone] spatial done     0.32s  rss=2799MB
+      [temporal] n_active=8298  node_batch_size=512  -> 17 batch(es)  T=168
+      [temporal] batch   1/17  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch   6/17  b= 512  ckpt=False  elapsed=   2.0s
+      [temporal] batch  11/17  b= 512  ckpt=False  elapsed=   3.6s
+      [temporal] batch  16/17  b= 512  ckpt=False  elapsed=   5.1s
+      [temporal] batch  17/17  b= 106  ckpt=False  elapsed=   5.2s
+    [backbone] temporal done    5.22s  rss=2847MB
+  chunk 1/11 done, 11,574 basket-positions so far
+    [backbone] projection done  T=168 N=8775  0.18s  rss=2847MB
+      [spatial] t=   0/168  active=  701  mece_edges=  342  ladder_edges=   84  elapsed=   0.0s
+      [spatial] t=  20/168  active=  655  mece_edges=  312  ladder_edges=   72  elapsed=   0.0s
+      [spatial] t=  40/168  active=  384  mece_edges=  168  ladder_edges=   67  elapsed=   0.0s
+      [spatial] t=  60/168  active=  710  mece_edges=  300  ladder_edges=   63  elapsed=   0.1s
+      [spatial] t=  80/168  active=  987  mece_edges=  408  ladder_edges=  138  elapsed=   0.1s
+      [spatial] t= 100/168  active=  459  mece_edges=  230  ladder_edges=   68  elapsed=   0.1s
+      [spatial] t= 120/168  active=  783  mece_edges=  296  ladder_edges=   72  elapsed=   0.1s
+      [spatial] t= 140/168  active=  901  mece_edges=  332  ladder_edges=  120  elapsed=   0.1s
+      [spatial] t= 160/168  active=  482  mece_edges=  282  ladder_edges=   66  elapsed=   0.2s
+      [spatial] t= 167/168  active=  854  mece_edges=  396  ladder_edges=   74  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1065 (at t=128)  total_elapsed=0.2s
+    [backbone] spatial done     0.19s  rss=2847MB
+      [temporal] n_active=8775  node_batch_size=512  -> 18 batch(es)  T=168
+      [temporal] batch   1/18  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/18  b= 512  ckpt=False  elapsed=   1.9s
+      [temporal] batch  11/18  b= 512  ckpt=False  elapsed=   3.4s
+      [temporal] batch  16/18  b= 512  ckpt=False  elapsed=   4.9s
+      [temporal] batch  18/18  b=  71  ckpt=False  elapsed=   5.3s
+    [backbone] temporal done    5.27s  rss=2918MB
+  chunk 2/11 done, 29,613 basket-positions so far
+    [backbone] projection done  T=24 N=2215  0.00s  rss=2918MB
+      [spatial] t=   0/24  active=  860  mece_edges=  406  ladder_edges=   73  elapsed=   0.0s
+      [spatial] t=  20/24  active=  669  mece_edges=  312  ladder_edges=   62  elapsed=   0.0s
+      [spatial] t=  23/24  active=  595  mece_edges=  236  ladder_edges=   61  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=898 (at t=8)  total_elapsed=0.0s
+    [backbone] spatial done     0.03s  rss=2918MB
+      [temporal] n_active=2215  node_batch_size=512  -> 5 batch(es)  T=24
+      [temporal] batch   1/5  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   5/5  b= 167  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.02s  rss=2918MB
+  chunk 3/11 done, 32,491 basket-positions so far
+    [backbone] projection done  T=168 N=9346  0.20s  rss=2918MB
+      [spatial] t=   0/168  active=  407  mece_edges=  126  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/168  active=  768  mece_edges=  262  ladder_edges=  125  elapsed=   0.0s
+      [spatial] t=  40/168  active=  382  mece_edges=  146  ladder_edges=   61  elapsed=   0.0s
+      [spatial] t=  60/168  active=  828  mece_edges=  294  ladder_edges=   79  elapsed=   0.1s
+      [spatial] t=  80/168  active=  740  mece_edges=  248  ladder_edges=   72  elapsed=   0.1s
+      [spatial] t= 100/168  active=  371  mece_edges=  116  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t= 120/168  active=  753  mece_edges=  290  ladder_edges=   77  elapsed=   0.1s
+      [spatial] t= 140/168  active=  924  mece_edges=  354  ladder_edges=  103  elapsed=   0.1s
+      [spatial] t= 160/168  active=  344  mece_edges=  208  ladder_edges=   65  elapsed=   0.2s
+      [spatial] t= 167/168  active=  817  mece_edges=  264  ladder_edges=   72  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=944 (at t=116)  total_elapsed=0.2s
+    [backbone] spatial done     0.18s  rss=2918MB
+      [temporal] n_active=9346  node_batch_size=512  -> 19 batch(es)  T=168
+      [temporal] batch   1/19  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/19  b= 512  ckpt=False  elapsed=   2.1s
+      [temporal] batch  11/19  b= 512  ckpt=False  elapsed=   3.5s
+      [temporal] batch  16/19  b= 512  ckpt=False  elapsed=   5.1s
+      [temporal] batch  19/19  b= 130  ckpt=False  elapsed=   5.8s
+    [backbone] temporal done    5.79s  rss=2918MB
+  chunk 4/11 done, 47,107 basket-positions so far
+    [backbone] projection done  T=168 N=10154  0.20s  rss=2918MB
+      [spatial] t=   0/168  active=  882  mece_edges=  250  ladder_edges=   75  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=  338  ladder_edges=  110  elapsed=   0.0s
+      [spatial] t=  40/168  active=  484  mece_edges=  152  ladder_edges=  101  elapsed=   0.1s
+      [spatial] t=  60/168  active=  870  mece_edges=  440  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t=  80/168  active=  661  mece_edges=  328  ladder_edges=   66  elapsed=   0.1s
+      [spatial] t= 100/168  active=  395  mece_edges=  150  ladder_edges=   65  elapsed=   0.2s
+      [spatial] t= 120/168  active=  873  mece_edges=  420  ladder_edges=   83  elapsed=   0.2s
+      [spatial] t= 140/168  active=  966  mece_edges=  424  ladder_edges=  139  elapsed=   0.2s
+      [spatial] t= 160/168  active=  432  mece_edges=  218  ladder_edges=   64  elapsed=   0.2s
+      [spatial] t= 167/168  active=  812  mece_edges=  300  ladder_edges=   75  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1070 (at t=128)  total_elapsed=0.2s
+    [backbone] spatial done     0.25s  rss=2918MB
+      [temporal] n_active=10154  node_batch_size=512  -> 20 batch(es)  T=168
+      [temporal] batch   1/20  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/20  b= 512  ckpt=False  elapsed=   1.7s
+      [temporal] batch  11/20  b= 512  ckpt=False  elapsed=   3.2s
+      [temporal] batch  16/20  b= 512  ckpt=False  elapsed=   4.6s
+      [temporal] batch  20/20  b= 426  ckpt=False  elapsed=   5.8s
+    [backbone] temporal done    5.81s  rss=3005MB
+  chunk 5/11 done, 68,639 basket-positions so far
+    [backbone] projection done  T=24 N=3045  0.00s  rss=3005MB
+      [spatial] t=   0/24  active=  839  mece_edges=  308  ladder_edges=   78  elapsed=   0.0s
+      [spatial] t=  20/24  active=  957  mece_edges=  320  ladder_edges=  130  elapsed=   0.0s
+      [spatial] t=  23/24  active= 1004  mece_edges=  398  ladder_edges=   83  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1004 (at t=23)  total_elapsed=0.0s
+    [backbone] spatial done     0.03s  rss=3005MB
+      [temporal] n_active=3045  node_batch_size=512  -> 6 batch(es)  T=24
+      [temporal] batch   1/6  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/6  b= 485  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.02s  rss=3005MB
+  chunk 6/11 done, 69,883 basket-positions so far
+    [backbone] projection done  T=168 N=11472  0.23s  rss=4100MB
+      [spatial] t=   0/168  active=  782  mece_edges=  224  ladder_edges=   32  elapsed=   0.0s
+      [spatial] t=  20/168  active= 1039  mece_edges=  454  ladder_edges=  122  elapsed=   0.0s
+      [spatial] t=  40/168  active=  574  mece_edges=  314  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t=  60/168  active=  838  mece_edges=  230  ladder_edges=   83  elapsed=   0.1s
+      [spatial] t=  80/168  active= 1005  mece_edges=  304  ladder_edges=  153  elapsed=   0.1s
+      [spatial] t= 100/168  active=  366  mece_edges=   98  ladder_edges=   93  elapsed=   0.1s
+      [spatial] t= 120/168  active=  891  mece_edges=  232  ladder_edges=  129  elapsed=   0.1s
+      [spatial] t= 140/168  active=  782  mece_edges=  244  ladder_edges=  119  elapsed=   0.2s
+      [spatial] t= 160/168  active=  454  mece_edges=  106  ladder_edges=  109  elapsed=   0.2s
+      [spatial] t= 167/168  active=  891  mece_edges=  202  ladder_edges=  104  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1168 (at t=32)  total_elapsed=0.2s
+    [backbone] spatial done     0.21s  rss=4100MB
+      [temporal] n_active=11472  node_batch_size=512  -> 23 batch(es)  T=168
+      [temporal] batch   1/23  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/23  b= 512  ckpt=False  elapsed=   1.7s
+      [temporal] batch  11/23  b= 512  ckpt=False  elapsed=   3.2s
+      [temporal] batch  16/23  b= 512  ckpt=False  elapsed=   4.6s
+      [temporal] batch  21/23  b= 512  ckpt=False  elapsed=   6.1s
+      [temporal] batch  23/23  b= 208  ckpt=False  elapsed=   6.5s
+    [backbone] temporal done    6.52s  rss=4558MB
+  chunk 7/11 done, 83,424 basket-positions so far
+    [backbone] projection done  T=168 N=13428  0.25s  rss=4558MB
+      [spatial] t=   0/168  active=  911  mece_edges=  204  ladder_edges=  103  elapsed=   0.0s
+      [spatial] t=  20/168  active= 1073  mece_edges=  250  ladder_edges=  226  elapsed=   0.0s
+      [spatial] t=  40/168  active=  499  mece_edges=  126  ladder_edges=   74  elapsed=   0.0s
+      [spatial] t=  60/168  active=  921  mece_edges=  148  ladder_edges=   94  elapsed=   0.1s
+      [spatial] t=  80/168  active= 1157  mece_edges=  276  ladder_edges=  169  elapsed=   0.1s
+      [spatial] t= 100/168  active=  454  mece_edges=  148  ladder_edges=   78  elapsed=   0.1s
+      [spatial] t= 120/168  active= 1211  mece_edges=  240  ladder_edges=   64  elapsed=   0.1s
+      [spatial] t= 140/168  active= 1015  mece_edges=  250  ladder_edges=   77  elapsed=   0.1s
+      [spatial] t= 160/168  active=  547  mece_edges=  120  ladder_edges=   62  elapsed=   0.2s
+      [spatial] t= 167/168  active= 1239  mece_edges=  352  ladder_edges=   74  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1304 (at t=165)  total_elapsed=0.2s
+    [backbone] spatial done     0.18s  rss=4558MB
+      [temporal] n_active=13428  node_batch_size=512  -> 27 batch(es)  T=168
+      [temporal] batch   1/27  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/27  b= 512  ckpt=False  elapsed=   4.7s
+      [temporal] batch  11/27  b= 512  ckpt=False  elapsed=   6.2s
+      [temporal] batch  16/27  b= 512  ckpt=False  elapsed=   7.8s
+      [temporal] batch  21/27  b= 512  ckpt=False  elapsed=   9.2s
+      [temporal] batch  26/27  b= 512  ckpt=False  elapsed=  10.7s
+      [temporal] batch  27/27  b= 116  ckpt=False  elapsed=  10.8s
+    [backbone] temporal done    10.83s  rss=4831MB
+  chunk 8/11 done, 92,604 basket-positions so far
+    [backbone] projection done  T=36 N=5877  0.02s  rss=4831MB
+      [spatial] t=   0/36  active= 1273  mece_edges=  362  ladder_edges=   72  elapsed=   0.0s
+      [spatial] t=  20/36  active= 1333  mece_edges=  418  ladder_edges=  150  elapsed=   0.0s
+      [spatial] t=  35/36  active= 1242  mece_edges=  336  ladder_edges=   55  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1405 (at t=9)  total_elapsed=0.0s
+    [backbone] spatial done     0.05s  rss=4831MB
+      [temporal] n_active=5877  node_batch_size=512  -> 12 batch(es)  T=36
+      [temporal] batch   1/12  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch  11/12  b= 512  ckpt=False  elapsed=   0.1s
+      [temporal] batch  12/12  b= 245  ckpt=False  elapsed=   0.1s
+    [backbone] temporal done    0.12s  rss=4831MB
+  chunk 9/11 done, 94,339 basket-positions so far
+    [backbone] projection done  T=168 N=16197  0.42s  rss=4831MB
+      [spatial] t=   0/168  active=  990  mece_edges=  142  ladder_edges=   16  elapsed=   0.0s
+      [spatial] t=  20/168  active=  998  mece_edges=  194  ladder_edges=  102  elapsed=   0.0s
+      [spatial] t=  40/168  active=  560  mece_edges=  264  ladder_edges=   42  elapsed=   0.1s
+      [spatial] t=  60/168  active= 1267  mece_edges=  348  ladder_edges=   96  elapsed=   0.1s
+      [spatial] t=  80/168  active= 1435  mece_edges=  414  ladder_edges=  169  elapsed=   0.1s
+      [spatial] t= 100/168  active=  597  mece_edges=  286  ladder_edges=   58  elapsed=   0.2s
+      [spatial] t= 120/168  active= 1102  mece_edges=  312  ladder_edges=   78  elapsed=   0.2s
+      [spatial] t= 140/168  active= 1248  mece_edges=  322  ladder_edges=  162  elapsed=   0.2s
+      [spatial] t= 160/168  active=  760  mece_edges=  270  ladder_edges=   90  elapsed=   0.3s
+      [spatial] t= 167/168  active= 1174  mece_edges=  344  ladder_edges=   87  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1435 (at t=80)  total_elapsed=0.3s
+    [backbone] spatial done     0.32s  rss=4831MB
+      [temporal] n_active=16197  node_batch_size=512  -> 32 batch(es)  T=168
+      [temporal] batch   1/32  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/32  b= 512  ckpt=False  elapsed=   1.8s
+      [temporal] batch  11/32  b= 512  ckpt=False  elapsed=   3.2s
+      [temporal] batch  16/32  b= 512  ckpt=False  elapsed=   4.6s
+      [temporal] batch  21/32  b= 512  ckpt=False  elapsed=   5.9s
+      [temporal] batch  26/32  b= 512  ckpt=False  elapsed=   7.3s
+      [temporal] batch  31/32  b= 512  ckpt=False  elapsed=   8.9s
+      [temporal] batch  32/32  b= 325  ckpt=False  elapsed=   9.1s
+    [backbone] temporal done    9.11s  rss=4940MB
+  chunk 10/11 done, 103,429 basket-positions so far
+    [backbone] projection done  T=128 N=12485  0.20s  rss=4940MB
+      [spatial] t=   0/128  active= 1154  mece_edges=  300  ladder_edges=   82  elapsed=   0.0s
+      [spatial] t=  20/128  active= 1029  mece_edges=  250  ladder_edges=   96  elapsed=   0.0s
+      [spatial] t=  40/128  active=  878  mece_edges=  254  ladder_edges=  106  elapsed=   0.1s
+      [spatial] t=  60/128  active= 1570  mece_edges=  382  ladder_edges=  115  elapsed=   0.1s
+      [spatial] t=  80/128  active= 1224  mece_edges=  366  ladder_edges=   72  elapsed=   0.1s
+      [spatial] t= 100/128  active=  719  mece_edges=  232  ladder_edges=   67  elapsed=   0.1s
+      [spatial] t= 120/128  active=  560  mece_edges=  158  ladder_edges=   40  elapsed=   0.2s
+      [spatial] t= 127/128  active=  306  mece_edges=    0  ladder_edges=   40  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1570 (at t=60)  total_elapsed=0.2s
+    [backbone] spatial done     0.18s  rss=4940MB
+      [temporal] n_active=12485  node_batch_size=512  -> 25 batch(es)  T=128
+      [temporal] batch   1/25  b= 512  ckpt=False  elapsed=   0.2s
+      [temporal] batch   6/25  b= 512  ckpt=False  elapsed=   1.1s
+      [temporal] batch  11/25  b= 512  ckpt=False  elapsed=   2.2s
+      [temporal] batch  16/25  b= 512  ckpt=False  elapsed=   3.4s
+      [temporal] batch  21/25  b= 512  ckpt=False  elapsed=   4.4s
+      [temporal] batch  25/25  b= 197  ckpt=False  elapsed=   8.1s
+    [backbone] temporal done    8.16s  rss=4940MB
+  chunk 11/11 done, 109,642 basket-positions so far
+
+------------------------------------------------------------------------------------------------
+  REPRODUCTION GUARD PASSED on every chunk and horizon: last-print MECE 0.00330 vs persist 0.00484 (n=109,642)
+  score_forecast.py logged: 0.00247 vs 0.00390 (n=37,392) -> MISMATCH
+
+================================================================================================
+LAST-PRINT HEADLINE BY STRATUM, all whole_settle positions, no bid filter
+[ADDED AFTER VAL s0 WAS SEEN -- not pre-registered; a decomposition of the
+ already-reported figure, used for no choice. See runs/README.md.]
+================================================================================================
+  all         : model/oracle 0.991x  CI95 [0.922, 1.109]  k=1,025 | model/persist 0.683x | alpha 0.566 | n=109,642 (100.0%)
+  no_settled  : model/oracle 1.087x  CI95 [0.985, 1.234]  k=1,015 | model/persist 0.879x | alpha 0.684 | n=87,860 (80.1%)
+  some_settled: model/oracle undefined (target constant $1)  k=993 | model/persist 0.189x | alpha 0.000 | n=21,782 (19.9%)
+
+================================================================================================
+UNSETTLED, LAST-PRINT, vs PER-SERIES x HORIZON ORACLE  [primary for the whole_unsettled
+ retrain, pre-registered 2026-09-27; for earlier checkpoints: diagnostic only]
+================================================================================================
+  model / family oracle : 1.196x  CI95 [1.067, 1.371]  k=1,015 baskets, 94 series x horizon groups, n=87,860
+  model / single-alpha  : 1.087x (alpha 0.684)   model / persistence 0.879x
+
+================================================================================================
+R = 1h  [PRIMARY]
+================================================================================================
+  all          : BID model/oracle 2.863x  CI95 [2.587, 3.195]  k=672 baskets | model/persist 1.742x | alpha 0.346 | n=26,823 (24.5% of whole_settle)
+                 last-print on same subset: model/oracle 0.945x, model/persist 0.652x, alpha 0.565
+  no_settled   : BID model/oracle 1.954x  CI95 [1.745, 2.222]  k=381 baskets | model/persist 1.515x | alpha 0.495 | n=20,841 (19.0% of whole_settle)
+                 last-print on same subset: model/oracle 1.034x, model/persist 0.837x, alpha 0.683
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.337x | k=634 | n=5,982 (5.5% of whole_settle)
+  per-horizon (all): h1: 1.653x (n=5,910)  h2: 1.903x (n=5,606)  h3: 2.195x (n=5,341)  h6: 3.735x (n=4,913)  h12: 12.347x (n=5,053)
+  mean bid-side basket sum at t: 0.9696  (last-print: 1.0596)
+
+================================================================================================
+R = 0.5h  [sensitivity (not used for any choice)]
+================================================================================================
+  all          : BID model/oracle 2.843x  CI95 [2.568, 3.187]  k=671 baskets | model/persist 1.705x | alpha 0.325 | n=24,761 (22.6% of whole_settle)
+                 last-print on same subset: model/oracle 0.939x, model/persist 0.643x, alpha 0.553
+  no_settled   : BID model/oracle 1.908x  CI95 [1.696, 2.177]  k=378 baskets | model/persist 1.474x | alpha 0.477 | n=19,081 (17.4% of whole_settle)
+                 last-print on same subset: model/oracle 1.023x, model/persist 0.828x, alpha 0.676
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.300x | k=631 | n=5,680 (5.2% of whole_settle)
+
+================================================================================================
+R = 2h  [sensitivity (not used for any choice)]
+================================================================================================
+  all          : BID model/oracle 2.850x  CI95 [2.593, 3.180]  k=675 baskets | model/persist 1.736x | alpha 0.348 | n=27,960 (25.5% of whole_settle)
+                 last-print on same subset: model/oracle 0.943x, model/persist 0.644x, alpha 0.560
+  no_settled   : BID model/oracle 1.952x  CI95 [1.746, 2.193]  k=383 baskets | model/persist 1.510x | alpha 0.495 | n=21,607 (19.7% of whole_settle)
+                 last-print on same subset: model/oracle 1.027x, model/persist 0.825x, alpha 0.676
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.336x | k=638 | n=6,353 (5.8% of whole_settle)
+
+exit: 0
