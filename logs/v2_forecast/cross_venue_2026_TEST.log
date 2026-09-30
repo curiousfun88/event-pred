@@ -1,0 +1,34 @@
+PRE-REGISTERED TEST (docs/planning/cross-venue-preregistration.md), 2026 data, run once
+matched legs 2114, events 768
+
+ALL: 4,320 trades in 239 events; mean |gap| 8.9c
+  PRIMARY net 1h, fee 0      : +0.70c/contract  CI95 [+0.47, +0.97]  (k=239 events, n=4320)
+  net 1h, fee 1c (sensitivity): -0.30c/contract  CI95 [-0.53, -0.03]  (k=239 events, n=4320)
+  net 2h (secondary)          : -0.62c/contract  CI95 [-0.81, -0.42]  (k=221 events, n=3962)
+  net 6h (secondary)          : -0.78c/contract  CI95 [-0.91, -0.64]  (k=219 events, n=3806)
+
+VERDICT: mean net +0.70c, CI95 [+0.47, +0.97] -> SUPPORTED (mean > 0, CI excludes 0)
+
+KXEPLGAME: 645 trades in 50 events; mean |gap| 8.9c
+  PRIMARY net 1h, fee 0      : +1.87c/contract  CI95 [+1.16, +2.99]  (k=50 events, n=645)
+  net 1h, fee 1c (sensitivity): +0.87c/contract  CI95 [+0.16, +1.99]  (k=50 events, n=645)
+  net 2h (secondary)          : -0.44c/contract  CI95 [-0.68, -0.16]  (k=47 events, n=557)
+  net 6h (secondary)          : -0.26c/contract  CI95 [-0.62, +0.14]  (k=47 events, n=552)
+
+KXLALIGAGAME: 1,398 trades in 52 events; mean |gap| 9.6c
+  PRIMARY net 1h, fee 0      : -0.10c/contract  CI95 [-0.33, +0.20]  (k=52 events, n=1398)
+  net 1h, fee 1c (sensitivity): -1.10c/contract  CI95 [-1.33, -0.80]  (k=52 events, n=1398)
+  net 2h (secondary)          : -0.91c/contract  CI95 [-1.17, -0.66]  (k=50 events, n=1320)
+  net 6h (secondary)          : -0.93c/contract  CI95 [-1.11, -0.73]  (k=50 events, n=1296)
+
+KXMLSGAME: 2,180 trades in 112 events; mean |gap| 8.3c
+  PRIMARY net 1h, fee 0      : +0.67c/contract  CI95 [+0.38, +1.03]  (k=112 events, n=2180)
+  net 1h, fee 1c (sensitivity): -0.33c/contract  CI95 [-0.62, +0.03]  (k=112 events, n=2180)
+  net 2h (secondary)          : -0.56c/contract  CI95 [-0.86, -0.24]  (k=107 events, n=2028)
+  net 6h (secondary)          : -0.89c/contract  CI95 [-1.05, -0.72]  (k=105 events, n=1909)
+
+KXUCLGAME: 97 trades in 25 events; mean |gap| 11.1c
+  PRIMARY net 1h, fee 0      : +4.97c/contract  CI95 [+2.90, +7.25]  (k=25 events, n=97)
+  net 1h, fee 1c (sensitivity): +3.97c/contract  CI95 [+1.90, +6.25]  (k=25 events, n=97)
+  net 2h (secondary)          : +2.15c/contract  CI95 [-0.49, +6.51]  (k=17 events, n=57)
+  net 6h (secondary)          : +1.63c/contract  CI95 [-1.03, +4.44]  (k=17 events, n=49)

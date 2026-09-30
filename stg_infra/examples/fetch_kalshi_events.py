@@ -14,21 +14,35 @@ cross-venue-preregistration.md). Only listing metadata is fetched by
 """
 import sys, json, time, argparse, datetime as dt
 import urllib.request, urllib.parse
+from pathlib import Path
 
 API = "https://api.elections.kalshi.com/trade-api/v2"
 UA = {"User-Agent": "Mozilla/5.0 (research; event-pred)"}
 
 
+class FetchFailed(Exception):
+    """A request failed for a reason other than 'not found' (e.g. rate limit, timeout)."""
+
+
 def get(path, params=None, tries=4):
+    """JSON on success; {} on 404 (the resource genuinely does not exist here);
+    raises FetchFailed on anything else after retries, so failures are never cached as 'no data'."""
+    import urllib.error
     url = f"{API}{path}" + ("?" + urllib.parse.urlencode(params) if params else "")
     for k in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
                 return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return {}
+            wait = 10 * (k + 1) if e.code == 429 else 1.5 * (k + 1)
+            if k == tries - 1:
+                raise FetchFailed(f"{url[:120]}: {e}")
+            time.sleep(wait)
         except Exception as e:
             if k == tries - 1:
-                print(f"  GET FAILED {url[:120]}: {e}", flush=True)
-                return {}
+                raise FetchFailed(f"{url[:120]}: {e}")
             time.sleep(1.5 * (k + 1))
 
 
@@ -79,14 +93,21 @@ def candle_rows(ticker, candles):
     return out
 
 
+LIVE_FROM = int(dt.datetime(2026, 8, 15, tzinfo=dt.timezone.utc).timestamp())   # live endpoint holds only recent markets
+
+
 def fetch_candles(series, ticker, start, end):
+    """Markets that closed before LIVE_FROM go straight to /historical (the live path 404s for them)."""
     rows, s = [], int(start)
+    paths = ([f"/historical/markets/{ticker}/candlesticks", f"/series/{series}/markets/{ticker}/candlesticks"]
+             if end < LIVE_FROM else
+             [f"/series/{series}/markets/{ticker}/candlesticks", f"/historical/markets/{ticker}/candlesticks"])
     while s < end:
         e = min(s + 5000 * 3600, int(end))
         q = {"start_ts": s, "end_ts": e, "period_interval": 60}
-        d = get(f"/series/{series}/markets/{ticker}/candlesticks", q, tries=2)
+        d = get(paths[0], q, tries=2)
         if not d.get("candlesticks"):
-            d = get(f"/historical/markets/{ticker}/candlesticks", q)
+            d = get(paths[1], q, tries=2)
         rows += candle_rows(ticker, d.get("candlesticks", []))
         s = e
     return rows
@@ -122,6 +143,8 @@ def main():
     ap.add_argument("--close-to", default="2026-09-25")
     ap.add_argument("--candidates", default="data/polymarket/kalshi_2026_candidates.parquet",
                     help="candles: where open/close times come from if MATCH lacks them")
+    ap.add_argument("--cache-dir", default="data/kalshi_candles_cache")
+    ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args()
     if a.self_test:
@@ -142,16 +165,43 @@ def main():
         if "close_time" not in m.columns:
             cand = pl.read_parquet(a.candidates).select(pl.col("ticker").alias("kalshi_ticker"), "open_time", "close_time")
             m = m.join(cand.unique("kalshi_ticker"), on="kalshi_ticker", how="left")
-        rows = []
-        for i, r in enumerate(m.select("kalshi_ticker", "event_ticker", "open_time", "close_time").unique("kalshi_ticker").iter_rows(named=True)):
+        # Resumable: one cache file per leg; a restart skips legs already fetched.
+        cache = Path(a.cache_dir); cache.mkdir(parents=True, exist_ok=True)
+        todo = [r for r in m.select("kalshi_ticker", "event_ticker", "open_time", "close_time").unique("kalshi_ticker").iter_rows(named=True)
+                if not (cache / f"{r['kalshi_ticker']}.json").exists()]
+        print(f"{m['kalshi_ticker'].n_unique()} legs; {len(todo)} to fetch ({a.workers} workers)", flush=True)
+
+        def one(r):
+            try:
+                return _one(r)
+            except FetchFailed as e:
+                print(f"  FETCH FAILED (not cached, rerun to retry): {e}", flush=True)
+                return -1
+
+        def _one(r):
             series = r["event_ticker"].split("-")[0]
-            start = int(r["open_time"].timestamp()) if r["open_time"] else int(r["close_time"].timestamp()) - 14 * 86400
-            rows += fetch_candles(series, r["kalshi_ticker"], max(start, int(r["close_time"].timestamp()) - 21 * 86400),
-                                  int(r["close_time"].timestamp()) + 3600)
-            if i % 200 == 0:
-                print(f"  {i} legs, {len(rows):,} candles", flush=True)
-            time.sleep(0.05)
-        pl.DataFrame(rows, schema=["ticker", "end_s", "bid", "ask"], orient="row").write_parquet(a.out)
+            cl = int(r["close_time"].timestamp())
+            start = int(r["open_time"].timestamp()) if r["open_time"] else cl - 14 * 86400
+            rows = fetch_candles(series, r["kalshi_ticker"], max(start, cl - 21 * 86400), cl + 3600)
+            tmp = cache / f"{r['kalshi_ticker']}.json.tmp"
+            tmp.write_text(json.dumps(rows)); tmp.rename(cache / f"{r['kalshi_ticker']}.json")
+            return len(rows)
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(a.workers) as ex:
+            failed = 0
+            for i, n in enumerate(ex.map(one, todo)):
+                failed += n < 0
+                if i % 200 == 0:
+                    print(f"  {i} legs fetched", flush=True)
+        if failed:
+            raise SystemExit(f"{failed} legs failed to fetch (not cached); rerun to retry before using the output")
+        rows = []
+        for tk in m["kalshi_ticker"].unique().to_list():
+            f = cache / f"{tk}.json"
+            if f.exists():
+                rows += [tuple(x) for x in json.loads(f.read_text())]
+        pl.DataFrame(rows, schema={"ticker": pl.Utf8, "end_s": pl.Int64, "bid": pl.Float64, "ask": pl.Float64},
+                     orient="row").write_parquet(a.out)
         print(f"{len(rows):,} candles -> {a.out}")
 
 

@@ -1,0 +1,490 @@
+2114 legs; 2114 to fetch (4 workers)
+  0 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01LAGDAL-DAL/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG08NEHOU-HOU/candlesticks?start_ts=178604: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG22SJMIN-MIN/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26AUG25VCFRBB-VCF/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG22SJMIN-MIN/candlesticks?start_ts=178623: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26AUG25VCFRBB-VCF/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG08NEHOU-NE/candlesticks?start_ts=1786044: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR22SJATX-SJ/candlesticks?start_ts=1776297: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR22SJATX-SJ/candlesticks?start_ts=1: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR14ATMGET-GET/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR14ATMGET-GET/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04ARACEL-ARA/candlesticks?start_ts=17852: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY24VILATM-VIL/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26AUG31OSAGET-GET/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26AUG31OSAGET-GET/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY24VILATM-VIL/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP12CRYIPS-CRY/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP12CRYIPS-CRY/candlesticks?start_ts=17879: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR20BOUMUN-MUN/candlesticks?start_ts=17725: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR20BOUMUN-MUN/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY12RBBELC-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP05ORLSD-TIE/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR13ALAVIL-VIL/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY12RBBELC-TIE/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP05ORLSD-TIE/candlesticks?start_ts=178736: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR13ALAVIL-VIL/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP05MIAATL-ATL/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP05MIAATL-ATL/candlesticks?start_ts=17873: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JAN20ALMBRU-BRU/candlesticks?start_ts=17677: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY08LEVOSA-LEV/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JAN20ALMBRU-BRU/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP05BRESUN-BRE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY08LEVOSA-LEV/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP05BRESUN-BRE/candlesticks?start_ts=17873: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR11VANNYC-NYC/candlesticks?start_ts=17752: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG16NYCPHI-PHI/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR11VANNYC-NYC/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG16NYCPHI-PHI/candlesticks?start_ts=17857: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26FEB24NEWQAR-TIE/candlesticks?start_ts=17707: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP09SDSJ-TIE/candlesticks?start_ts=1: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP09SDSJ-TIE/candlesticks?start_ts=1787791: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26FEB24NEWQAR-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB28COLPOR-TIE/candlesticks?start_ts=17716: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB28COLPOR-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  200 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26SEP10COMRBL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP19MTLCLB-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26SEP10COMRBL-TIE/candlesticks?start_ts=17883: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR22HOUSD-HOU/candlesticks?start_ts=177629: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP19MTLCLB-TIE/candlesticks?start_ts=17885: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR22HOUSD-HOU/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01COLATX-COL/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01VANLAFC-TIE/candlesticks?start_ts=1785: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP19BRIARS-ARS/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP19BRIARS-ARS/candlesticks?start_ts=17885: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY09ATMRCC-RCC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG05FENSTU-STU/candlesticks?start_ts=17854: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY09ATMRCC-RCC/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26AUG05FENSTU-STU/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26FEB18OLYLEV-LEV/candlesticks?start_ts=17698: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26FEB18OLYLEV-LEV/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26FEB28LFCWHU-LFC/candlesticks?start_ts=17709: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26FEB28LFCWHU-LFC/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PORSEA-POR/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CHICLT-CLT/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG01CHICLT-CLT/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04DINKAZ-KAZ/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MIACLB-CLB/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26AUG04DINKAZ-KAZ/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04HBSCZV-CZV/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR21ESPGET-GET/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY02LAGVAN-TIE/candlesticks?start_ts=17771: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY02LAGVAN-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR21ESPGET-GET/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG22IPSSUN-IPS/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY09FULBOU-FUL/candlesticks?start_ts=17769: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB21ATXMIN-TIE/candlesticks?start_ts=17713: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR11BURBRI-TIE/candlesticks?start_ts=17742: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG22IPSSUN-IPS/candlesticks?start_ts=17861: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY09FULBOU-FUL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB21ATXMIN-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR11BURBRI-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JAN20RMAASM-ASM/candlesticks?start_ts=17677: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JAN20RMAASM-ASM/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR25CINNYRB-CIN/candlesticks?start_ts=1776: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR25CINNYRB-CIN/candlesticks?start_t: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY17RSOVCF-VCF/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY17RSOVCF-VCF/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR14BURBOU-BUR/candlesticks?start_ts=17720: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR14BURBOU-BUR/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL25MTLMIA-MIA/candlesticks?start_ts=17843: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY10OVIGET-GET/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26AUG29RSOESP-ESP/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY10OVIGET-GET/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26AUG29RSOESP-ESP/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  400 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY09SUNMUN-SUN/candlesticks?start_ts=17769: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04LEVALM-LEV/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP04IPSLFC-LFC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY09SUNMUN-SUN/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR25VCFGIR-VCF/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP04IPSLFC-LFC/candlesticks?start_ts=17872: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR25VCFGIR-VCF/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JUL28HOMSTU-HOM/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY24MIAPHI-MIA/candlesticks?start_ts=17789: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY24MIAPHI-MIA/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY23RBBLEV-LEV/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY23RBBLEV-LEV/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MIACLB-MIA/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04ARACEL-TIE/candlesticks?start_ts=17852: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04HBSCZV-TIE/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR23RVCESP-RVC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR23RVCESP-RVC/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26MAR18BARNEW-TIE/candlesticks?start_ts=17725: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26MAR18BARNEW-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL31NYCTOR-NYC/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL31NYCTOR-NYC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PORSEA-TIE/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP05NFOTOT-TOT/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY12RCCLEV-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP05NFOTOT-TOT/candlesticks?start_ts=17873: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG22NFOLEE-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP12CLBNYRB-CLB/candlesticks?start_t: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY12RCCLEV-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG22NFOLEE-TIE/candlesticks?start_ts=17861: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP12CLBNYRB-CLB/candlesticks?start_ts=1787: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG08NEHOU-TIE/candlesticks?start_ts=178604: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CHICLT-CHI/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP19NFOCOV-COV/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP19NFOCOV-COV/candlesticks?start_ts=17885: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG29NSHCIN-CIN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG29NSHCIN-CIN/candlesticks?start_ts=17868: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR04NYRBCIN-NYRB/candlesticks?start_ts=177: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR04NYRBCIN-NYRB/candlesticks?start_: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PHIATL-ATL/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY17RVCVIL-VIL/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY17RVCVIL-VIL/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01NYRBORL-TIE/candlesticks?start_ts=1785: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR21VANSJ-SJ/candlesticks?start_ts=1773533: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26SEP08BVBVIL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR21VANSJ-SJ/candlesticks?start_ts=1: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26SEP08BVBVIL-TIE/candlesticks?start_ts=17882: HTTP Error 429: Too Many Requests
+  600 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP13OSAESP-OSA/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP13OSAESP-OSA/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR01GIRRCC-GIR/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR01GIRRCC-GIR/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY09FULBOU-TIE/candlesticks?start_ts=17769: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26AUG18DINVIK-DIN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY09FULBOU-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP12TOTEVE-EVE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG18DINVIK-DIN/candlesticks?start_ts=17864: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP12TOTEVE-EVE/candlesticks?start_ts=17879: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR03BOUBRE-BRE/candlesticks?start_ts=17711: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR03BOUBRE-BRE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR25ATXHOU-HOU/candlesticks?start_ts=17765: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26SEP09LFCATM-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR25ATXHOU-HOU/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26SEP09LFCATM-TIE/candlesticks?start_ts=17883: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY24MCIAVL-AVL/candlesticks?start_ts=17781: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY02VILLEV-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY24MCIAVL-AVL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JAN20VILAJA-VIL/candlesticks?start_ts=17677: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY02VILLEV-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JAN20VILAJA-VIL/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04LEVALM-TIE/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01DCUNSH-NSH/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26MAR18LFCGAL-TIE/candlesticks?start_ts=17725: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26MAR18LFCGAL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP20MCISUN-SUN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR26VILRCC-VIL/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP20MCISUN-SUN/candlesticks?start_ts=17886: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY19CFCTOT-TIE/candlesticks?start_ts=17777: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR26VILRCC-VIL/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CINSJ-CIN/candlesticks?start_ts=178512: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP15ELCRMA-TIE/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY19CFCTOT-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP15ELCRMA-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CHICLT-TIE/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY17RVCVIL-RVC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY23MINRSL-TIE/candlesticks?start_ts=17788: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY17RVCVIL-RVC/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY23MINRSL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY10LAFCHOU-HOU/candlesticks?start_ts=1777: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY10LAFCHOU-HOU/candlesticks?start_t: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR18NEWBOU-BOU/candlesticks?start_ts=17750: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR18NEWBOU-BOU/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP13SEVVCF-TIE/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP05BRILEE-LEE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP13SEVVCF-TIE/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP05BRILEE-LEE/candlesticks?start_ts=17873: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP05MCICOV-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP05MCICOV-TIE/candlesticks?start_ts=17873: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR25WHUEVE-TIE/candlesticks?start_ts=17756: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR25WHUEVE-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  800 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR15RSOOSA-RSO/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR15RSOOSA-RSO/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MINSD-MIN/candlesticks?start_ts=178512: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26APR15ARSSPO-ARS/candlesticks?start_ts=17748: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26APR15ARSSPO-ARS/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY24LAFCSEA-SEA/candlesticks?start_ts=1779: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY24LAFCSEA-SEA/candlesticks?start_t: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01SKCHOU-TIE/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG30SUNFUL-SUN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY03ESPRMA-ESP/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG30SUNFUL-SUN/candlesticks?start_ts=17868: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01DCUNSH-TIE/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY03ESPRMA-ESP/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR10RMAGIR-GIR/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG05AGFSBH-AGF/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR10RMAGIR-GIR/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP06ALAOSA-TIE/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP06ALAOSA-TIE/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26MAR10LEVARS-LEV/candlesticks?start_ts=17722: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26MAR10LEVARS-LEV/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR01VCFOSA-OSA/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR01VCFOSA-OSA/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR05OVISEV-SEV/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR05OVISEV-SEV/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26APR21MALVCF-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY24BRIMUN-BRI/candlesticks?start_ts=17781: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26APR21MALVCF-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY24BRIMUN-BRI/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP12DALPOR-DAL/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26FEB27LEVALA-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP12DALPOR-DAL/candlesticks?start_ts=17880: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26FEB27LEVALA-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR04HOUSEA-SEA/candlesticks?start_ts=17747: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG30LEEBRE-LEE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR04HOUSEA-SEA/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG30LEEBRE-LEE/candlesticks?start_ts=17868: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04DINKAZ-TIE/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  1000 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG22MIATOR-TOR/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG22MIATOR-TOR/candlesticks?start_ts=17861: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26AUG18LEVAEK-LEV/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL25ORLNSH-NSH/candlesticks?start_ts=17843: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG18LEVAEK-LEV/candlesticks?start_ts=17864: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY23ALARVC-RVC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY23ALARVC-RVC/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01COLATX-TIE/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR12CLBORL-ORL/candlesticks?start_ts=17753: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26AUG21RBBRSO-RBB/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR12CLBORL-ORL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26AUG21RBBRSO-RBB/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY14VCFRVC-RVC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY14VCFRVC-RVC/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PORSEA-SEA/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR18PHIDCU-TIE/candlesticks?start_ts=17758: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR18PHIDCU-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR22RMAATM-RMA/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR22RMAATM-RMA/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR08VILELC-VIL/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR08VILELC-VIL/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MINSD-TIE/candlesticks?start_ts=178512: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP05FULCRY-CRY/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP05FULCRY-CRY/candlesticks?start_ts=17873: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR04LAFCORL-ORL/candlesticks?start_ts=1774: <urlopen error [Errno 104] Connection reset by peer>
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR25ARSNEW-ARS/candlesticks?start_ts=17756: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR04LAFCORL-ORL/candlesticks?start_t: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR25ARSNEW-ARS/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG29MINORL-MIN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG29MINORL-MIN/candlesticks?start_ts=17868: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR08VILELC-ELC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR22HOUSD-SD/candlesticks?start_ts=1776297: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR08VILELC-ELC/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR22HOUSD-SD/candlesticks?start_ts=1: HTTP Error 429: Too Many Requests
+  1200 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL31NYCTOR-TIE/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01LAGDAL-TIE/candlesticks?start_ts=17851: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR11BURBRI-BUR/candlesticks?start_ts=17742: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR11BURBRI-BUR/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR18LEEWOL-TIE/candlesticks?start_ts=17750: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY02TORSJ-TIE/candlesticks?start_ts=177707: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR18LEEWOL-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MTLNE-NE/candlesticks?start_ts=1785122: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY02TORSJ-TIE/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY03GETRVC-GET/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL22SJORL-ORL/candlesticks?start_ts=178416: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY03GETRVC-GET/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR07SKCSD-TIE/candlesticks?start_ts=177232: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL22SJORL-ORL/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR07SKCSD-TIE/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR18MINPOR-MIN/candlesticks?start_ts=17759: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR18MINPOR-MIN/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY02PHINSH-NSH/candlesticks?start_ts=17770: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY02PHINSH-NSH/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG11CELARA-CEL/candlesticks?start_ts=17858: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR07PORVAN-POR/candlesticks?start_ts=17723: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR07PORVAN-POR/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY13VILSEV-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY13VILSEV-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JUL22EGRCEL-CEL/candlesticks?start_ts=17842: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JUL22EGRCEL-CEL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY11RVCGIR-RVC/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04DINKAZ-DIN/candlesticks?start_ts=17854: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG30MUNIPS-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY11RVCGIR-RVC/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG30MUNIPS-TIE/candlesticks?start_ts=17868: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26AUG18HBSSBH-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG18HBSSBH-TIE/candlesticks?start_ts=17864: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP23SEARSL-SEA/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL22CLTATL-ATL/candlesticks?start_ts=17841: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP23SEARSL-SEA/candlesticks?start_ts=17890: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL22CLTATL-ATL/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR07LAFCDAL-LAFC/candlesticks?start_ts=177: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY17RSOVCF-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PHIATL-PHI/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR07LAFCDAL-LAFC/candlesticks?start_: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY17RSOVCF-TIE/candlesticks?st: HTTP Error 404: Not Found
+  1400 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY13SEASJ-SEA/candlesticks?start_ts=177811: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY13SEASJ-SEA/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR14CHIDCU-TIE/candlesticks?start_ts=17729: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01NYRBORL-ORL/candlesticks?start_ts=1785: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR14CHIDCU-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG01NYRBORL-ORL/candlesticks?start_t: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR18CINCHI-CHI/candlesticks?start_ts=17758: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR21DALHOU-DAL/candlesticks?start_ts=17735: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR18CINCHI-CHI/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR21DALHOU-DAL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG15TORNE-TOR/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG15TORNE-TOR/candlesticks?start_ts=178578: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG19CINNYC-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG19CINNYC-TIE/candlesticks?start_ts=17858: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01PHIATL-TIE/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY09LFCCFC-CFC/candlesticks?start_ts=17769: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB28MINCIN-TIE/candlesticks?start_ts=17716: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY09LFCCFC-CFC/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG22MIATOR-MIA/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB28MINCIN-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB28DALNSH-NSH/candlesticks?start_ts=17717: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG22MIATOR-MIA/candlesticks?start_ts=17861: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB28DALNSH-NSH/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR18ORLHOU-ORL/candlesticks?start_ts=17758: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY02LAGVAN-VAN/candlesticks?start_ts=17771: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR18ORLHOU-ORL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY02LAGVAN-VAN/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY23CHITOR-CHI/candlesticks?start_ts=17789: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY23CHITOR-CHI/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP05RVCSAN-SAN/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL22ATXSEA-SEA/candlesticks?start_ts=17841: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP05RVCSAN-SAN/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL22ATXSEA-SEA/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY11TOTLEE-TOT/candlesticks?start_ts=17770: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY11TOTLEE-TOT/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG05FENSTU-TIE/candlesticks?start_ts=17854: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MIACLB-TIE/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26AUG22ESPRMA-RMA/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26AUG22ESPRMA-RMA/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  1600 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY23CLTNE-CLT/candlesticks?start_ts=177888: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY23CLTNE-CLT/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP05TORCHI-TOR/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL25NYRBCLT-TIE/candlesticks?start_ts=1784: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP05TORCHI-TOR/candlesticks?start_ts=17873: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL25NYRBCLT-TIE/candlesticks?start_t: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL25ORLNSH-ORL/candlesticks?start_ts=17843: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP05DALSKC-SKC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB28DALNSH-TIE/candlesticks?start_ts=17717: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04HBSCZV-HBS/candlesticks?start_ts=17854: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP05DALSKC-SKC/candlesticks?start_ts=17874: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB28DALNSH-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01VANLAFC-LAFC/candlesticks?start_ts=178: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY17MUNNFO-NFO/candlesticks?start_ts=17775: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY17MUNNFO-NFO/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR14CHIDCU-CHI/candlesticks?start_ts=17729: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR01ORLMIA-TIE/candlesticks?start_ts=17718: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR14CHIDCU-CHI/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR01ORLMIA-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR15MUNAVL-TIE/candlesticks?start_ts=17721: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR15MUNAVL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG16ATXDAL-ATX/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MTLNE-TIE/candlesticks?start_ts=178512: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG16ATXDAL-ATX/candlesticks?start_ts=17857: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG22CINSEA-SEA/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR01ORLMIA-MIA/candlesticks?start_ts=17718: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG22CINSEA-SEA/candlesticks?start_ts=17861: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR01ORLMIA-MIA/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL22PORDAL-DAL/candlesticks?start_ts=17841: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26JUL22PORDAL-DAL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01VANLAFC-VAN/candlesticks?start_ts=1785: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JAN28BRUOM-OM/candlesticks?start_ts=1769000: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY13NENSH-TIE/candlesticks?start_ts=177802: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JAN28BRUOM-OM/candlesticks?start_ts=1: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY13NENSH-TIE/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CINSJ-TIE/candlesticks?start_ts=178512: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG29SEACHI-SEA/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG29SEACHI-SEA/candlesticks?start_ts=17867: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAR01RBBSEV-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01SKCHOU-HOU/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAR01RBBSEV-TIE/candlesticks?st: HTTP Error 404: Not Found
+  1800 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY03RBBOVI-RBB/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY03RBBOVI-RBB/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26SEP09LFCATM-LFC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAR07CLTATX-TIE/candlesticks?start_ts=17723: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26SEP09LFCATM-LFC/candlesticks?start_ts=17883: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAR07CLTATX-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY02CHICIN-CHI/candlesticks?start_ts=17771: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP13RMARVC-RMA/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY02CHICIN-CHI/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP13RMARVC-RMA/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26SEP12RSLNYC-NYC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26SEP12RSLNYC-NYC/candlesticks?start_ts=17880: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01CINSJ-SJ/candlesticks?start_ts=1785122: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26SEP12CFCHUL-CFC/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26SEP12CFCHUL-CFC/candlesticks?start_ts=17879: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB21SDMTL-TIE/candlesticks?start_ts=177137: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB21SDMTL-TIE/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR14SUNBRI-BRI/candlesticks?start_ts=17720: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR14SUNBRI-BRI/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26FEB21VANRSL-TIE/candlesticks?start_ts=17713: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR22BURMCI-BUR/candlesticks?start_ts=17756: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP19SEVBAR-SEV/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26JUL31NYCTOR-TOR/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR22BURMCI-BUR/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP19SEVBAR-SEV/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26FEB21VANRSL-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01COLATX-ATX/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAY24SUNCFC-CFC/candlesticks?start_ts=17781: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26AUG01COLATX-ATX/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAY24SUNCFC-CFC/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP07ELCRSO-RSO/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP07ELCRSO-RSO/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP15ELCRMA-ELC/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP15ELCRMA-ELC/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26SEP13RMARVC-TIE/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY13GETMAL-GET/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26SEP13RMARVC-TIE/candlesticks?start_ts=17: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY13GETMAL-GET/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY09PORSKC-TIE/candlesticks?start_ts=17777: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY09PORSKC-TIE/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26JAN21OMLFC-TIE/candlesticks?start_ts=176779: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26APR25FULAVL-AVL/candlesticks?start_ts=17756: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26JAN21OMLFC-TIE/candlesticks?start_ts=: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26APR25FULAVL-AVL/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26MAY13SEASJ-TIE/candlesticks?start_ts=177811: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26MAY13SEASJ-TIE/candlesticks?start_ts=: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26FEB24LEVOLY-LEV/candlesticks?start_ts=17707: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01SKCHOU-SKC/candlesticks?start_ts=17851: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26MAR15ARSEVE-TIE/candlesticks?start_ts=17721: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXUCLGAME/markets/KXUCLGAME-26FEB24LEVOLY-LEV/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  2000 legs fetched
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26MAR15ARSEVE-TIE/candlesticks?start_ts: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXEPLGAME/markets/KXEPLGAME-26AUG22NFOLEE-NFO/candlesticks?start_ts: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXEPLGAME-26AUG22NFOLEE-NFO/candlesticks?start_ts=17861: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY13ALABAR-BAR/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY13ALABAR-BAR/candlesticks?st: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26AUG01MINSD-SD/candlesticks?start_ts=1785122: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR18NECLB-NE/candlesticks?start_ts=1775865: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR18NECLB-NE/candlesticks?start_ts=1: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG04ARACEL-CEL/candlesticks?start_ts=17852: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR04NEMTL-NE/candlesticks?start_ts=1774656: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR04NEMTL-NE/candlesticks?start_ts=1: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXLALIGAGAME-26MAY09RSORBB-TIE/candlesticks?start_ts=17: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXLALIGAGAME/markets/KXLALIGAGAME-26MAY09RSORBB-TIE/candlesticks?st: HTTP Error 404: Not Found
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXUCLGAME-26AUG05AGFSBH-TIE/candlesticks?start_ts=17854: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/historical/markets/KXMLSGAME-26APR04DCUDAL-DAL/candlesticks?start_ts=17746: HTTP Error 429: Too Many Requests
+  GET FAILED https://api.elections.kalshi.com/trade-api/v2/series/KXMLSGAME/markets/KXMLSGAME-26APR04DCUDAL-DAL/candlesticks?start_ts: HTTP Error 404: Not Found
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/examples/fetch_kalshi_events.py", line 184, in <module>
+    main()
+  File "/home/fyp/event-pred/stg_infra/examples/fetch_kalshi_events.py", line 179, in main
+    pl.DataFrame(rows, schema=["ticker", "end_s", "bid", "ask"], orient="row").write_parquet(a.out)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/polars/dataframe/frame.py", line 409, in __init__
+    self._df = sequence_to_pydf(
+               ^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/polars/_utils/construction/dataframe.py", line 466, in sequence_to_pydf
+    return _sequence_to_pydf_dispatcher(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/functools.py", line 909, in wrapper
+    return dispatch(args[0].__class__)(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/polars/_utils/construction/dataframe.py", line 689, in _sequence_of_tuple_to_pydf
+    return _sequence_of_sequence_to_pydf(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/polars/_utils/construction/dataframe.py", line 603, in _sequence_of_sequence_to_pydf
+    pydf = PyDataFrame.from_rows(
+           ^^^^^^^^^^^^^^^^^^^^^^
+polars.exceptions.ComputeError: could not append value: 0.03 of type: f64 to the builder; make sure that all rows have the same schema or consider increasing `infer_schema_length`
+
+it might also be that a value overflows the data-type's capacity
+2114 legs; 198 to fetch (3 workers)
+  0 legs fetched
+489,500 candles -> data/polymarket/kalshi_2026_candles.parquet
