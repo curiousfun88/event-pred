@@ -1,0 +1,20 @@
+  2024-11: 3,063 rows
+  2024-12: 6,877 rows
+  2025-01: 10,099 rows
+  2025-02: 13,032 rows
+  2025-03: 16,215 rows
+  2025-04: 19,716 rows
+  2025-05: 23,197 rows
+  2025-06: 27,532 rows
+  2025-07: 32,987 rows
+
+DEVELOPMENT MONTHS ONLY. MECE legs, one row per leg-day: train 23,197 (2,223 events), validation 9,790 (891 events); YES rate val 24.6%
+
+VALIDATION   log-loss    Brier
+  price (mid/100)                  0.4577   0.1498
+  price + isotonic                 0.4603   0.1507
+  basket-normalised + isotonic     0.4758   0.1579
+  GBM                              0.4589   0.1500
+
+  GBM minus best baseline (price + isotonic): -0.0013  CI95 [-0.0056, +0.0029]  (k=891; negative = GBM better)
+  within-5c-band upset AUC (skill beyond price): GBM 0.538   basket-normalised 0.544   price 0.522
