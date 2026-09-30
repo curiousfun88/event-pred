@@ -78,7 +78,7 @@ def map_legs(k_names, pm_names, min_score=0.85):
 
 def query_for(title: str, event_ticker: str) -> str:
     t = re.sub(r"\*\*", "", title)
-    if event_ticker.startswith("KXCLUBWCGAME"):
+    if event_ticker.startswith(("KXCLUBWCGAME", "KXEPLGAME", "KXMLSGAME", "KXUCLGAME", "KXLALIGAGAME")):
         return re.sub(r"\s*Winner\?$", "", t)
     if event_ticker.startswith("KXF1RACE"):
         m = re.search(r"(\w[\w ]*?) Grand Prix", t)
@@ -93,6 +93,29 @@ def query_for(title: str, event_ticker: str) -> str:
         m = re.search(r"win the (.+)\?", t)
         return f"{m.group(1)} Winner" if m else t
     return t
+
+
+GAME_SERIES = ("KXCLUBWCGAME", "KXEPLGAME", "KXMLSGAME", "KXUCLGAME", "KXLALIGAGAME")
+F1_CODES = {"AUS": "Australian", "CHN": "Chinese", "JPN": "Japanese", "BAH": "Bahrain", "SAU": "Saudi Arabian",
+            "MIA": "Miami", "CAN": "Canadian", "MON": "Monaco", "SPA": "Spanish", "AUT": "Austrian",
+            "BRI": "British", "BEL": "Belgian", "HUN": "Hungarian", "DUT": "Dutch", "ITA": "Italian",
+            "MAD": "Madrid", "AZE": "Azerbaijan", "SIN": "Singapore", "USA": "United States", "MEX": "Mexico City",
+            "BRA": "Sao Paulo", "LV": "Las Vegas", "QAT": "Qatar", "ABU": "Abu Dhabi", "EMI": "Emilia Romagna"}
+
+
+def event_query(event_ticker: str, titles, subs) -> str:
+    """Query for one Kalshi event. Event-level titles ('X vs Y Winner?', 'F1 ... Winner?')
+    go through query_for; market-level titles (historical API: 'Fulham wins',
+    'Will Max Verstappen finish in first...') are rebuilt from leg names / ticker."""
+    t0 = titles[0] if titles else ""
+    if event_ticker.startswith(GAME_SERIES) and not t0.endswith("Winner?"):
+        teams = sorted(s for s in subs if norm(s) not in ("tie", "draw"))
+        return " vs ".join(teams[:2])
+    if event_ticker.startswith("KXF1RACE") and "Grand Prix" not in t0:
+        code = event_ticker.split("-")[1][:-4]           # e.g. SPAGP26 -> SPA
+        name = F1_CODES.get(code)
+        return f"F1 {name} Grand Prix Winner" if name else t0
+    return query_for(t0, event_ticker)
 
 
 def reject_title(pm_title: str, event_ticker: str) -> bool:
@@ -167,6 +190,11 @@ def self_test():
     got = pick_event(evs, close, "KXF1RACE-BELGP25", 3)
     check("pick_event: rejects pole market and last year's race", got and got["title"] == "F1 Belgian Grand Prix Winner")
     check("query: Fed", query_for("x", "KXFEDDECISION-25JUL") == "Fed decision in July")
+    check("market-level game titles -> 'A vs B'",
+          event_query("KXEPLGAME-26SEP20FULMUN", ["Tie is the result"], ["Tie", "Manchester United", "Fulham"]) == "Fulham vs Manchester United")
+    check("F1 market-level title -> race from ticker",
+          event_query("KXF1RACE-SPAGP26", ["Will Max Verstappen finish in first"], ["Max Verstappen"]) == "F1 Spanish Grand Prix Winner")
+    check("event-level titles unchanged", event_query("KXCLUBWCGAME-25JUL08FLUCHE", ["Fluminense vs Chelsea Winner?"], []) == "Fluminense vs Chelsea")
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -184,8 +212,8 @@ def main():
     k = pl.read_parquet(a.candidates)
     rows, report = [], []
     for (ev,), g in k.group_by(["event_ticker"], maintain_order=True):
-        title, close = g["title"][0], g["close_time"].max()
-        q = query_for(title, ev)
+        close = g["close_time"].max()
+        q = event_query(ev, g["title"].to_list(), g["yes_sub_title"].to_list())
         e = pick_event(search(q), close, ev, a.max_days)
         if e is None:
             report.append((ev, "NO EVENT", q, 0, g.height)); continue
