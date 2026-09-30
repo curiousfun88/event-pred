@@ -241,8 +241,8 @@ Confidence intervals resample events (clusters).
     inputs was rejected by a pre-registered rule on validation.
   \item \textbf{Pre-registration.} Every test result below was specified in the repository before the test months
     were scored, and run once. The learned policies' models are hash-checked before scoring. Test months already
-    used for the rule-based maker were reused for the learned policies; this is disclosed, and no design choice for
-    the learned policies used them.
+    used for the rule-based maker were reused for the learned policies; this is disclosed, and none of the learned
+    policies' parameters used them.
   \item \textbf{Parlays.} From October 2025 Kalshi lists multi-game parlays (about 99{,}000 tickers that month).
     They belong to no basket; they were excluded from test scoring after a verified check that excluding edge-free
     nodes leaves MECE results byte-identical.
@@ -440,8 +440,10 @@ consistent with evidence that boosted trees remain strong on tabular data \cite{
     competition; live queue position cannot be observed from the tape.
   \item \textbf{Backtest, not live trading.} Market impact, faster competitors and larger order sizes are not
     modelled; the simulator re-quotes hourly.
-  \item \textbf{Reused test months.} August--November 2025 were used for the rule-based maker before the learned
-    policies were designed; disclosed, and no learned-policy choice used them.
+  \item \textbf{Sequential testing.} The learned policy was designed after the rule-based maker's test result was
+    seen, and both were evaluated on the same four months. The policy's parameters never used those months, and its
+    margin survives a correction for the six strategies tested, but a fresh forward period would make the test fully
+    blind \cite{white2000, bailey2014}.
   \item \textbf{Short window.} Thirteen months of one fast-growing market; the population is concentrated in weather,
     crypto ranges and sports.
   \item \textbf{In-sample STGAT features.} G+S used STGAT outputs that are in-sample on the training months, a caveat
@@ -468,6 +470,7 @@ improve.
 \bibitem{aktug2026} E.~Aktu\u{g} and O.~Torul. Price Discovery Across Political Prediction Markets: Evidence from the 2024 U.S. Presidential Election. Working paper, June 2026.
 \bibitem{arora2026} A.~Arora and S.~Malpani. PredictionMarketBench: A SWE-bench-style framework for backtesting trading agents on prediction markets. arXiv:2602.00133, 2026.
 \bibitem{avellaneda2008} M.~Avellaneda and S.~Stoikov. High-frequency trading in a limit order book. \emph{Quantitative Finance}, 8(3):217--224, 2008.
+\bibitem{bailey2014} D.~H.~Bailey, J.~M.~Borwein, M.~L\'opez de Prado and Q.~J.~Zhu. Pseudo-mathematics and financial charlatanism: The effects of backtest overfitting on out-of-sample performance. \emph{Notices of the American Mathematical Society}, 61(5):458--471, 2014.
 \bibitem{burgi2025} C.~B\"urgi, W.~Deng and K.~Whelan. Makers and Takers: The Economics of the Kalshi Prediction Market. CESifo / CEPR Discussion Paper DP20631, 2025.
 \bibitem{crosier2026} A.~W.~Crosier. Prediction Markets Beat the Weather Forecast on Tomorrow's High Temperature. arXiv:2609.23969, 2026.
 \bibitem{glosten1985} L.~R.~Glosten and P.~R.~Milgrom. Bid, ask and transaction prices in a specialist market with heterogeneously informed traders. \emph{Journal of Financial Economics}, 14(1):71--100, 1985.
@@ -479,6 +482,7 @@ improve.
 \bibitem{saguillo2025} O.~Saguillo, V.~Ghafouri, L.~Kiffer and G.~Suarez-Tangil. Unravelling the Probabilistic Forest: Arbitrage in Prediction Markets. In \emph{Advances in Financial Technologies (AFT)}, LIPIcs, 2025. arXiv:2508.03474.
 \bibitem{snowberg2010} E.~Snowberg and J.~Wolfers. Explaining the favorite-longshot bias: Is it risk-love or misperceptions? \emph{Journal of Political Economy}, 118(4):723--746, 2010.
 \bibitem{velickovic2018} P.~Veli\v{c}kovi\'c, G.~Cucurull, A.~Casanova, A.~Romero, P.~Li\`o and Y.~Bengio. Graph attention networks. In \emph{ICLR}, 2018.
+\bibitem{white2000} H.~White. A reality check for data snooping. \emph{Econometrica}, 68(5):1097--1126, 2000.
 \bibitem{wolfers2004} J.~Wolfers and E.~Zitzewitz. Prediction markets. \emph{Journal of Economic Perspectives}, 18(2):107--126, 2004.
 \bibitem{yu2018stgcn} B.~Yu, H.~Yin and Z.~Zhu. Spatio-temporal graph convolutional networks: A deep learning framework for traffic forecasting. In \emph{IJCAI}, 2018.
 \bibitem{zhang2019deeplob} Z.~Zhang, S.~Zohren and S.~Roberts. DeepLOB: Deep convolutional neural networks for limit order books. \emph{IEEE Transactions on Signal Processing}, 67(11):3001--3012, 2019.
