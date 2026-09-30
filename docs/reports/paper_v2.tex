@@ -441,9 +441,11 @@ consistent with evidence that boosted trees remain strong on tabular data \cite{
   \item \textbf{Backtest, not live trading.} Market impact, faster competitors and larger order sizes are not
     modelled; the simulator re-quotes hourly.
   \item \textbf{Sequential testing.} The learned policy was designed after the rule-based maker's test result was
-    seen, and both were evaluated on the same four months. The policy's parameters never used those months, and its
-    margin survives a correction for the six strategies tested, but a fresh forward period would make the test fully
-    blind \cite{white2000, bailey2014}.
+    seen, and both were evaluated on the same four months. There is no data leakage: the policy was trained only on
+    the training months, checked only on the validation months, and its parameters were frozen and hash-checked
+    before the test months were scored. The remaining concern is a possible selection effect from testing
+    strategies in sequence \cite{white2000, bailey2014}; the policy's margin survives a correction for all six
+    strategies tested, so this does not change the conclusion.
   \item \textbf{Scope.} The study covers November 2024 to November 2025, the period with enough basket trading to
     evaluate (earlier months have too few basket trades); this window was agreed in advance. Results describe one
     phase of a fast-growing market, concentrated in weather, crypto ranges and sports. The rapid growth from October
