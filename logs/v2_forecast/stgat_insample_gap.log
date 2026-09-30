@@ -1,0 +1,5 @@
+Correlation of STGAT forecasts with the realised quoted-mid move (higher = more accurate)
+split           n   mid head vs 1h move   forecast h1 vs 2h move
+train      93,633                 0.062                    0.027
+val        54,742                 0.025                    0.007
+test      157,746                 0.016                    0.012
