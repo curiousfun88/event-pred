@@ -31,8 +31,48 @@ FEATS_G = ["side", "price", "rel_price", "spread", "mid", "trades_24h", "dmid_24
            "basket_sum", "second_mid", "hour_utc", "charged", "cat_i"]      # A12: no time-to-close
 HP = dict(max_iter=400, learning_rate=0.03, max_leaf_nodes=31, min_samples_leaf=300, l2_regularization=1.0,
           random_state=0)
-MODEL_PATH = _REPO / "runs/maker/policy_G_model.pkl"
-META_PATH = _REPO / "runs/maker/policy_G_model.json"
+ST_COLS = ["st_mid", "st_d1", "st_d2", "st_d3", "st_d6", "st_d12"]    # A12 G+S: STGAT inputs (cents)
+FEATS = {"G": FEATS_G, "GS": FEATS_G + ST_COLS}
+ST_PATH = _REPO / "runs/maker/stgat_features_13mo.parquet"
+ST_MAX_AGE_NS = 2 * 3_600_000_000_000                             # latest snapshot ending <= H, at most 2h old
+VARIANT = "G"
+
+
+def model_path(v=None):
+    return _REPO / f"runs/maker/policy_{v or VARIANT}_model.pkl"
+
+
+def meta_path(v=None):
+    return _REPO / f"runs/maker/policy_{v or VARIANT}_model.json"
+
+
+MODEL_PATH = model_path("G")
+META_PATH = meta_path("G")
+
+
+def load_stgat(path=ST_PATH):
+    """{ticker: (end_ns sorted, values (n, 6))} from export_stgat_features.py."""
+    import polars as pl
+    df = pl.read_parquet(path).sort(["ticker", "end_ns"])
+    return {tk: (g["end_ns"].to_numpy(), g.select(ST_COLS).to_numpy())
+            for (tk,), g in df.group_by(["ticker"], maintain_order=True)}
+
+
+def stgat_at(st, tk, H):
+    """A12: outputs of the latest snapshot ending at or before H and at most 2h old; else all-NaN."""
+    rec = st.get(tk) if st else None
+    if rec is not None:
+        e, v = rec
+        j = np.searchsorted(e, H, side="right") - 1
+        if j >= 0 and H - e[j] <= ST_MAX_AGE_NS:
+            return v[j]
+    return np.full(len(ST_COLS), np.nan)
+
+
+def add_stgat(r, st, tk, H):
+    if r is not None and VARIANT == "GS":
+        r.update(dict(zip(ST_COLS, stgat_at(st, tk, H))))
+    return r
 
 
 def category_lookup():
@@ -71,7 +111,7 @@ def quote_features(legs, events, charged, lookup, month, ev, tk, H, side, price)
 
 def to_matrix(rows, cats):
     return np.array([[r[f] if f != "cat_i" else float(cats.index(r["cat"]) if r["cat"] in cats else -1)
-                      for f in FEATS_G] for r in rows], dtype=float)
+                      for f in FEATS[VARIANT]] for r in rows], dtype=float)
 
 
 def file_hash(p):
@@ -85,6 +125,7 @@ def cmd_train():
     lookup = category_lookup()
     F = dict(np.load(_REPO / f"runs/maker/cache/{BROAD_KEY_DEV}.fills.npz", allow_pickle=True))
     month = np.array([s.month_of(int(h)) for h in F["hour_ns"]])
+    st = load_stgat() if VARIANT == "GS" else None
     rows, ys = [], []
     for mo in TRAIN:
         legs, events, charged = s.load([mo], "mece")
@@ -93,26 +134,35 @@ def cmd_train():
                 continue
             r = quote_features(legs, events, charged, lookup, mo, F["event"][i], F["ticker"][i],
                                int(F["hour_ns"][i]), int(F["side"][i]), int(F["price"][i]))
+            r = add_stgat(r, st, F["ticker"][i], int(F["hour_ns"][i]))
             if r is not None:
                 rows.append(r); ys.append(F["net_c"][i] / F["qty"][i])
         print(f"  {mo}: {len(rows):,} training fills", flush=True)
     cats = sorted({r["cat"] for r in rows})
     X, y = to_matrix(rows, cats), np.array(ys)
-    m = HistGradientBoostingRegressor(**HP, categorical_features=[f == "cat_i" for f in FEATS_G]).fit(X, y)
-    MODEL_PATH.write_bytes(pickle.dumps({"model": m, "cats": cats, "feats": FEATS_G}))
-    META_PATH.write_text(json.dumps({"amendment": "A12", "variant": "G", "train_months": TRAIN, "n_train": len(y),
-                                     "features": FEATS_G, "hp": HP, "threshold_c": 1.0,
-                                     "source_fills": BROAD_KEY_DEV, "model_sha1": file_hash(MODEL_PATH)}, indent=1))
-    print(f"trained G on {len(y):,} fills; saved {MODEL_PATH.name} sha1 {file_hash(MODEL_PATH)}")
+    fe = FEATS[VARIANT]
+    m = HistGradientBoostingRegressor(**HP, categorical_features=[f == "cat_i" for f in fe]).fit(X, y)
+    mp_, me_ = model_path(), meta_path()
+    mp_.write_bytes(pickle.dumps({"model": m, "cats": cats, "feats": fe}))
+    extra = {}
+    if VARIANT == "GS":
+        cov = float(np.mean(~np.isnan(X[:, fe.index("st_mid")])))
+        extra = {"stgat_features": str(ST_PATH.name), "stgat_sha1": file_hash(ST_PATH), "stgat_coverage_train": cov}
+        print(f"  STGAT feature coverage on training fills: {cov:.1%}")
+    me_.write_text(json.dumps({"amendment": "A12", "variant": VARIANT, "train_months": TRAIN, "n_train": len(y),
+                               "features": fe, "hp": HP, "threshold_c": 1.0, "source_fills": BROAD_KEY_DEV,
+                               "model_sha1": file_hash(mp_), **extra}, indent=1))
+    print(f"trained {VARIANT} on {len(y):,} fills; saved {mp_.name} sha1 {file_hash(mp_)}")
 
 
 def cmd_score(months):
     import polars as pl
     import simulate_maker as s
-    blob = pickle.loads(MODEL_PATH.read_bytes())
+    blob = pickle.loads(model_path().read_bytes())
     m, cats = blob["model"], blob["cats"]
     lookup = category_lookup()
     cfg = s.Config(**BROAD)
+    st = load_stgat() if VARIANT == "GS" else None
     out = []
     for mo in months:
         legs, events, charged = s.load([mo], "mece")
@@ -121,15 +171,16 @@ def cmd_score(months):
         rows, keys = [], []
         for ev, tk, H, sd, pr, b, a in cand:
             r = quote_features(legs, events, charged, lookup, mo, ev, tk, int(H), int(sd), int(pr))
+            r = add_stgat(r, st, tk, int(H))
             if r is not None:
                 rows.append(r); keys.append((tk, int(H), int(sd)))
         pred = m.predict(to_matrix(rows, cats)) if rows else np.array([])
         out += [(k[0], k[1], k[2], float(p)) for k, p in zip(keys, pred)]
         print(f"  {mo}: {len(cand):,} candidate orders scored; {np.mean(pred > 1.0) if len(pred) else 0:.1%} above t=1c", flush=True)
-    path = _REPO / f"runs/maker/policy_G_scores_{months[0]}_{months[-1]}.parquet"
+    path = _REPO / f"runs/maker/policy_{VARIANT}_scores_{months[0]}_{months[-1]}.parquet"
     pl.DataFrame(out, schema={"ticker": pl.Utf8, "hour_ns": pl.Int64, "side": pl.Int64, "pred": pl.Float64},
                  orient="row").write_parquet(path)
-    print(f"-> {path} ({len(out):,} scored orders; model sha1 {file_hash(MODEL_PATH)})")
+    print(f"-> {path} ({len(out):,} scored orders; model sha1 {file_hash(model_path())})")
 
 
 def cmd_check(month):
@@ -177,6 +228,12 @@ def self_test():
     check("order price relative to mid", abs(r["rel_price"] - 1) < 1e-9)
     check("no quote at H -> None", quote_features(legs, events, lambda sr, mo: False, {}, "2025-01", "EV", "A", 5 * HN, 1, 40) is None)
     check("no time-to-close feature (A12)", "ttc_h" not in FEATS_G)
+    st = {"A": (np.array([0, 2 * HN], dtype=np.int64), np.array([[1.0] * 6, [2.0] * 6]))}
+    check("STGAT: exact snapshot at H used", stgat_at(st, "A", 2 * HN)[0] == 2.0)
+    check("STGAT: 1h-old snapshot used", stgat_at(st, "A", 3 * HN)[0] == 2.0)
+    check("STGAT: >2h-old snapshot -> missing", np.isnan(stgat_at(st, "A", 5 * HN)[0]))
+    check("STGAT: snapshot after H never used", stgat_at(st, "A", HN)[0] == 1.0)
+    check("STGAT: unknown node -> missing", np.isnan(stgat_at(st, "Z", HN)).all())
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -186,7 +243,10 @@ def main():
     ap.add_argument("cmd", nargs="?", choices=["train", "score", "check"])
     ap.add_argument("months", nargs="*")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--variant", choices=["G", "GS"], default="G")
     a = ap.parse_args()
+    global VARIANT
+    VARIANT = a.variant
     if a.self_test:
         sys.exit(0 if self_test() else 1)
     if a.cmd == "train":
