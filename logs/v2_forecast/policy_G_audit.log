@@ -1,0 +1,43 @@
+POST-TEST AUDIT OF LEARNED POLICY G (diagnostics only; G and its reported result are unchanged)
+
+reference: G test, pessimistic: ret +3.55%  CI [+2.50, +4.57]  net $+3748.44  events 1325  fills 34086
+
+A. LABEL TIMING
+  training fills: 163,128 in 2,219 events
+  events settling after the training window (after 2025-05): 22 (998 training fills, 0.61%)
+  events settling inside the TEST window (2025-08 or later): 0 (0 training fills, 0.00%)
+  G test events also present in training fills: 0 of 1325
+
+B. CONCENTRATION OF G's TEST P&L
+  2025-08: ret  +3.44%  CI [ +1.57,  +5.24]  net $ +1108.98  events  416  fills  9,603
+  2025-09: ret  +4.62%  CI [ +2.89,  +6.36]  net $ +1397.42  events  447  fills  9,310
+  2025-10: ret  +3.15%  CI [ +1.02,  +5.24]  net $  +873.63  events  325  fills  9,653
+  2025-11: ret  +2.38%  CI [ -0.72,  +5.45]  net $  +368.41  events  183  fills  5,520
+  Climate and Weather   : ret  +3.07%  net $ +2859.44  events  772  fills 30,729
+  Sports                : ret  +3.99%  net $  +237.26  events  270  fills  1,600
+  Politics              : ret +11.13%  net $  +234.43  events   14  fills    619
+  Crypto                : ret +12.39%  net $  +216.79  events  141  fills    403
+  Financials            : ret +10.43%  net $  +141.82  events   68  fills    248
+  Science and Technology: ret  +8.53%  net $   +36.95  events    3  fills     83
+  Entertainment         : ret  +3.13%  net $   +24.18  events   55  fills    369
+  Economics             : ret  -2.03%  net $    -2.43  events    2  fills     35
+  top-10 events carry $+608.10 of $+3748.44 (16%); events positive: 56%; without the top-10 events: $+3140.34
+
+C. RANDOM-SELECTION CONTROL (same share of candidates posted as G, chosen at random)
+  G posts 19.7% of 437,268 scored candidate orders
+  random seed 0: ret +0.18%  CI [-1.06, +1.43]  net $+136.91  fills 24,473
+  random seed 1: ret +0.37%  CI [-0.86, +1.58]  net $+275.41  fills 24,585
+  random seed 2: ret -0.82%  CI [-2.15, +0.52]  net $-606.80  fills 24,303
+  random seed 3: ret -0.44%  CI [-1.68, +0.84]  net $-322.75  fills 24,520
+  random seed 4: ret -0.48%  CI [-1.72, +0.76]  net $-353.46  fills 24,406
+  random mean -0.23%  vs G +3.55%
+
+D. WHAT G SELECTS (fills, pessimistic, test)
+  quote everything  sell share 54% | price <=15c 29%, 15-85c 69%, >=85c 2%
+  G                 sell share 65% | price <=15c 21%, 15-85c 76%, >=85c 3%
+    G buy YES   1-15c: fills  3,363  ret -12.83%  net $  -206.12
+    G buy YES  16-84c: fills  7,928  ret  +4.71%  net $  +795.28
+    G buy YES  85-99c: fills    499  ret  +3.59%  net $  +109.02
+    G sell YES  1-15c: fills  3,675  ret  +3.39%  net $  +778.64
+    G sell YES 16-84c: fills 17,929  ret  +3.73%  net $ +2272.98
+    G sell YES 85-99c: fills    692  ret  -0.40%  net $    -1.36
