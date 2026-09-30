@@ -94,13 +94,17 @@ def attempts_for_month(month):
                     comp = np.nan
                 # "cond" may only use what is known at H+1h: the LOCKED-IN value assuming the
                 # partition holds (exactly one winner), never the realised outcome.
+                lock = np.nan
                 if filled and rest and can:
                     lock = (sum(px[t] for t in filled) + sum(q[t][2] - taker_fee_c(q[t][2]) for t in rest) - mfee - 100) if side < 0                         else (100 - sum(px[t] for t in filled) - sum(q[t][3] + taker_fee_c(q[t][3]) for t in rest) - mfee)
                     cond = comp if lock >= 0 else naked
                 else:
                     cond = comp if comp == comp else naked
+                # columns 11+ (added for the per-category breakdown; 0-10 unchanged):
+                # series, completion possible at H+1h, locked-in value if completed
                 rows.append((ev, month, side, len(tks), liquid, edge, len(filled), len(winners), naked,
-                             comp if comp == comp else naked, cond))
+                             comp if comp == comp else naked, cond,
+                             legs[tks[0]]["series"], bool(can), lock))
     return rows
 
 

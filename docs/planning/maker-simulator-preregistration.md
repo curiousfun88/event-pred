@@ -424,3 +424,35 @@ robustness on development data only.
   expected to come in below development. A10 improves robustness; it does not
   guarantee a positive test.
 - Runs after the STGAT tuning finishes (CPU/RAM), before any test run.
+
+## Amendment A11 (2026-09-30, AFTER A10, BEFORE any test-month simulation): A10 outcome and predictions
+
+**A10 outcome (development months 2024-11..2025-07, `logs/v2_forecast/after_tuning.log`).**
+61 of 896 configurations qualify. Winner, frozen in `runs/maker/selected_a10.json`:
+MECE, both sides, improve 1¢, band 85-99¢, spread >= 4¢, taker-only series,
+inventory cap 25, `min_ttc_h` 24.
+- Pessimistic +21.72% [+7.35, +41.52], 345 fills, 93 events.
+- Strict +24.19% [+7.99, +48.24], 144 fills, strict > 0 in 8/9 months.
+- The 24 h rule carries the result. The same configuration without it
+  scores +3.97% pessimistic and -1.21% strict (6,117 fills). The A6 winner
+  over the same months scores +11.24% pessimistic and -9.14% strict (4,130
+  fills).
+
+**Predictions, stated before the test run.**
+- Primary pessimistic fills: about 130-150 over 2025-08..11 (2025-11 ends
+  on the 25th).
+- Point estimate positive but well below development (best of 896).
+- CI likely includes 0, so the A6.2 verdict (CI excluding 0) is not
+  expected to pass. A negative return is plausible: one or two favourites
+  failing more than 24 h before close would produce it.
+- S4 - base about 0: the signal has no validation skill (7/2/4 §6e,
+  mid-move head 1.007x zero-move).
+- S5: few fills; return sign unknown; CI wide.
+
+**Not added: whole-basket (Sports) strategy.** An exploratory breakdown on
+development months (`stg_infra/examples/explore_basket_maker.py`,
+`summarise_basket_explore.py`, `logs/v2_forecast/basket_explore_dev_by_category.log`)
+found complete basket fills common only in 3-leg Sports baskets (18-25% of
+filled attempts). The P&L lead (+1.07¢/attempt, CI [-0.18, +2.35]) is one
+cell of about 28 post-hoc cells. It is dropped, not tested, and reported only
+as a direction for future work.

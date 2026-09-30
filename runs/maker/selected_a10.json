@@ -1,0 +1,16 @@
+{
+  "sides": "both",
+  "improve": 1,
+  "band_lo": 85,
+  "band_hi": 99,
+  "min_spread": 4,
+  "series": "taker_only",
+  "q": 10,
+  "basket": false,
+  "pos_limit": 25,
+  "event_limit": 200,
+  "universe": "mece",
+  "min_trades_24h": 0,
+  "stgat": "",
+  "min_ttc_h": 24
+}

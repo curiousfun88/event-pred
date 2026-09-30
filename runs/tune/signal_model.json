@@ -1,0 +1,11 @@
+{
+  "choice": "A",
+  "mean_A": 1.006632,
+  "mean_B": 1.03563575,
+  "checkpoints": [
+    "runs/tune/final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s0/best.pt",
+    "runs/tune/final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s1/best.pt",
+    "runs/tune/final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s2/best.pt",
+    "runs/tune/final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s3/best.pt"
+  ]
+}

@@ -1,0 +1,23 @@
+TRAIN 2024-11..2025-05 | VAL 2025-06..2025-07 | test months are never passed to training
+
+== SCREEN
+  screen_d32_h4_lr0.001_do0_wm1_q0_wmid1_s0: done, best val_mece 0.0065
+  screen_d32_h4_lr0.0003_do0.1_wm2_q1_wmid1_s0: pruned@2, best val_mece 0.00826
+  screen_d32_h4_lr0.001_do0.2_wm0.5_q0_wmid1_s0: pruned@4, best val_mece 0.007121
+  screen_d16_h2_lr0.003_do0.1_wm2_q0_wmid1_s0: pruned@2, best val_mece 0.00786
+  screen_d16_h8_lr0.0003_do0.2_wm1_q1_wmid2_s0: pruned@2, best val_mece 0.009479
+  screen_d16_h4_lr0.001_do0.1_wm2_q0_wmid2_s0: pruned@2, best val_mece 0.007949
+  screen_d32_h4_lr0.003_do0.1_wm0.5_q0_wmid0.5_s0: pruned@2, best val_mece 0.008613
+  screen_d32_h8_lr0.003_do0.2_wm0.5_q1_wmid1_s0: pruned@2, best val_mece 0.009191
+  screen_d16_h8_lr0.001_do0.2_wm0.5_q0_wmid2_s0: pruned@2, best val_mece 0.00813
+  EARLY EXIT: none of the first 8 configs beats the defaults' epoch-4 val_mece (0.00699) by 2%
+  STOP RULE: tuning not material (nothing beats the defaults by 2%); defaults go to FINAL
+
+== FINAL: d32_h4_lr0.001_do0_wm1_q0_wmid1 x 4 seeds
+  final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s0: done, best val_mece 0.006143
+  final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s1: done, best val_mece 0.006214
+  final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s2: done, best val_mece 0.006299
+  final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s3: done, best val_mece 0.005834
+
+winner and final checkpoints recorded in /home/fyp/event-pred/runs/tune/winner.json
+exit: 0
