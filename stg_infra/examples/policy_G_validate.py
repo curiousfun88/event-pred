@@ -60,5 +60,27 @@ def run():
     print(f"\n  GATE (pessimistic return > 0): {'PASS -> proceed to the test months' if g['ret'] > 0 else 'FAIL -> report and stop'}")
 
 
+def test():
+    """A12 single test run of G on 2025-08..11 (pre-registered; run once)."""
+    TEST = ["2025-08", "2025-09", "2025-10", "2025-11"]
+    scores = "runs/maker/policy_G_scores_2025-08_2025-11.parquet"
+    a10 = s.Config(**json.load(open("runs/maker/selected_a10.json")))
+    broad = s.Config(**mp.BROAD)
+    G = s.Config(**{**mp.BROAD, "policy": scores, "policy_t": 1.0})
+    tasks = [(c, m, TEST) for c in (broad, G, a10) for m in ("opt", "pess", "strict")]
+    res = s.run_many(tasks, workers=3)
+    meta = json.load(open(mp.META_PATH))
+    print("\nA12 TEST RUN (2025-08..11; single pre-registered run; months previously used for A10/S4/S5 -- disclosed)")
+    print(f"  model sha1 {meta['model_sha1']}, trained on {meta['train_months'][0]}..{meta['train_months'][-1]}, t = 1c")
+    for nm, c in (("quote everything (BROAD)", broad), ("G (learned policy)", G), ("A10 (rules)", a10)):
+        for m in ("opt", "pess", "strict"):
+            r = res[(c, m)]
+            print(f"  {nm:<26} {m.upper():<6} ret {r['ret']:+7.2f}%  CI95 [{r['lo']:+7.2f}, {r['hi']:+7.2f}]  net ${r['net_c'] / 100:+9.2f}"
+                  f"  fills {r['fills']:>7,}  events {r['events']:>5,}  markout {r['markout_c_per_contract']:+.2f}c/ct")
+    g = res[(G, "pess")]
+    v = g["ret"] > 0 and g["lo"] > 0
+    print(f"\n  VERDICT (pessimistic return > 0 with event-cluster CI excluding 0): {'SUPPORTED' if v else 'NOT SUPPORTED'}")
+
+
 if __name__ == "__main__":
-    {"featcheck": lambda: sys.exit(0 if featcheck() else 1), "run": run}[sys.argv[1]]()
+    {"featcheck": lambda: sys.exit(0 if featcheck() else 1), "run": run, "test": test}[sys.argv[1]]()
