@@ -306,6 +306,36 @@ made for two jobs. S4/S5 use the mid-move head, which nothing selected for.
 - B1.4's ablation is not triggered (the winner has quote inputs off) and is
   superseded by B.
 
+## 6e. Decision after B3 (2026-09-30, BEFORE maker A10 and any test result)
+
+**Choice: Model A for both jobs** (basket forecasting and the S4/S5 signal),
+the outcome of the B3 rule, confirmed by the author after a side-by-side on
+validation (`logs/v2_forecast/val_ab/`, `score_forecast.py --split val`):
+
+| val, 4-seed mean | A (quotes off) | B (quotes on) |
+|---|---|---|
+| MECE vs shrinkage oracle | 0.904x (0.859-0.930) | 0.906x (0.862-0.988) |
+| mid-move head vs zero-move | 1.007x | 1.036x (s1 1.111x) |
+| node, pooled vs persistence | 0.995x | 0.982x |
+
+Reason: basket forecasting is tied and B's seeds spread wider. B's mid head
+is worse and fails the <= 0.9865 bar. B's only gain (node-level, about 1.3
+points) feeds neither job. It is reported as exploratory.
+
+**Expectation stated before test:** neither mid-move head beats zero-move on
+validation (every seed >= 1.00x; only A s2 and B s3 have CIs that include 1).
+So S4/S5 are expected to be close to the base maker. A null S4/S5 result is
+the predicted outcome, not a failure of the protocol.
+
+**Settled/unsettled split for A on validation** (`score_mece_bidside.py`,
+last-print strata; a decomposition added after val s0 was first seen in
+September, used for no choice): unsettled positions (75.5%) score 0.916x
+the single-alpha oracle (0.869-0.948, 4/4 CIs exclude 1) and 0.970x the
+per-series x horizon oracle (0.920-1.004, 1/4 CIs exclude 1). The earlier
+causal checkpoints scored 0.887x on this stratum on val and 1.034x on test,
+so a val margin of this size is not expected to transfer. Test will report
+the same strata once.
+
 ## 7. Known constraints
 
 - CPU only and 7 GB of RAM, so one job runs at a time. Estimated cost:
