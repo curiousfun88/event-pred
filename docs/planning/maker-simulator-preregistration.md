@@ -456,3 +456,48 @@ found complete basket fills common only in 3-leg Sports baskets (18-25% of
 filled attempts). The P&L lead (+1.07¢/attempt, CI [-0.18, +2.35]) is one
 cell of about 28 post-hoc cells. It is dropped, not tested, and reported only
 as a direction for future work.
+
+## Amendment A12 (2026-09-30, BEFORE any run of a learned policy on the test months): learned maker policies G and G+S
+
+**Context (development months only).** An offline check (`stg_infra/examples/learned_maker_policy.py`,
+`logs/v2_forecast/learned_maker_policy_dev.log`) trained a gradient-boosted model on the fills of the broadest
+cached MECE configuration (key `b85bd3c8cb9be1ee`: both sides, improve 1c, 1-99c, spread >= 2c, all series,
+inventory 50, event limit 200, no ttc rule, pessimistic fills) to predict each fill's net P&L per contract at
+settlement, after fees. On validation (2025-06..07), keeping fills with predicted P&L > 0 gave +2.22c/contract,
+CI [+1.51, +2.90], vs -0.01 for quoting everything. The leak audit
+(`logs/v2_forecast/learned_maker_policy_leak_audit.log`) passed: shuffled labels give ~0, and the edge survives
+without time-to-close (sports `close_time` is the ACTUAL match end, so it is excluded below), without
+fee status/category, and on non-sports series. Offline scoring ignored inventory interactions; the policy
+is therefore re-validated inside the simulator before any test run.
+
+**Test months already seen.** Aug-Nov 2025 were used for A10/A6/S4/S5 (A6.2/A11). Every result below on those
+months is a disclosed later evaluation of the same months. No design choice below uses any test-month result.
+
+**G (primary learned policy).**
+- Candidate orders: exactly those of the broad configuration above (same simulator logic).
+- Features at the quoting hour H (shared code, `stg_infra/maker_policy.py`): side, order price, order price - mid,
+  spread, mid, trades in (H-24h, H], mid change over 24h, basket size, legs quoted, basket sum of mids, best other
+  mid, hour of day, maker-fee status, category. **Not** time-to-close.
+- Model: `HistGradientBoostingRegressor(max_iter=400, learning_rate=0.03, max_leaf_nodes=31, min_samples_leaf=300,
+  l2_regularization=1.0, random_state=0)`, target net c/contract (pessimistic fills), trained on **2024-11..2025-05
+  only**, frozen and saved with a hash.
+- Rule: post an order only if predicted P&L > **t = 1c** per contract (fixed now).
+- Inventory limits, fees, fill models: unchanged simulator.
+
+**G+S (STGAT variant).** Identical to G plus STGAT inputs at H: the seed-averaged Model A (the four
+`runs/tune/final_*_s{0..3}` checkpoints) outputs from the latest snapshot ending at or before H and at most 2h
+old: next-hour mid-move head (cents) and forecast-head predicted change at horizons 1, 2, 3, 6, 12 (cents);
+missing when no fresh snapshot or node. Same training months, model, threshold, gates and verdict.
+Known caveat, stated now: the STGAT was trained on the same train months, so its train-month outputs are in-sample.
+
+**Gates and verdict (each variant separately).**
+1. Validation gate: in-simulator run on 2025-06..07; proceed to the test months only if the pessimistic
+   return > 0 (point estimate). Otherwise report and stop.
+2. Test: 2025-08..11, once, optimistic / pessimistic / strict. **Verdict:** pessimistic return > 0 with the
+   event-cluster CI excluding 0; strict and optimistic reported as bounds; A10 reported beside it.
+3. The STGAT contribution is reported as G+S minus G (pessimistic, same months).
+4. G may be run on the test months before G+S is built; G+S's specification above does not change after
+   G's result is seen. If G+S cannot be built as specified, that is reported, not redesigned.
+
+No parameter above (features, model, months, threshold, gates, verdict) may be changed after any test-month
+result of G or G+S is seen.
