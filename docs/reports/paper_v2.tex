@@ -447,20 +447,16 @@ consistent with evidence that boosted trees remain strong on tabular data \cite{
   \item \textbf{Scope.} The study covers November 2024 to November 2025, the period with enough basket trading to
     evaluate (earlier months have too few basket trades); this window was agreed in advance. Results describe one
     phase of a fast-growing market, concentrated in weather, crypto ranges and sports. The rapid growth from October
-    2025 (for example, the arrival of parlays) suggests re-testing on later data before generalising, which we leave
-    as possible future work.
+    2025 (for example, the arrival of parlays) suggests re-testing on later data before generalising (possible future
+    work: a forward test of the frozen learned policy on December 2025 onwards, which would also make the test fully
+    blind).
   \item \textbf{In-sample STGAT features.} G+S used STGAT outputs that are in-sample on the training months, a caveat
     stated before the run; out-of-fold features could remove the harm but, given the out-of-sample correlations,
     are unlikely to add value.
 \end{itemize}
 
-\paragraph{Future work.}
-\begin{itemize}
-  \item \textbf{Forward test on later data.} Run the frozen learned policy, unchanged, on December 2025 onwards. This
-    would give a fully blind test, addressing both the sequential-testing caveat and the scope of the window.
-  \item \textbf{Model benchmark.} A pre-registered comparison on the same policy task: CatBoost, a modern deep tabular
-    model, and the STGAT itself as the policy, each tuned on validation and run once on test.
-\end{itemize}
+\paragraph{Next steps.} A pre-registered model benchmark on the same policy task: CatBoost, a modern deep tabular
+model, and the STGAT itself as the policy, each tuned on validation and run once on test.
 
 % ===========================================================================
 \section{Conclusion}
