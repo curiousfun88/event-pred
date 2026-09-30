@@ -217,17 +217,61 @@ Confidence intervals resample events (clusters).
     close.
   \item \textbf{S4 / S5 (STGAT signal):} A10 with quotes skipped when the STGAT predicts an adverse move of more than
     half the spread (S4), or quoting only where the STGAT predicts a move (S5).
-  \item \textbf{G (learned policy):} a gradient-boosted regressor predicts, for each candidate quote of ``quote
-    everything'', its net P\&L per contract at settlement after fees; the quote is posted only if the prediction
-    exceeds $1\cent$. The model is scikit-learn's \texttt{HistGradient\allowbreak{}Boosting\allowbreak{}Regressor}
-    \cite{pedregosa2011} (400 iterations, learning rate 0.03, 31 leaves, at least 300 samples per leaf, L2 penalty
-    1.0), with 14 features known at the quoting hour: order side and price, price relative to mid, spread, mid,
-    trades in the last 24h, 24h mid change, basket size, legs quoted, basket sum of mids, best other leg's mid, hour,
-    maker-fee status and category. Time-to-close is excluded because for sports markets the recorded close time is
-    the actual match end.
-  \item \textbf{G+S:} G plus six STGAT outputs at the quoting hour (the mid-move head and the forecast head's
-    predicted change at each horizon, seed-averaged), from the latest snapshot no more than 2h old.
+  \item \textbf{G (learned policy):} a model scores every candidate quote of ``quote everything'' and only quotes
+    with a high enough predicted profit are posted (Section~\ref{sec:learning-policy}).
+  \item \textbf{G+S:} G with the STGAT's forecasts as additional inputs (Section~\ref{sec:learning-policy}).
 \end{itemize}
+
+\subsection{Learning the policy}\label{sec:learning-policy}
+
+\paragraph{Candidates.} At each quoting hour $H$, every leg with a two-sided quote and a spread of at least $2\cent$
+offers two candidate orders: a bid $1\cent$ above the best bid and an ask $1\cent$ below the best ask (order prices
+1--99$\cent$). These are exactly the orders of the ``quote everything'' strategy, enumerated by the simulator's own
+quoting code so that no candidate logic is duplicated.
+
+\paragraph{Training data and target.} We run ``quote everything'' through the simulator on the training months
+(November 2024--May 2025) under the pessimistic fill model. Each resulting fill $j$ has features $\bm{x}_j$ observed
+at its quoting hour and a label equal to its net profit per contract when the market settles, after maker fees:
+\begin{equation}
+  y_j \;=\; \frac{s_j\,(100\cdot\mathbf{1}[\text{leg settles YES}] - p_j)\,q_j \;-\; \text{fee}_j}{q_j}
+  \quad\text{(cents per contract)},
+\end{equation}
+where $s_j=+1$ for a bid (buy YES) and $-1$ for an ask (sell YES), $p_j$ is the order price and $q_j$ the filled
+quantity. This gives 163{,}128 training fills. No validation or test month is used, and the audit in
+Section~\ref{sec:res-robust} confirms that no training event settles inside the test period.
+
+\paragraph{Why predict profit \emph{given a fill}.} An unfilled order costs nothing (Kalshi charges maker fees only on
+fills), so the expected value of posting a candidate with features $\bm{x}$ is
+$\Pr(\text{fill}\mid\bm{x})\cdot\mathbb{E}[y\mid\text{fill},\bm{x}]$. It is positive exactly when
+$\mathbb{E}[y\mid\text{fill},\bm{x}]$ is positive. Training on fills learns this conditional expectation directly,
+including the adverse selection that makes some fills more likely precisely when they are bad.
+
+\paragraph{Features.} Fourteen quantities known at $H$: order side and price; price relative to the mid; spread; mid;
+trades in $(H-24\text{h}, H]$; change in the mid over 24h; basket size; number of legs quoted; sum of the basket's
+mids; best other leg's mid; hour of day; maker-fee status; and category (treated as categorical). Time-to-close is
+excluded because for sports markets the recorded close time is the actual match end. One shared function computes the
+features for training and for scoring; on 2{,}000 sampled fills its output matches the leak-audited development
+features exactly.
+
+\paragraph{Model and decision rule.} A histogram gradient-boosted regression tree ensemble \cite{ke2017lightgbm}
+(scikit-learn \texttt{HistGradient\allowbreak{}Boosting\allowbreak{}Regressor} \cite{pedregosa2011}; squared-error
+loss, 400 iterations, learning rate 0.03, at most 31 leaves per tree, at least 300 samples per leaf, L2 penalty 1.0,
+fixed seed; the library's default early stopping holds out a random 10\% of the training fills) fits
+$\hat y(\bm{x})\approx\mathbb{E}[y\mid\text{fill},\bm{x}]$. At scoring time the frozen model is applied to every
+candidate, and an order is posted only if
+\begin{equation}
+  \hat y(\bm{x}) > \tau, \qquad \tau = 1\cent \text{ per contract (fixed in advance).}
+\end{equation}
+The posted orders then go through the unchanged simulator, which enforces inventory limits, fees and the three fill
+models. A policy that allows every candidate reproduces the ``quote everything'' simulation exactly, and one that
+allows none gives zero fills.
+
+\paragraph{G+S.} Identical, plus six inputs from the STGAT (four seeds averaged): its next-hour mid-move prediction and
+its forecast head's predicted change at horizons 1, 2, 3, 6 and 12 snapshots, taken from the latest snapshot ending at
+or before $H$ and at most 2h old (missing otherwise; the tree model handles missing values natively).
+
+\paragraph{Use of validation.} Validation (June--July 2025) is used only for a pre-registered gate: each variant proceeds
+to the single test run only if its in-simulator pessimistic return on validation is positive.
 
 % ===========================================================================
 \section{Experimental Setup}
@@ -430,6 +474,10 @@ Random selection\textsuperscript{a} & $-0.23\%$ & $-0.82\%$ to $+0.37\%$\textsup
     events are profitable.
   \item \textbf{The model's selection is what earns.} Posting the same share of candidate quotes (19.7\%) chosen at
     random loses on average, so the gain is not from quoting less.
+  \item \textbf{What it selects.} G leans to the sell side (65\% of its fills sell YES, against 54\% when quoting
+    everything), mostly on legs priced 15--85$\cent$. This fits the coherence finding: basket legs are slightly
+    overpriced on average, so selling them earns a little. Its selection is not perfect: buying long shots at
+    1--15$\cent$ still loses ($-12.8\%$ on 3{,}363 fills).
   \item \textbf{Concentrated in weather markets.} Weather baskets carry \$2{,}859 of the \$3{,}748 profit (76\%) and
     30{,}729 of the 34{,}086 fills. Other categories are positive but small, so the evidence is strongest for weather.
 \end{itemize}
