@@ -1,0 +1,36 @@
+DEVELOPMENT MONTHS. MECE events: 11804
+  events whose legs do NOT share one close time: 2 (0.0%)
+  events whose legs close >1h apart: 1
+  events with a close time at non-zero seconds (not a round schedule): 186 (1.6%)
+shape: (25, 4)
+┌──────────────────┬────────┬──────────────────┬───────────────────┐
+│ series           ┆ events ┆ legs_close_apart ┆ irregular_seconds │
+│ ---              ┆ ---    ┆ ---              ┆ ---               │
+│ str              ┆ u32    ┆ u32              ┆ u32               │
+╞══════════════════╪════════╪══════════════════╪═══════════════════╡
+│ KXBTC            ┆ 3580   ┆ 0                ┆ 0                 │
+│ KXETH            ┆ 3580   ┆ 0                ┆ 0                 │
+│ KXHIGHNY         ┆ 273    ┆ 0                ┆ 0                 │
+│ KXHIGHAUS        ┆ 273    ┆ 0                ┆ 0                 │
+│ KXHIGHMIA        ┆ 273    ┆ 0                ┆ 0                 │
+│ KXHIGHCHI        ┆ 273    ┆ 0                ┆ 0                 │
+│ KXHIGHDEN        ┆ 248    ┆ 0                ┆ 0                 │
+│ KXHIGHPHIL       ┆ 248    ┆ 0                ┆ 0                 │
+│ KXDOGE           ┆ 245    ┆ 0                ┆ 0                 │
+│ KXSHIBA          ┆ 240    ┆ 0                ┆ 0                 │
+│ KXHIGHLAX        ┆ 202    ┆ 0                ┆ 0                 │
+│ KXSPOTIFYGLOBALD ┆ 192    ┆ 0                ┆ 0                 │
+│ KXWTI            ┆ 188    ┆ 0                ┆ 0                 │
+│ KXEURUSD         ┆ 186    ┆ 0                ┆ 0                 │
+│ KXUSDJPY         ┆ 186    ┆ 0                ┆ 0                 │
+│ KXNASDAQ100      ┆ 186    ┆ 0                ┆ 0                 │
+│ KXINX            ┆ 186    ┆ 0                ┆ 0                 │
+│ KXSPOTIFYARTISTD ┆ 184    ┆ 0                ┆ 0                 │
+│ KXTNOTED         ┆ 144    ┆ 0                ┆ 0                 │
+│ KXSPOTIFY2D      ┆ 129    ┆ 0                ┆ 0                 │
+│ KXMLSGAME        ┆ 116    ┆ 0                ┆ 116               │
+│ KXAPPRANKFREE2   ┆ 115    ┆ 0                ┆ 0                 │
+│ KXHIGHHOU        ┆ 65     ┆ 0                ┆ 0                 │
+│ KXCLUBWCGAME     ┆ 43     ┆ 0                ┆ 41                │
+│ KXTOPSONG        ┆ 36     ┆ 0                ┆ 0                 │
+└──────────────────┴────────┴──────────────────┴───────────────────┘

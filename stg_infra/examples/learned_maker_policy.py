@@ -18,6 +18,7 @@ must run the policy inside simulate_maker.
     python stg_infra/examples/learned_maker_policy.py
 """
 import sys, json, argparse
+from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, "stg_infra")
@@ -73,6 +74,38 @@ def cluster_mean_ci(v, g, n_boot=2000, seed=0):
     return v.mean(), tuple(np.percentile(s[idx].sum(1) / c[idx].sum(1), [2.5, 97.5])), k
 
 
+def audit(X, y, ev, mo_, net, cap):
+    """Leak audit on validation: the edge must vanish with shuffled labels, and should survive
+    without time-to-close (sports close_time is the ACTUAL match end) and without sports games."""
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    tr, va = np.isin(mo_, TRAIN), np.isin(mo_, VAL)
+    games = np.array([e.split("-")[0].endswith("GAME") for e in ev])
+    rng = np.random.default_rng(1)
+
+    def fit_eval(cols, y_train, label, eval_mask=None):
+        ci = [FEATS.index(c) for c in cols]
+        m = HistGradientBoostingRegressor(max_iter=400, learning_rate=0.03, max_leaf_nodes=31, min_samples_leaf=300,
+                                          l2_regularization=1.0, random_state=0,
+                                          categorical_features=[c == "cat_i" for c in cols]).fit(X[tr][:, ci], y_train)
+        p = m.predict(X[va][:, ci])
+        em = np.ones(va.sum(), bool) if eval_mask is None else eval_mask
+        for t in (0, 1):
+            sel = (p > t) & em
+            mm, (lo, hi), k = cluster_mean_ci(y[va][sel], ev[va][sel]) if sel.sum() > 30 else (np.nan, (np.nan, np.nan), 0)
+            print(f"  {label:<46} t={t}c: kept {sel.sum():>6,}  net ${net[va][sel].sum() / 100:>+9.2f}  "
+                  f"{mm:>+6.2f}c/contract CI95 [{lo:+.2f}, {hi:+.2f}]  (k={k})")
+    print("LEAK AUDIT (validation Jun-Jul 2025; train Nov 2024 - May 2025)")
+    allm = np.ones(va.sum(), bool)
+    mm, (lo, hi), k = cluster_mean_ci(y[va], ev[va])
+    print(f"  reference: quote everything  net ${net[va].sum() / 100:+.2f}  {mm:+.2f}c/contract CI95 [{lo:+.2f}, {hi:+.2f}]")
+    fit_eval(FEATS, y[tr], "all features (as reported)")
+    fit_eval(FEATS, rng.permutation(y[tr]), "SHUFFLED training labels (must be ~0)")
+    fit_eval([f for f in FEATS if f != "ttc_h"], y[tr], "without time-to-close")
+    fit_eval([f for f in FEATS if f not in ("ttc_h", "charged", "cat_i")], y[tr], "without ttc, fee status, category")
+    fit_eval(FEATS, y[tr], "all features, evaluated on NON-game series only", ~games[va])
+    fit_eval([f for f in FEATS if f != "ttc_h"], y[tr], "without ttc, NON-game series only", ~games[va])
+
+
 def self_test():
     ok = True
 
@@ -106,6 +139,7 @@ def self_test():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--audit", action="store_true", help="leak audit: label shuffle, feature ablations, no sports games")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
@@ -116,15 +150,23 @@ def main():
     lookup = dict(zip(c["series_ticker"].to_list(), c["category"].to_list()))
     F = dict(np.load(f"runs/maker/cache/{BROAD_KEY}.fills.npz", allow_pickle=True))
     month = np.array([s.month_of(int(h)) for h in F["hour_ns"]])
-    feats = {}
-    for mo in DEV:
-        feats.update(features_for_month(mo, np.where(month == mo)[0], F, lookup))
-        print(f"  {mo}: features for {len(feats):,} fills", flush=True)
-    idx = np.array(sorted(feats))
-    cats = sorted({feats[i]["cat"] for i in idx})
-    X = np.array([[feats[i][f] if f != "cat_i" else float(cats.index(feats[i]["cat"])) for f in FEATS] for i in idx])
+    cache = Path("runs/maker/learned_policy_features_dev.npz")
+    if cache.exists():
+        z = np.load(cache, allow_pickle=True); idx, X = z["idx"], z["X"]
+        print(f"  features loaded from {cache}")
+    else:
+        feats = {}
+        for mo in DEV:
+            feats.update(features_for_month(mo, np.where(month == mo)[0], F, lookup))
+            print(f"  {mo}: features for {len(feats):,} fills", flush=True)
+        idx = np.array(sorted(feats))
+        cats = sorted({feats[i]["cat"] for i in idx})
+        X = np.array([[feats[i][f] if f != "cat_i" else float(cats.index(feats[i]["cat"])) for f in FEATS] for i in idx])
+        np.savez_compressed(cache, idx=idx, X=X)
     y = F["net_c"][idx] / F["qty"][idx]                      # cents per contract at settlement, after fees
     ev = F["event"][idx]; mo_ = month[idx]; net = F["net_c"][idx]; qty = F["qty"][idx]; cap = F["capital_c"][idx]
+    if a.audit:
+        return audit(X, y, ev, mo_, net, cap)
     tr, va = np.isin(mo_, TRAIN), np.isin(mo_, VAL)
     print(f"\nDEVELOPMENT MONTHS ONLY. broad-config fills with features: train {tr.sum():,}, validation {va.sum():,}")
     m = HistGradientBoostingRegressor(max_iter=400, learning_rate=0.03, max_leaf_nodes=31, min_samples_leaf=300,

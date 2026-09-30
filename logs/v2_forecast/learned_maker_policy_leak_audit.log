@@ -1,0 +1,23 @@
+  2024-11: features for 18,790 fills
+  2024-12: features for 44,219 fills
+  2025-01: features for 69,510 fills
+  2025-02: features for 91,788 fills
+  2025-03: features for 115,854 fills
+  2025-04: features for 139,731 fills
+  2025-05: features for 163,128 fills
+  2025-06: features for 189,043 fills
+  2025-07: features for 218,550 fills
+LEAK AUDIT (validation Jun-Jul 2025; train Nov 2024 - May 2025)
+  reference: quote everything  net $-638.73  -0.01c/contract CI95 [-0.37, +0.38]
+  all features (as reported)                     t=0c: kept 23,699  net $ +2950.59   +2.22c/contract CI95 [+1.51, +2.90]  (k=796)
+  all features (as reported)                     t=1c: kept 16,310  net $ +2632.99   +2.91c/contract CI95 [+1.97, +3.81]  (k=772)
+  SHUFFLED training labels (must be ~0)          t=0c: kept 15,696  net $  -552.30   +0.05c/contract CI95 [-0.78, +0.89]  (k=819)
+  SHUFFLED training labels (must be ~0)          t=1c: kept    102  net $    +1.43   +1.75c/contract CI95 [-6.95, +9.74]  (k=63)
+  without time-to-close                          t=0c: kept 23,806  net $ +2725.87   +1.98c/contract CI95 [+1.27, +2.72]  (k=793)
+  without time-to-close                          t=1c: kept 16,502  net $ +2540.54   +2.58c/contract CI95 [+1.66, +3.52]  (k=772)
+  without ttc, fee status, category              t=0c: kept 23,319  net $ +2325.96   +1.74c/contract CI95 [+1.00, +2.46]  (k=827)
+  without ttc, fee status, category              t=1c: kept 16,094  net $ +1967.61   +2.23c/contract CI95 [+1.17, +3.23]  (k=797)
+  all features, evaluated on NON-game series only t=0c: kept 21,602  net $ +2736.51   +2.25c/contract CI95 [+1.50, +3.00]  (k=641)
+  all features, evaluated on NON-game series only t=1c: kept 14,510  net $ +2305.86   +2.93c/contract CI95 [+1.93, +3.93]  (k=623)
+  without ttc, NON-game series only              t=0c: kept 21,383  net $ +2428.84   +2.00c/contract CI95 [+1.23, +2.80]  (k=635)
+  without ttc, NON-game series only              t=1c: kept 14,411  net $ +2289.29   +2.68c/contract CI95 [+1.63, +3.72]  (k=617)
