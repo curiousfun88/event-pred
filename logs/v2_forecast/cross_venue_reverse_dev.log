@@ -1,0 +1,37 @@
+development months only; 42 matched events, 394 legs
+
+ALL: n=11,418 hours, 40 events; median |gap| 1.00c
+  PM lag-1 autocorrelation of hourly moves: -0.138  (bounce -> strongly negative, e.g. -0.3 to -0.5)
+  PM next-hour move ~ PM own last move              : 0.989x zero-move  CI95 [0.970, 1.018]  (k=40)
+  PM next-hour move ~ gap to Kalshi                 : 0.738x zero-move  CI95 [0.606, 0.901]  (k=40)
+  PM next-hour move ~ own last move + gap           : 0.734x zero-move  CI95 [0.604, 0.900]  (k=40)
+  PM next-hour move ~ own + gap + Kalshi last move  : 0.666x zero-move  CI95 [0.521, 0.818]  (k=40)
+  Gap closure: slope of PM move on gap (1.0 = PM moves all the way to Kalshi), LOEO-free OLS
+    by +1h: cumulative +0.411  CI95 [+0.272, +0.562]   increment since previous horizon +0.411
+    by +2h: cumulative +0.516  CI95 [+0.379, +0.655]   increment since previous horizon +0.105
+    by +3h: cumulative +0.547  CI95 [+0.413, +0.666]   increment since previous horizon +0.032
+    by +6h: cumulative +0.653  CI95 [+0.455, +0.808]   increment since previous horizon +0.106
+
+KXCLUBWCGAME: n=2,942 hours, 28 events; median |gap| 0.50c
+  PM lag-1 autocorrelation of hourly moves: -0.227  (bounce -> strongly negative, e.g. -0.3 to -0.5)
+  PM next-hour move ~ PM own last move              : 0.968x zero-move  CI95 [0.888, 1.099]  (k=28)
+  PM next-hour move ~ gap to Kalshi                 : 0.882x zero-move  CI95 [0.656, 1.419]  (k=28)
+  PM next-hour move ~ own last move + gap           : 0.841x zero-move  CI95 [0.619, 1.380]  (k=28)
+  PM next-hour move ~ own + gap + Kalshi last move  : 0.850x zero-move  CI95 [0.619, 1.407]  (k=28)
+  Gap closure: slope of PM move on gap (1.0 = PM moves all the way to Kalshi), LOEO-free OLS
+    by +1h: cumulative +0.271  CI95 [+0.102, +0.588]   increment since previous horizon +0.271
+    by +2h: cumulative +0.385  CI95 [+0.133, +0.616]   increment since previous horizon +0.114
+    by +3h: cumulative +0.484  CI95 [+0.136, +0.626]   increment since previous horizon +0.100
+    by +6h: cumulative +0.690  CI95 [+0.102, +0.882]   increment since previous horizon +0.206
+
+KXF1RACE: n=4,477 hours, 10 events; median |gap| 1.00c
+  PM lag-1 autocorrelation of hourly moves: -0.127  (bounce -> strongly negative, e.g. -0.3 to -0.5)
+  PM next-hour move ~ PM own last move              : 1.002x zero-move  CI95 [0.986, 1.044]  (k=10)
+  PM next-hour move ~ gap to Kalshi                 : 0.677x zero-move  CI95 [0.499, 0.840]  (k=10)
+  PM next-hour move ~ own last move + gap           : 0.680x zero-move  CI95 [0.504, 0.841]  (k=10)
+  PM next-hour move ~ own + gap + Kalshi last move  : 0.583x zero-move  CI95 [0.345, 0.751]  (k=10)
+  Gap closure: slope of PM move on gap (1.0 = PM moves all the way to Kalshi), LOEO-free OLS
+    by +1h: cumulative +0.543  CI95 [+0.394, +0.679]   increment since previous horizon +0.543
+    by +2h: cumulative +0.659  CI95 [+0.478, +0.819]   increment since previous horizon +0.117
+    by +3h: cumulative +0.647  CI95 [+0.468, +0.806]   increment since previous horizon -0.012
+    by +6h: cumulative +0.700  CI95 [+0.503, +0.888]   increment since previous horizon +0.053

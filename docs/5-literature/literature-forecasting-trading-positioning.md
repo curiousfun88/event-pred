@@ -68,6 +68,22 @@ leave-one-event-out fits.
 - The rough Kalshi taker check is negative after fees (-3.44c/contract, CI
   [-5.08, -1.71], realistic exit).
 - Limits: 40 events; hourly only (the literature's lead is at 5 min).
+- **Reverse detail** (`--reverse-detail`, `logs/v2_forecast/cross_venue_reverse_dev.log`).
+  Is it a lead or PM noise?
+  - PM lag-1 autocorrelation is -0.14 (planted bounce: -0.40).
+  - PM's own last move predicts nothing (0.989x). The gap to Kalshi does
+    (0.738x, CI [0.606, 0.901]). Adding Kalshi's last move improves it
+    further (0.666x, CI [0.521, 0.818]): Kalshi's moves propagate to PM
+    within the next hour.
+  - The gap closes gradually: 41% by +1h, 52% by +2h, 65% by +6h (planted
+    noise: ~100% within 1h, then flat). F1 closes mostly within 2h; Club
+    World Cup closes gradually (27% -> 69% by 6h, wide CI).
+  - Reading: **Kalshi leads Polymarket** on these 2025 sports/F1 MECE
+    markets. That is information flow, not only bounce, and opposite to the
+    2024 election evidence (Polymarket led).
+  - Caveats: 40 events; whether PM's history is mid or last price is not
+    documented; the median gap is only 1.0c. Not tradable as tested: no PM
+    bid/ask history, PM access restrictions.
 
 ## Positioning
 

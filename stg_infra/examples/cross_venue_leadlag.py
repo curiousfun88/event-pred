@@ -227,9 +227,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("match", nargs="?")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--reverse-detail", action="store_true",
+                    help="Kalshi -> Polymarket: bounce vs gradual gap closure (added 2026-09-30)")
     a = ap.parse_args()
     if a.self_test:
-        sys.exit(0 if self_test() else 1)
+        sys.exit(0 if (self_test() & _reverse_self_test()) else 1)
     import polars as pl
     m = pl.read_parquet(a.match)
     q = pl.concat([pl.read_parquet(f) for f in sorted(Path("data/quotes/by_month").glob("quotes_*.parquet"))
@@ -240,7 +242,7 @@ def main():
         pl.col("ticker").is_in(m["kalshi_ticker"].to_list())).collect().unique("ticker")
     close = {r["ticker"]: int(r["close_time"].timestamp()) for r in mk.iter_rows(named=True) if r["close_time"]}
     cat = lambda ev: ev.split("-")[0]
-    rows = []
+    rows, rev = [], []
     for r in m.iter_rows(named=True):
         g = q.filter(pl.col("ticker") == r["kalshi_ticker"])
         kq = {}
@@ -252,12 +254,118 @@ def main():
             continue
         pts = fetch_pm(r["pm_token_yes"], min(kq) - 2 * H, max(kq) + 2 * H)
         rows += build_rows(kq, pts, close.get(r["kalshi_ticker"]), r["event_ticker"], r["kalshi_ticker"])
+        rev += reverse_rows(kq, pts, close.get(r["kalshi_ticker"]), r["event_ticker"])
     print(f"development months only; {m['event_ticker'].n_unique()} matched events, {m.height} legs")
+    if a.reverse_detail:
+        reverse_detail(rev, label="ALL")
+        for c in sorted({cat(r[0]) for r in rev}):
+            sub = [r for r in rev if cat(r[0]) == c]
+            if len({r[0] for r in sub}) >= 3:
+                reverse_detail(sub, label=c)
+        return
     analyse(rows, "ALL")
     for c in sorted({cat(r[0]) for r in rows}):
         sub = [r for r in rows if cat(r[0]) == c]
         if len({r[0] for r in sub}) >= 3:
             analyse(sub, c)
+
+
+
+# ---------------------------------------------------------------- reverse detail (added 2026-09-30)
+def reverse_rows(kq, pm_pts, close_ts, event, horizons=(1, 2, 3, 6)):
+    """Per Kalshi quoting hour H (two-sided at H and H-1h, before close):
+    (event, gap, xp, xk, d_1, d_2, ...) with d_h = PM(H+h) - PM(H), cents.
+    Only the INPUTS are restricted to <= H; d_h are targets."""
+    if not pm_pts:
+        return []
+    pt = np.array([t for t, _ in pm_pts], dtype=np.int64)
+    pv = np.array([p for _, p in pm_pts]) * 100
+    out = []
+    for Hh in sorted(kq):
+        if close_ts is not None and Hh + max(horizons) * H >= close_ts:
+            continue
+        if Hh - H not in kq:
+            continue
+        m0 = sum(kq[Hh]) / 2
+        mm = sum(kq[Hh - H]) / 2
+        p0, pm1 = asof(pt, pv, Hh), asof(pt, pv, Hh - H)
+        fut = [asof(pt, pv, Hh + h * H) - p0 for h in horizons]
+        if np.isnan(p0) or np.isnan(pm1) or any(np.isnan(fut)):
+            continue
+        out.append((event, m0 - p0, p0 - pm1, m0 - mm, *fut))
+    return out
+
+
+def reverse_detail(rows, horizons=(1, 2, 3, 6), label="ALL"):
+    """rows from reverse_rows: gap = Kalshi mid - PM (positive = PM below Kalshi)."""
+    ev = np.array([r[0] for r in rows])
+    A = np.array([r[1:] for r in rows], dtype=float)
+    gap, xp, xk = A[:, 0], A[:, 1], A[:, 2]
+    D = A[:, 3:]
+    d1 = D[:, 0]
+    print(f"\n{label}: n={len(gap):,} hours, {len(np.unique(ev))} events; median |gap| {np.median(np.abs(gap)):.2f}c")
+    ok = ~np.isnan(xp)
+    lag1 = np.corrcoef(xp[ok], d1[ok])[0, 1]
+    print(f"  PM lag-1 autocorrelation of hourly moves: {lag1:+.3f}  (bounce -> strongly negative, e.g. -0.3 to -0.5)")
+    for name, X in (("PM own last move", xp[:, None]), ("gap to Kalshi", gap[:, None]),
+                    ("own last move + gap", np.c_[xp, gap]), ("own + gap + Kalshi last move", np.c_[xp, gap, xk])):
+        p = loeo_predict(X, d1, ev)
+        r, (lo, hi), k = ratio_ci(d1, p, ev)
+        print(f"  PM next-hour move ~ {name:<30}: {r:.3f}x zero-move  CI95 [{lo:.3f}, {hi:.3f}]  (k={k})")
+    print("  Gap closure: slope of PM move on gap (1.0 = PM moves all the way to Kalshi), LOEO-free OLS")
+    prev = np.zeros_like(gap)
+    for j, h in enumerate(horizons):
+        b = float(np.dot(gap, D[:, j]) / np.dot(gap, gap))
+        inc = D[:, j] - prev
+        bi = float(np.dot(gap, inc) / np.dot(gap, gap))
+        # event-bootstrap CI for the cumulative slope
+        _, inv = np.unique(ev, return_inverse=True)
+        k = inv.max() + 1
+        num = np.bincount(inv, weights=gap * D[:, j], minlength=k)
+        den = np.bincount(inv, weights=gap * gap, minlength=k)
+        rng = np.random.default_rng(0)
+        idx = rng.integers(0, k, size=(2000, k))
+        bs = num[idx].sum(1) / den[idx].sum(1)
+        lo, hi = np.percentile(bs, [2.5, 97.5])
+        print(f"    by +{h}h: cumulative {b:+.3f}  CI95 [{lo:+.3f}, {hi:+.3f}]   increment since previous horizon {bi:+.3f}")
+        prev = D[:, j]
+
+
+def _reverse_self_test():
+    rng = np.random.default_rng(2)
+    ok = True
+
+    def check(msg, c):
+        nonlocal ok
+        ok &= bool(c)
+        print(f"  [{'PASS' if c else 'FAIL'}] {msg}")
+    print("SELF-TEST (reverse detail)")
+
+    def slopes(kind, n_ev=40, T=80):
+        rows = []
+        for e in range(n_ev):
+            true = np.clip(50 + np.cumsum(rng.normal(0, 2, T + 10)), 5, 95)
+            if kind == "noise":        # PM = truth + iid noise (bounce)
+                pm = true + rng.normal(0, 3, T + 10)
+            else:                      # PM closes 30% of the gap to truth each hour
+                pm = np.empty_like(true); pm[0] = true[0]
+                for t in range(1, T + 10):
+                    pm[t] = pm[t - 1] + 0.3 * (true[t - 1] - pm[t - 1]) + rng.normal(0, 0.2)
+            kq = {h * H: (true[h] - 0.5, true[h] + 0.5) for h in range(T + 10)}
+            rows += reverse_rows(kq, [(h * H, pm[h] / 100) for h in range(T + 10)], None, f"E{e}")
+        A = np.array([r[1:] for r in rows], dtype=float)
+        g, D = A[:, 0], A[:, 3:]
+        return [float(np.dot(g, D[:, j]) / np.dot(g, g)) for j in range(D.shape[1])], A
+    sn, An = slopes("noise")
+    sl, Al = slopes("lag")
+    check(f"noise: gap closes ~fully within 1h and stays flat ({sn[0]:+.2f} -> {sn[-1]:+.2f})",
+          sn[0] > 0.8 and abs(sn[-1] - sn[0]) < 0.15)
+    check(f"lag: gap closes gradually ({sl[0]:+.2f} at 1h -> {sl[-1]:+.2f} at 6h)", sl[0] < 0.5 and sl[-1] > sl[0] + 0.3)
+    xn = np.corrcoef(An[:, 1], An[:, 3])[0, 1]
+    check(f"noise: negative lag-1 autocorrelation ({xn:+.2f})", xn < -0.3)
+    print("SELF-TEST (reverse detail)", "PASSED" if ok else "FAILED")
+    return ok
+
 
 
 if __name__ == "__main__":
