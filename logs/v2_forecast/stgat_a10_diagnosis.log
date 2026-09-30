@@ -1,0 +1,14 @@
+
+DEVELOPMENT: A10 fills 345, contracts 2287, net $+180.92
+  P&L split: first-hour markout $+90.77  |  after the first hour, to settlement $+90.15
+  losing fills 187 (54%), their 1h markout sum $+62.59 vs final $-162.11
+  CEILING (perfect 1h foresight, skip fills with adverse 1h markout): net $+176.06 on 268 fills (vs $+180.92)
+  (for scale) perfect OUTCOME foresight: $+343.03
+
+TEST: A10 fills 83, contracts 437, net $+1.87
+  P&L split: first-hour markout $+21.91  |  after the first hour, to settlement $-20.04
+  losing fills 67 (81%), their 1h markout sum $+15.06 vs final $-47.99
+  CEILING (perfect 1h foresight, skip fills with adverse 1h markout): net $+3.07 on 71 fills (vs $+1.87)
+  (for scale) perfect OUTCOME foresight: $+49.86
+  COVERAGE: fills with a fresh STGAT signal at their quoting hour: 36/83
+  |m_hat| at those fills: median 0.19c, max 0.55c; >2c (S4 threshold, s>=4c): 0
