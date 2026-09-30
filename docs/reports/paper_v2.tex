@@ -27,6 +27,7 @@
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{multirow}
+\usepackage{float}
 \usepackage[margin=2.4cm]{geometry}
 \usepackage{enumitem}
 \usepackage{xcolor}
@@ -65,7 +66,8 @@ settlement convergence; on unsettled baskets it does not beat a per-family const
 does not improve a market maker whose profit is decided at settlement.
 (iv) \emph{A learned market-making policy is profitable out of sample}: a gradient-boosted model that selects which
 maker quotes to post earns $+3.55\%$ net of fees on the test months (95\% CI $+2.51\%$ to $+4.60\%$, 34{,}086
-simulated fills) under a pessimistic fill model, while posting every quote loses money. The edge is not significant
+simulated fills) under a pessimistic fill model, positive in every test month and mostly in weather markets, while
+posting every quote, or a random subset of the same size, loses money. The edge is not significant
 under a strict model in which competing makers also improve their prices. Adding the STGAT's forecasts to the policy
 reduces its return by 0.65 percentage points. We conclude that the learned graph model adds value in forecasting how
 basket prices evolve, while the tradable edge lies in execution, which a model on simple market features captures.
@@ -394,9 +396,47 @@ A10 (rules) & $+1.80\%$ [$+105\%$] & $-48.5\%$ to $+62.4\%$ & $+\$1.87$ & $+28.5
     information is near zero.
 \end{itemize}
 
-\subsection{Other routes}\label{sec:res-other}
+\subsection{Robustness of the learned policy (post-test checks)}\label{sec:res-robust}
+
+After the test run we audited G for failure modes not covered by the pre-registration. These are diagnostics:
+nothing in G or its reported result was changed.
 
 \begin{table}[htbp]
+\centering
+\caption{G on the test months by month (pessimistic fills), and against random quote selection.}
+\label{tab:robust}
+\small
+\begin{tabular}{lcccc}
+\toprule
+ & return & 95\% CI & net & fills \\
+\midrule
+August 2025 & $+3.44\%$ & $+1.57\%$ to $+5.24\%$ & $+\$1{,}109$ & 9{,}603 \\
+September 2025 & $+4.62\%$ & $+2.89\%$ to $+6.36\%$ & $+\$1{,}397$ & 9{,}310 \\
+October 2025 & $+3.15\%$ & $+1.02\%$ to $+5.24\%$ & $+\$874$ & 9{,}653 \\
+November 2025 (to the 25th) & $+2.38\%$ & $-0.72\%$ to $+5.45\%$ & $+\$368$ & 5{,}520 \\
+\midrule
+Random selection\textsuperscript{a} & $-0.23\%$ & $-0.82\%$ to $+0.37\%$\textsuperscript{b} & --- & $\approx$24{,}400 \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize \textsuperscript{a} Same share of candidate quotes as G (19.7\%), chosen at random; mean of 5 seeds.\quad \textsuperscript{b} Range over seeds.}
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item \textbf{No label leakage into the test period.} Training fills are labelled by settlement; none of the 2{,}219
+    training events settles inside the test window, and none of the 1{,}325 test events appears in the training data.
+    Twenty-two training events (0.6\% of training fills) settle during validation, which can only flatter validation.
+  \item \textbf{Consistent over time.} The policy is positive in every test month (Table~\ref{tab:robust}).
+  \item \textbf{Not driven by a few events.} The ten most profitable events carry 16\% of the profit, and 56\% of
+    events are profitable.
+  \item \textbf{The model's selection is what earns.} Posting the same share of candidate quotes (19.7\%) chosen at
+    random loses on average, so the gain is not from quoting less.
+  \item \textbf{Concentrated in weather markets.} Weather baskets carry \$2{,}859 of the \$3{,}748 profit (76\%) and
+    30{,}729 of the 34{,}086 fills. Other categories are positive but small, so the evidence is strongest for weather.
+\end{itemize}
+
+\subsection{Other routes}\label{sec:res-other}
+
+\begin{table}[H]
 \centering
 \caption{Further routes to trading profit. ``Pre-reg.'' = pre-registered; otherwise exploratory, development data.}
 \label{tab:other}
