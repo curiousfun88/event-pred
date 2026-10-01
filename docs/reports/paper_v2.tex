@@ -105,7 +105,7 @@ schedule. Every evaluation reported as a test result was pre-registered and run 
     \ref{sec:res-settle}).
   \item \textbf{A learned market-making policy that is profitable out of sample} under pessimistic fills, with its
     limits stated, and a measurement of what the STGAT adds to it (Section~\ref{sec:res-policy}).
-  \item \textbf{Negative results with mechanisms} for five further routes: cross-venue lead--lag, live weather
+  \item \textbf{Negative results with mechanisms} for five possible research routes explored: cross-venue lead--lag, live weather
     observations, fill prediction, streaming data and a rule-based maker (Section~\ref{sec:res-other}).
 \end{enumerate}
 
@@ -576,8 +576,19 @@ consistent with evidence that boosted trees remain strong on tabular data \cite{
     are unlikely to add value.
 \end{itemize}
 
-\paragraph{Next steps.} A pre-registered model benchmark on the same policy task: CatBoost, a modern deep tabular
-model, and the STGAT itself as the policy, each tuned on validation and run once on test.
+\paragraph{Next steps.} Pre-registered model benchmarks on the same market making strategy, but using different gradient boosting models: eg. CatBoost, XGBoost etc. each tuned on validation and run once on test. The poorer STGAT result could be used as a baseline that the gradient boosting model beats. 
+
+% ===========================================================================
+\section{Questions for Prof}
+% ===========================================================================
+
+\begin{enumerate}
+    \item Does this learned market-making trading strategy based on Gradient Boosting Trees meet the FYP's ``positive net P\&L'' requirement?
+
+    \item Is it acceptable to report profitability under the pessimistic fill model, while stating the strict result as a limitation?
+
+    \item As a next step, should I benchmark the GBT policy against other models (e.g., CatBoost) using the same market-making strategy? Could I use STGAT, despite its poorer performance, as a baseline for comparison? Alternatively, if other gradient boosting models yield better results, should I use one of them as my main model?
+\end{enumerate}
 
 % ===========================================================================
 \section{Conclusion}
