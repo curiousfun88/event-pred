@@ -440,6 +440,36 @@ A10 (rules) & $+1.80\%$ [$+105\%$] & $-48.5\%$ to $+62.4\%$ & $+\$1.87$ & $+28.5
     information is near zero.
 \end{itemize}
 
+\paragraph{Gross profit, fees and net.} Net P\&L is the gross trading profit at settlement (fills at our own limit
+price against the \$1 or \$0 payout, so the spread earned is included) minus Kalshi's maker fees
+(Table~\ref{tab:fees}). Returns are net P\&L divided by the total collateral committed across all fills, i.e.\ return on
+capital deployed over the four months, not an annualised return.
+
+\begin{table}[htbp]
+\centering
+\caption{Decomposition of test-month P\&L (August--November 2025), in dollars.}
+\label{tab:fees}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+ & fills & gross & maker fees & \textbf{net} & capital committed \\
+\midrule
+G, optimistic fills & 35{,}822 & $+4{,}021.64$ & $32.64$ & $+3{,}989.00$ & $112{,}067$ \\
+\textbf{G, pessimistic fills} & 34{,}086 & $+3{,}769.70$ & $21.26$ & $\bm{+3{,}748.44}$ & $105{,}691$ \\
+G, strict fills & 22{,}739 & $+309.84$ & $15.27$ & $+294.57$ & $74{,}997$ \\
+\midrule
+Quote everything, pessimistic & 110{,}867 & $-956.28$ & $177.10$ & $-1{,}133.38$ & $332{,}858$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Fees are small because most MECE series, including weather, charge only takers; 2.4\% of G's fills fell in series that
+charge makers, against 5.5\% when quoting everything, consistent with fee status being one of the policy's inputs. The
+simulator charges the fee schedule in force at each trade (2025). Re-pricing every test fill under Kalshi's current
+schedule (September 2026, with per-series multipliers, assuming an unchanged base maker rate) leaves net P\&L almost
+unchanged ($+\$3{,}746.93$ under pessimistic fills), because the weather series that carry most of the profit still
+charge makers nothing.
+
 \subsection{Robustness of the learned policy (post-test checks)}\label{sec:res-robust}
 
 After the test run we audited G for failure modes not covered by the pre-registration. These are diagnostics:
@@ -527,7 +557,8 @@ consistent with evidence that boosted trees remain strong on tabular data \cite{
   \item \textbf{Fill assumptions.} Profitability holds under optimistic and pessimistic fills but not under strict
     competition; live queue position cannot be observed from the tape.
   \item \textbf{Backtest, not live trading.} Market impact, faster competitors and larger order sizes are not
-    modelled; the simulator re-quotes hourly.
+    modelled; the simulator re-quotes hourly. Costs beyond maker fees are not charged: the cost of capital locked
+    until settlement, and infrastructure, data and latency costs of running a live maker.
   \item \textbf{Sequential testing.} The learned policy was designed after the rule-based maker's test result was
     seen, and both were evaluated on the same four months. There is no data leakage: the policy was trained only on
     the training months, checked only on the validation months, and its parameters were frozen and hash-checked
