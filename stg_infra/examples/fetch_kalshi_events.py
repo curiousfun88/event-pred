@@ -84,7 +84,8 @@ def candle_rows(ticker, candles):
     out = []
     for c in candles:
         yb, ya = c.get("yes_bid") or {}, c.get("yes_ask") or {}
-        b = yb.get("close_dollars"); a = ya.get("close_dollars")
+        # Live endpoint: "close_dollars"; historical archive: "close" (both in dollars). Read either.
+        b = yb.get("close_dollars", yb.get("close")); a = ya.get("close_dollars", ya.get("close"))
         b = float(b) if b not in (None, "") else None
         a = float(a) if a not in (None, "") else None
         if b is not None and b <= 0: b = None
@@ -129,6 +130,8 @@ def self_test():
     check("0/1 placeholders become None", r[1][2] is None and r[1][3] is None)
     check("missing bid becomes None", r[2][2] is None and r[2][3] == 0.5)
     check("timestamps parse with Z", parse_ts("2026-09-20T15:14:01Z").tzinfo is not None)
+    rh = candle_rows("T", [{"end_period_ts": 3600, "yes_bid": {"close": "0.4400"}, "yes_ask": {"close": "0.4800"}}])
+    check("historical-archive candle format ('close') parsed", rh[0] == ("T", 3600, 0.44, 0.48))
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
