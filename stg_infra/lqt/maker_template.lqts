@@ -1,0 +1,25 @@
+# Maker arm "ARM" for the Lumid forward test (policy G, maker pre-registration A12).
+# Generated from maker_template.lqts; the three arms differ ONLY in the signal they read:
+#   gbt_*  = G's predicted net P&L per contract (cents), rnd_* = random selection at G's share,
+#   cand_* = every candidate quote. Each arm posts where its signal is above 1c.
+# Mirrors the simulator's BROAD config: both sides, improve by 1c when spread >= 3c, join the
+# touch when spread is 2c, 10 lots per order, |net position| <= 50 per leg.
+strategy ARM_maker_v1 {
+  params { threshold: 0.01, min_spread: 0.02, improve_spread: 0.03, tick: 0.01, size_lots: 10, pos_cap: 50 }
+
+  when signal("ARM_bid") > params.threshold && market.bid > 0 && market.spread >= params.improve_spread
+       && position.net_lots < params.pos_cap && ctx("instrument_tradable") > 0 {
+    buy min(params.size_lots, params.pos_cap - position.net_lots) lots @ market.bid + params.tick
+  } else if signal("ARM_bid") > params.threshold && market.bid > 0 && market.spread >= params.min_spread
+       && position.net_lots < params.pos_cap && ctx("instrument_tradable") > 0 {
+    buy min(params.size_lots, params.pos_cap - position.net_lots) lots @ market.bid
+  }
+
+  when signal("ARM_ask") > params.threshold && market.ask < 1.0 && market.spread >= params.improve_spread
+       && position.net_lots > 0 - params.pos_cap && ctx("instrument_tradable") > 0 {
+    sell min(params.size_lots, params.pos_cap + position.net_lots) lots @ market.ask - params.tick
+  } else if signal("ARM_ask") > params.threshold && market.ask < 1.0 && market.spread >= params.min_spread
+       && position.net_lots > 0 - params.pos_cap && ctx("instrument_tradable") > 0 {
+    sell min(params.size_lots, params.pos_cap + position.net_lots) lots @ market.ask
+  }
+}

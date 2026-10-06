@@ -501,3 +501,47 @@ Known caveat, stated now: the STGAT was trained on the same train months, so its
 
 No parameter above (features, model, months, threshold, gates, verdict) may be changed after any test-month
 result of G or G+S is seen.
+
+## Amendment A13 (2026-10-06, BEFORE any 2026 training data is fetched or any retrained model exists): retrained policy G2
+
+**Context (exploratory, reported).** The frozen G, run unchanged on 2026-09-07..10-04
+(`stg_infra/examples/smoke_test_2026.py`, `logs/v2_forecast/smoke_test_2026-09.log`), returned -1.41%
+pessimistic (CI [-4.10, +1.36]), the same as quoting everything (-1.45%). The diagnosis
+(`logs/v2_forecast/smoke_test_2026_diagnosis.log`) finds the families still present, not a seasonal effect,
+a harder market for every maker (weather quote-everything markout +0.31c -> -0.67c per contract, 4.6x more
+prints, tighter spreads) and a ranking that no longer finds profitable quotes (top decile +4.1c -> -0.7c).
+Question for G2: is this model decay (fixable by retraining) or market decay (not)?
+
+**Seen already.** 2026-09-07..10-04 was used by the smoke test, so it is G2's **validation** window only.
+G2's test is the live forward test (`docs/planning/lumid-forward-test-preregistration.md`).
+
+**G2 design: identical to G** except the training months. Same candidates (BROAD config), same features
+(`FEATS_G`, no time-to-close), same model and hyperparameters (`maker_policy.HP`), same target (net c/contract
+at settlement after fees, pessimistic fills), same threshold t = 1c. No feature, hyperparameter or threshold
+is chosen on the validation window.
+
+**Series.** The 23 series of the smoke test: G's 26 test-month series minus KXAPPRANKFREE2 (fails the live
+basket rule) and KXDOGE, KXETH (hourly crypto ranges, tens of thousands of legs). Training baskets: events of
+these series with 3-100 legs that resolved with exactly one YES (hindsight curation of training data, as for
+G's training months). 2024-11..2025-11 come from the local data (`simulate_maker.load`, restricted to these
+series); 2025-12..2026-08 from Kalshi's public API (archive and live endpoints), cached as compact arrays.
+
+**Candidate training windows (three, fixed now):**
+- W1 recent: 2026-06..2026-08
+- W2 medium: 2026-03..2026-08
+- W3 long: 2024-11..2026-08
+
+**Selection rule (fixed now).** Each window's model is run on the validation window in the unchanged
+simulator, pessimistic fills. G2 = the window with the highest pessimistic validation return **among those
+with return > 0**. Also reported for each: optimistic/strict returns, the paired difference vs quoting
+everything, and random selection at the same share.
+- If no window is > 0: reported; the forward test runs G, random and quote-everything only, and whether to
+  add a G2 arm is decided with the supervisor and recorded as a further amendment.
+- The selected window's validation return is optimistic (best of three); it is not a test result.
+
+**Descriptive only (never part of the selection):** month-by-month quote-everything returns and markouts
+2025-12..2026-09 (when did the market change?), and the similarity of each candidate window's candidate-quote
+features to the live market's (the producer's 2026-10-05 snapshot), using features only, no outcomes.
+
+**Live arms if G2 is selected:** G2, G (the 2025 model, as a decay reference), random at G2's hourly share,
+quote everything.

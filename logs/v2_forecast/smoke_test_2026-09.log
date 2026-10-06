@@ -1,0 +1,66 @@
+series: 26 trained; 23 kept; skipped by --skip ['KXDOGE', 'KXETH']; fail the live basket rule ['KXAPPRANKFREE2']
+  KXEPLGAME: 60 legs in 20 events (api calls so far 657)
+  KXEURUSD: 285 legs in 19 events (api calls so far 1228)
+  KXF1RACE: 66 legs in 3 events (api calls so far 1430)
+  KXFEAR: 20 legs in 4 events (api calls so far 1471)
+  KXFEDDECISION: 5 legs in 1 events (api calls so far 1541)
+  KXHIGHAUS: 168 legs in 28 events (api calls so far 1922)
+  KXHIGHCHI: 168 legs in 28 events (api calls so far 2341)
+  KXHIGHDEN: 168 legs in 28 events (api calls so far 2697)
+  KXHIGHLAX: 168 legs in 28 events (api calls so far 3420)
+  KXHIGHMIA: 168 legs in 28 events (api calls so far 3918)
+  KXHIGHNY: 168 legs in 28 events (api calls so far 4420)
+  KXHIGHPHIL: 168 legs in 28 events (api calls so far 4778)
+  KXHMONTHRANGE: 6 legs in 1 events (api calls so far 4791)
+  KXINX: 570 legs in 19 events (api calls so far 5932)
+  KXLAGODAYS: 5 legs in 1 events (api calls so far 5943)
+  KXLALIGAGAME: 90 legs in 30 events (api calls so far 6919)
+  KXLIGUE1GAME: 54 legs in 18 events (api calls so far 7123)
+  KXLLM1: 34 legs in 4 events (api calls so far 7194)
+  KXMLSGAME: 183 legs in 61 events (api calls so far 8394)
+  KXNASCARRACE: 335 legs in 9 events (api calls so far 9174)
+  KXNASDAQ100: 570 legs in 19 events (api calls so far 10315)
+legs 3545, events 427, months ['2026-09', '2026-10'], api calls 10315
+candidates in window 149,948; scored 149,948; G posts 43.1%
+
+RESULTS, quoting hours 2026-09-07 .. 2026-10-05 (exploratory)
+ fills = pess
+  G (pred > 1c)                  fills 10,599  events   329  net $  -289.52  fees $  10.05  ret  -1.41%  CI [-4.10, +1.36]  markout -0.15c
+  quote everything               fills 29,452  events   386  net $  -869.25  fees $  24.75  ret  -1.45%  CI [-2.40, -0.53]  markout -0.42c
+  random 43% (seed 0)            fills 13,264  events   367  net $  -524.17  fees $  16.36  ret  -1.88%  CI [-3.62, -0.18]  markout -0.45c
+  random 43% (seed 1)            fills 13,310  events   374  net $  -730.11  fees $  15.33  ret  -2.60%  CI [-4.36, -0.78]  markout -0.41c
+  random 43% (seed 2)            fills 13,294  events   365  net $  -305.25  fees $  16.28  ret  -1.09%  CI [-2.89, +0.77]  markout -0.37c
+  random 43% (seed 3)            fills 13,395  events   374  net $  -576.20  fees $  15.68  ret  -2.06%  CI [-3.72, -0.36]  markout -0.46c
+  random 43% (seed 4)            fills 13,221  events   377  net $  -570.16  fees $  16.01  ret  -2.09%  CI [-3.84, -0.33]  markout -0.49c
+  random mean ret -1.95%
+ fills = opt
+  G (pred > 1c)                  fills 12,476  events   353  net $  -103.37  fees $  13.04  ret  -0.45%  CI [-3.10, +2.18]  markout +0.18c
+  quote everything               fills 37,199  events   420  net $  -289.71  fees $  76.89  ret  -0.38%  CI [-1.17, +0.45]  markout +0.06c
+ fills = strict
+  G (pred > 1c)                  fills  8,527  events   313  net $  -481.15  fees $   9.30  ret  -2.77%  CI [-5.86, +0.52]  markout -1.22c
+  quote everything               fills 22,598  events   371  net $ -1317.87  fees $  17.15  ret  -2.67%  CI [-3.83, -1.56]  markout -1.41c
+
+ G by series (pessimistic)
+  KXHIGHLAX          fills 1,472  events   27  net $  -69.04  ret  -2.57%
+  KXHIGHMIA          fills 1,224  events   27  net $ +140.69  ret  +6.43%
+  KXHIGHNY           fills 1,151  events   27  net $ -209.06  ret -11.70%
+  KXHIGHCHI          fills 1,093  events   27  net $  +91.50  ret  +5.54%
+  KXHIGHAUS          fills 1,038  events   27  net $  -11.27  ret  -0.73%
+  KXINX              fills 1,038  events   19  net $  -36.88  ret  -1.32%
+  KXHIGHPHIL         fills   859  events   27  net $ -108.09  ret  -8.13%
+  KXHIGHDEN          fills   839  events   27  net $ -164.62  ret -13.40%
+  KXNASDAQ100        fills   765  events   19  net $  -64.78  ret  -5.38%
+  KXNASCARRACE       fills   295  events    9  net $  -14.86  ret  -0.97%
+  KXEURUSD           fills   206  events   19  net $  +11.95  ret  +1.34%
+  KXAPRPOTUS         fills   118  events    4  net $  +23.86  ret  +6.74%
+  KXLALIGAGAME       fills   115  events   16  net $   -0.83  ret  -0.54%
+  KXF1RACE           fills    94  events    3  net $  +37.11  ret  +7.38%
+  KXLLM1             fills    92  events    4  net $  +41.50  ret +45.86%
+  KXMLSGAME          fills    92  events   31  net $  +69.84  ret +29.57%
+  KXFEAR             fills    74  events    4  net $  -46.63  ret -26.10%
+  KXHMONTHRANGE      fills     9  events    1  net $   +4.75  ret  +6.31%
+  KXBUNDESLIGAGAME   fills     8  events    5  net $   +5.51  ret +16.06%
+  KXEPLGAME          fills     7  events    2  net $   +6.22  ret +27.51%
+  KXLAGODAYS         fills     5  events    1  net $   +2.22  ret  +6.99%
+  KXLIGUE1GAME       fills     3  events    2  net $   +5.85  ret +41.79%
+  KXFEDDECISION      fills     2  events    1  net $   -4.46  ret -101.36%
