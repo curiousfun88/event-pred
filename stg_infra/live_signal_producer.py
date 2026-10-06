@@ -228,7 +228,7 @@ class Kalshi:
         self.calls = 0
 
     def get(self, path, **params):
-        for attempt in range(6):
+        for attempt in range(12):          # backoff 1, 2, 4 .. capped at 60s: rides out ~8 min of outage
             wait = self.last + self.gap - time.time()
             if wait > 0:
                 time.sleep(wait)
@@ -237,9 +237,9 @@ class Kalshi:
             try:
                 r = self.s.get(f"{API}/{path}", params=params, timeout=60)
             except Exception:
-                time.sleep(2 ** attempt); continue
+                time.sleep(min(2 ** attempt, 60)); continue
             if r.status_code == 429 or r.status_code >= 500:
-                time.sleep(2 ** attempt); continue
+                time.sleep(min(2 ** attempt, 60)); continue
             r.raise_for_status()
             return r.json()
         raise RuntimeError(f"Kalshi GET failed: {path} {params}")

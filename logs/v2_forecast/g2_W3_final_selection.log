@@ -1,0 +1,103 @@
+  2024-11 (local): 17,120 training fills
+  2024-12 (local): 20,575 training fills
+  2025-01 (local): 21,300 training fills
+  2025-02 (local): 20,934 training fills
+  2025-03 (local): 23,280 training fills
+  2025-04 (local): 22,143 training fills
+  2025-05 (local): 22,712 training fills
+  2025-06 (local): 24,184 training fills
+  2025-07 (local): 27,703 training fills
+  2025-08 (local): 28,896 training fills
+  2025-09 (local): 29,818 training fills
+  2025-10 (local): 29,445 training fills
+  2025-11 (local): 18,588 training fills
+  2025-12..2026-08 (API): 372,702 training fills
+trained G2-W3 on 679,400 fills (6 categories); sha1 de87439617ba9476
+  2024-11 (local): 19,867 training fills
+  2024-12 (local): 26,678 training fills
+  2025-01 (local): 27,745 training fills
+  2025-02 (local): 24,887 training fills
+  2025-03 (local): 29,852 training fills
+  2025-04 (local): 27,125 training fills
+  2025-05 (local): 27,369 training fills
+  2025-06 (local): 28,694 training fills
+  2025-07 (local): 34,191 training fills
+  2025-08 (local): 35,829 training fills
+  2025-09 (local): 36,447 training fills
+  2025-10 (local): 38,121 training fills
+  2025-11 (local): 23,715 training fills
+  2025-12..2026-08 (API): 470,730 training fills
+trained G2P-W3 on 851,250 fills (6 categories); sha1 fcad35080c11d957
+VALIDATION 2026-09-07..2026-10-05 (A13/A14)
+  quote everything [pess  ] ret  -1.45% CI [ -2.40,  -0.53]  fills 29,452  events  386  net $ -869.25  markout -0.42c
+  quote everything [opt   ] ret  -0.38% CI [ -1.17,  +0.45]  fills 37,199  events  420  net $ -289.71  markout +0.06c
+  quote everything [strict] ret  -2.67% CI [ -3.83,  -1.56]  fills 22,598  events  371  net $-1317.87  markout -1.41c
+
+== G2: 149,948 candidates
+ G2-G (scores 43% of candidates above 1c)
+  G   [pess  ] ret  -1.41% CI [ -4.10,  +1.36]  fills 10,599  events  329  net $ -289.52  markout -0.15c
+      minus quote-everything (pessimistic, event-paired): +0.04 pts CI [-2.35, +2.63]
+      random at the same share (5 seeds): mean -1.95%  range [-2.60, -1.09]
+  G   [opt   ] ret  -0.45% CI [ -3.10,  +2.18]  fills 12,476  events  353  net $ -103.37  markout +0.18c
+  G   [strict] ret  -2.77% CI [ -5.86,  +0.52]  fills  8,527  events  313  net $ -481.15  markout -1.22c
+ G2-W1 (scores 40% of candidates above 1c)
+  W1  [pess  ] ret  +1.25% CI [ -0.70,  +3.35]  fills  9,293  events  354  net $ +286.94  markout +0.24c
+      minus quote-everything (pessimistic, event-paired): +2.70 pts CI [+0.73, +4.51]
+      random at the same share (5 seeds): mean -1.92%  range [-2.48, -1.15]
+  W1  [opt   ] ret  +1.28% CI [ -0.88,  +3.37]  fills 11,979  events  405  net $ +375.72  markout +0.59c
+  W1  [strict] ret  +0.94% CI [ -1.42,  +3.27]  fills  7,300  events  330  net $ +179.58  markout -0.84c
+ G2-W2 (scores 45% of candidates above 1c)
+  W2  [pess  ] ret  -0.36% CI [ -2.76,  +2.26]  fills  7,446  events  346  net $  -72.39  markout +0.53c
+      minus quote-everything (pessimistic, event-paired): +1.09 pts CI [-1.40, +3.38]
+      random at the same share (5 seeds): mean -1.83%  range [-2.47, -1.18]
+  W2  [opt   ] ret  -0.18% CI [ -2.37,  +2.07]  fills  9,924  events  406  net $  -50.39  markout +0.85c
+  W2  [strict] ret  -0.95% CI [ -3.86,  +1.74]  fills  5,498  events  322  net $ -151.62  markout -0.71c
+ G2-W3 (scores 36% of candidates above 1c)
+  W3  [pess  ] ret  +1.41% CI [ -1.47,  +4.31]  fills  5,215  events  341  net $ +212.21  markout +1.30c
+      minus quote-everything (pessimistic, event-paired): +2.86 pts CI [-0.23, +5.69]
+      random at the same share (5 seeds): mean -1.60%  range [-2.46, -0.94]
+  W3  [opt   ] ret  +2.22% CI [ -0.49,  +4.81]  fills  6,683  events  399  net $ +450.16  markout +1.35c
+  W3  [strict] ret  +0.60% CI [ -2.39,  +3.67]  fills  3,766  events  319  net $  +71.49  markout -0.04c
+
+  A13/A14 SELECTION for G2: W3
+
+== G2P: 251,206 candidates
+ G2P-W1 (scores 45% of candidates above 1c)
+  W1  [pess  ] ret  +0.44% CI [ -1.60,  +2.34]  fills  9,533  events  328  net $ +100.85  markout +0.04c
+      minus quote-everything (pessimistic, event-paired): +1.89 pts CI [+0.08, +3.63]
+      random at the same share (5 seeds): mean -1.56%  range [-2.18, -1.02]
+  W1  [opt   ] ret  +0.93% CI [ -0.97,  +2.84]  fills 12,834  events  378  net $ +282.06  markout +0.72c
+  W1  [strict] ret  -0.41% CI [ -2.59,  +1.74]  fills  8,333  events  317  net $  -85.42  markout -0.54c
+ G2P-W2 (scores 44% of candidates above 1c)
+  W2  [pess  ] ret  +0.45% CI [ -2.17,  +2.96]  fills  6,739  events  336  net $  +83.76  markout +0.77c
+      minus quote-everything (pessimistic, event-paired): +1.89 pts CI [-0.89, +4.49]
+      random at the same share (5 seeds): mean -1.55%  range [-2.12, -1.05]
+  W2  [opt   ] ret  +1.18% CI [ -1.34,  +3.47]  fills  9,225  events  387  net $ +292.83  markout +1.11c
+  W2  [strict] ret  +0.15% CI [ -2.57,  +2.82]  fills  5,406  events  315  net $  +24.85  markout -0.10c
+ G2P-W3 (scores 42% of candidates above 1c)
+  W3  [pess  ] ret  +1.05% CI [ -1.73,  +3.76]  fills  6,297  events  313  net $ +194.59  markout +0.67c
+      minus quote-everything (pessimistic, event-paired): +2.50 pts CI [-0.50, +5.29]
+      random at the same share (5 seeds): mean -1.57%  range [-1.96, -1.01]
+  W3  [opt   ] ret  +1.78% CI [ -0.52,  +4.28]  fills  7,808  events  369  net $ +401.02  markout +1.19c
+  W3  [strict] ret  +0.32% CI [ -2.50,  +2.98]  fills  4,915  events  296  net $  +49.81  markout -0.25c
+
+  A13/A14 SELECTION for G2P: W3
+QUOTE EVERYTHING BY MONTH (pessimistic), descriptive -- A13
+  2025-12 all      fills 39,589  ret  +0.08%  net c/contract +0.04  markout +0.06c
+  2025-12 weather  fills 31,703  ret  +0.16%  net c/contract +0.08  markout -0.12c
+  2026-01 all      fills 45,762  ret  +0.06%  net c/contract +0.03  markout +0.13c
+  2026-01 weather  fills 37,420  ret  -0.09%  net c/contract -0.04  markout -0.06c
+  2026-02 all      fills 35,168  ret  -0.45%  net c/contract -0.23  markout +0.34c
+  2026-02 weather  fills 25,782  ret  -0.85%  net c/contract -0.42  markout -0.03c
+  2026-03 all      fills 46,908  ret  +0.12%  net c/contract +0.06  markout +0.15c
+  2026-03 weather  fills 36,704  ret  -0.39%  net c/contract -0.19  markout -0.21c
+  2026-04 all      fills 43,205  ret  -0.70%  net c/contract -0.36  markout +0.10c
+  2026-04 weather  fills 32,485  ret  -0.33%  net c/contract -0.16  markout -0.10c
+  2026-05 all      fills 43,468  ret  -0.88%  net c/contract -0.45  markout +0.01c
+  2026-05 weather  fills 33,757  ret  -1.30%  net c/contract -0.64  markout -0.26c
+  2026-06 all      fills 38,094  ret  -0.43%  net c/contract -0.22  markout -0.24c
+  2026-06 weather  fills 32,145  ret  -0.09%  net c/contract -0.05  markout -0.38c
+  2026-07 all      fills 38,788  ret  -1.07%  net c/contract -0.55  markout -0.49c
+  2026-07 weather  fills 31,545  ret  -1.30%  net c/contract -0.65  markout -0.55c
+  2026-08 all      fills 32,389  ret  -1.63%  net c/contract -0.83  markout -0.33c
+  2026-08 weather  fills 25,292  ret  -1.11%  net c/contract -0.56  markout -0.50c
