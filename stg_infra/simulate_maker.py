@@ -82,6 +82,9 @@ class Config:
     min_ttc_h: int = 0           # A10: no quote on a leg within this many hours of its close
     policy: str = ""             # A12: learned policy scores (parquet: ticker, hour_ns, side, pred); "" = off
     policy_t: float = 1.0        # A12: post an order only if its predicted P&L per contract > policy_t
+    levels: str = ""             # A14: "" = one level per side (improve rule); "both" = touch AND, when
+                                 # spread >= 3c, 1c inside; with a policy, keyed (ticker, H, side, price),
+                                 # the higher-scoring level per side is posted if > policy_t
 
     def name(self):
         return (f"univ={self.universe} sides={self.sides} improve={self.improve} band={self.band_lo}-{self.band_hi} "
@@ -353,6 +356,38 @@ def self_test() -> int:
           "min_ttc_h" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(min_ttc_h=24))["min_ttc_h"] == 24)
     check("configs without a model keep their old cache keys",
           "stgat" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(stgat="s4"))["stgat"] == "s4")
+
+    # A14: levels="both"
+    check("A14: levels unset keeps old cache keys; 'both' enters the key",
+          "levels" not in _cfg_key_dict(Config()) and _cfg_key_dict(Config(levels="both"))["levels"] == "both")
+    H0 = 1_767_225_600 * 1_000_000_000          # 2026-01-01 00:00 UTC
+    e0 = np.array([H0], np.int64)
+    mkleg = lambda b, a, tt, tp, tc, ts_: {"series": "KXT", "close": None, "yes": True, "e": e0,
+                                           "bid": np.array([b]), "ask": np.array([a]), "tt": np.array(tt, np.int64),
+                                           "tp": np.array(tp, float), "tc": np.array(tc, float), "ts": np.array(ts_, float)}
+    lg = {"X": mkleg(.40, .44, [H0 + 60, H0 + 120], [40, 45], [5, 2], [-1, 1]),
+          "Y": mkleg(.30, .32, [], [], [], []), "Z": mkleg(.20, .21, [], [], [], [])}
+    evs = {"E": ["X", "Y", "Z"]}
+    nofee = lambda s_, m_: False
+    base = dict(sides="both", improve=1, min_spread=2, pos_limit=50, event_limit=200)
+    rec1, rec2 = [], []
+    simulate(Config(**base), "pess", lg, evs, nofee, ["2026-01"], record=rec1)
+    simulate(Config(**base, levels="both"), "pess", lg, evs, nofee, ["2026-01"], record=rec2)
+    c1 = sorted((r[1], r[3], r[4]) for r in rec1); c2 = sorted((r[1], r[3], r[4]) for r in rec2)
+    check(f"A14: default candidates unchanged (improve when spread >= 3): {c1}",
+          c1 == [("X", -1, 43), ("X", 1, 41), ("Y", -1, 32), ("Y", 1, 30)])
+    check(f"A14: 'both' adds the touch level; 2c spread has one level: {c2}",
+          c2 == [("X", -1, 43), ("X", -1, 44), ("X", 1, 40), ("X", 1, 41), ("Y", -1, 32), ("Y", 1, 30)])
+    sc = {("X", H0, 1, 40): 3.0, ("X", H0, 1, 41): 2.0, ("X", H0, -1, 44): 0.5, ("X", H0, -1, 43): 1.5}
+    fb = simulate(Config(**base, levels="both", policy="x", policy_t=1.0), "pess", lg, evs, nofee, ["2026-01"],
+                  policy_scores=sc)
+    check(f"A14: policy posts the better level per side (bid at touch 40 not filled by the sell AT 40; "
+          f"ask 43 inside filled x2 by the buy at 45): {[(f[1], f[2], f[3], f[4]) for f in fb]}",
+          [(f[1], f[2], f[3], f[4]) for f in fb] == [("X", -1, 43, 2)])
+    allow = {(r[1], int(r[2]), int(r[3])): 9.0 for r in rec1}
+    check("A14: the one-level policy path is unchanged (allow-all == no policy)",
+          simulate(Config(**base, policy="x", policy_t=1.0), "pess", lg, evs, nofee, ["2026-01"], policy_scores=allow)
+          == simulate(Config(**base), "pess", lg, evs, nofee, ["2026-01"]))
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
 
@@ -497,15 +532,32 @@ def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None
                     want_bid, want_ask = stgat_sides(cfg.stgat, want_bid, want_ask,
                                                      signal_at(signal, tk, H), spread)
                 imp = cfg.improve and spread >= 3 and not cfg.basket
-                if want_bid:
-                    orders.append((+1, b + (1 if imp else 0), b))
-                if want_ask:
-                    orders.append((-1, a - (1 if imp else 0), a))
+                if cfg.levels == "both":
+                    if want_bid:
+                        orders.append((+1, b, b))
+                        if spread >= 3:
+                            orders.append((+1, b + 1, b))
+                    if want_ask:
+                        orders.append((-1, a, a))
+                        if spread >= 3:
+                            orders.append((-1, a - 1, a))
+                else:
+                    if want_bid:
+                        orders.append((+1, b + (1 if imp else 0), b))
+                    if want_ask:
+                        orders.append((-1, a - (1 if imp else 0), a))
                 orders = [(s, p, o) for s, p, o in orders if cfg.band_lo <= p <= cfg.band_hi]
                 if record is not None:
                     record.extend((ev, tk, H, s, p, b, a) for s, p, o in orders)
                     continue
-                if cfg.policy:
+                if cfg.policy and cfg.levels == "both":
+                    best = {}
+                    for s_, p, o in orders:
+                        sc = policy_scores.get((tk, H, s_, p), -np.inf)
+                        if sc > cfg.policy_t and (s_ not in best or sc > best[s_][0]):
+                            best[s_] = (sc, (s_, p, o))
+                    orders = [v[1] for v in best.values()]
+                elif cfg.policy:
                     orders = [(s, p, o) for s, p, o in orders
                               if policy_scores.get((tk, H, s), -np.inf) > cfg.policy_t]
                 if not orders:
@@ -527,7 +579,7 @@ def simulate(cfg: Config, model: str, legs, events, charged, months, signal=None
                         leg_room = cfg.pos_limit - s * pos[tk]
                         ev_room = cfg.event_limit - sum(abs(v) for v in pos.values())
                         return max(0, min(leg_room, ev_room))
-                    for _, f in fills_for_order(side, price, cfg.q, bool(imp), model, tp, tc, ts, room, orig):
+                    for _, f in fills_for_order(side, price, cfg.q, price != orig, model, tp, tc, ts, room, orig):
                         pos[tk] += side * f
                         mo = month_of(H)
                         fee = maker_fee_c(price, f, charged(L["series"], mo), mo)
@@ -576,6 +628,8 @@ def _cfg_key_dict(cfg: Config) -> dict:
             d.pop(k)
     if not d["policy"]:                   # A12: no policy -> old key
         d.pop("policy"); d.pop("policy_t")
+    if not d["levels"]:                   # A14: one level per side -> old key
+        d.pop("levels")
     return d
 
 
