@@ -1,7 +1,6 @@
-# Maker arm "cand" for the Lumid forward test (policy G, maker pre-registration A12).
-# Generated from maker_template.lqts; the three arms differ ONLY in the signal they read:
-#   gbt_*  = G's predicted net P&L per contract (cents), rnd_* = random selection at G's share,
-#   cand_* = every candidate quote. Each arm posts where its signal is above 1c.
+# One-level maker arm "cand" for the Lumid forward test (amendments A12-A14).
+# Arms g, g2, rnd2, cand use this template and differ ONLY in the signal they read (cents per
+# contract; a side is posted where its signal is above 1c). See live_signal_producer.py.
 # Mirrors the simulator's BROAD config: both sides, improve by 1c when spread >= 3c, join the
 # touch when spread is 2c, 10 lots per order, |net position| <= 50 per leg.
 strategy cand_maker_v1 {

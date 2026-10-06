@@ -1,157 +1,154 @@
-# Lumid forward test of the learned maker policy G: pre-registration
+# Live forward test of the learned maker policies: pre-registration
 
-**Status:** DRAFT 2026-10-06. Frozen by the commit that precedes the first
-published signal; nothing below changes after that except by a dated amendment.
-**Seen before writing:** two dry runs of the producer (2026-10-05, hour 15 UTC):
-candidate counts, selection shares and category mix only. No fill, outcome or
-P&L of the live period has been observed.
+**Status:** FROZEN 2026-10-06 by the commit that adds this version, before the
+first logged live hour. Nothing below changes except by a dated amendment.
+**Seen before writing:** producer dry runs on 2026-10-05 (candidate counts,
+selection shares, category mix); the A13/A14 validation on 2026-09-07..10-04.
+No fill, outcome or P&L of the live period has been observed.
 
 **Why.** The supervisor (2026-10-05): start with the own simulator, then move to
 the platform; "baselines will be from forward testing", from now until the
-presentation. Policy G passed its pre-registered test on 2025-08..11 (A12:
-pessimistic +3.55%, CI [+2.51%, +4.60%], 34,086 fills; random selection of the
-same share -0.23%). This test asks whether that holds on live markets that did
-not exist when G was frozen.
+presentation. The 2025 policy G passed its test on 2025-08..11 (A12: +3.55%
+pessimistic) but returned -1.41% on 2026-09-07..10-04, the same as quoting
+everything (A13 context). Retrained policies were then selected on that window
+(A13/A14): G2-W3 +1.41% and G2+-W3 +1.05% pessimistic, each about +2.5 to +2.9
+points above quoting everything. This test asks whether retraining recovers a
+live, out-of-sample edge.
 
 ---
 
 ## 1. Questions
 
-1. **Live profitability.** Is G's net P&L after fees positive on the live period?
-2. **Model value.** Does G beat random selection of the same share of quotes,
+1. **Live profitability.** Is the retrained policy's net P&L after fees positive?
+2. **Model value.** Does it beat random selection of the same share of quotes,
    and quoting everything, on the same candidates in the same hours?
-3. **Generalisation.** Does the result differ between series G was trained on,
-   new series in categories G has seen, and categories G has never seen?
-4. **Benchmarks.** Risk-adjusted, is the strategy a better use of capital than
-   an equity index or T-bills over the same dates?
+3. **Decay.** Does the 2025 policy G keep losing relative to the retrained ones?
+4. **Adverse-selection defences.** Does G2+ differ from G2?
+5. **Generalisation and benchmarks** (descriptive): results by category and for
+   series outside the 23 training series; risk-adjusted returns against an equity
+   index and T-bills over the same dates.
 
 ## 2. Period
 
-- **Start:** the hour of the first published batch that the platform confirms
-  (signal visible in `lqt.signals`).
+- **Start:** the first hour logged by the hourly producer service after this
+  commit (`runs/live/runs.jsonl`). Platform publishing starts separately, when
+  the platform runs user strategies (§4 A).
 - **End of quoting:** 2026-11-11 00:00 UTC. The presentation is in the week of
-  2026-11-16 (day not yet fixed); this leaves the 48h settlement allowance below
-  and three days of analysis before the earliest possible day.
+  2026-11-16 (day not yet fixed).
 - **Scored positions:** fills in events that settle by the end of quoting + 48h.
-  Positions in events still open then are reported separately, marked to the
-  last mid, and excluded from the verdicts.
+  Positions in events still open then are reported separately, marked to the last
+  mid, and excluded from the verdicts.
 - **Interim cut for the written report (due 2026-11-03):** fills before
-  **2026-10-28 00:00 UTC**, in events settled by 2026-10-30 00:00 UTC, scored
-  exactly as §4-§6. The report states these as **interim** results of a test
-  still running. The verdicts of §5 are taken at the final cut (end of
-  quoting) and presented at the presentation. Nothing (arms, threshold, period,
-  verdicts) changes because of the interim result, and the test does not stop
-  early whatever it shows.
+  2026-10-28 00:00 UTC, in events settled by 2026-10-30 00:00 UTC, scored exactly
+  as below and stated as **interim**. The verdicts are taken at the final cut.
+  Nothing changes because of the interim result; the test does not stop early.
 
-## 3. Arms (fixed)
+## 3. Models and arms (fixed)
 
-Three `.lqts` strategies generated from one template
-(`stg_infra/lqt/maker_template.lqts`). They differ **only** in the signal read:
-
-| arm | signal | selects |
+| arm | model / rule | signals |
 |---|---|---|
-| `gbt_maker_v1` | `gbt_bid` / `gbt_ask` | G's predicted net c/contract > 1c |
-| `rnd_maker_v1` | `rnd_bid` / `rnd_ask` | random candidates, at G's selection share **that hour** |
-| `cand_maker_v1` | `cand_bid` / `cand_ask` | every candidate (quote everything) |
+| `g2` (**primary**) | G2-W3 (A13), sha1 `de87439617ba9476`, post if predicted > 1c | `g2_bid`, `g2_ask` |
+| `g2p` | G2+-W3 (A14), sha1 `fcad35080c11d957`, better level per side, post if > 1c | `g2p_bid/_ask`, `g2p_bid_lvl/_ask_lvl` |
+| `g` | G (A12, 2025), sha1 `e39cc4ca97bbebd4`, decay reference | `g_bid`, `g_ask` |
+| `rnd2` | random one-level candidates at G2's share that hour | `rnd2_bid`, `rnd2_ask` |
+| `rnd2p` | random two-level candidates at G2+'s share that hour | `rnd2p_*` incl. levels |
+| `cand` | every one-level candidate (quote everything) | `cand_bid`, `cand_ask` |
 
-Common to all: both sides; improve by 1c when spread >= 3c, join the touch at
-2c; 10 contracts per order; |net position| <= 50 per leg.
+Strategies: `stg_infra/lqt/*_maker_v1.lqts`, from two templates
+(`maker_template.lqts`, `maker_template_two_level.lqts`): both sides; improve by
+1c when spread >= 3c, else join the touch (two-level arms follow their level
+signal); 10 contracts per order; |net position| <= 50 per leg.
 
-**Producer** (`stg_infra/live_signal_producer.py`): hourly at minute 1 UTC.
-Candidates and features come from the simulator's and `maker_policy.py`'s own
-code; on 488 replayed test-month scores the live path reproduced the backtest
-exactly (max abs diff 0). Model `runs/maker/policy_G_model.pkl`, sha1
-`e39cc4ca97bbebd4`, unchanged since A12. Threshold t = 1c, unchanged.
+**Producer** (`stg_infra/live_signal_producer.py`): hourly. Candidates and
+features from the simulator's, `maker_policy.py`'s and `retrain_g2.py`'s own
+code. Replaying the validation window through the live path reproduced the
+validation scores exactly (798 G2 and 1,344 G2+ scores, 0 mismatches;
+`logs/v2_forecast/live_producer_v2_replay_check.log`).
 
-**Universe.** The producer scores every open Kalshi event that is flagged
-mutually exclusive, has 3-100 legs, is not a combo, and whose series has >= 3
-recent settled events all with exactly one YES. What the strategies can trade is
-that set intersected with the platform's monitored universe, which the platform
-controls. Universe changes affect all three arms identically.
+**Universe.** Every open Kalshi event flagged mutually exclusive, with 3-100 legs,
+not a combo, whose series has >= 3 recent settled events all with exactly one
+YES. On the platform, additionally limited to its monitored universe, which it
+controls and which affects all arms identically.
 
 ## 4. Two evaluation channels
 
-**B. Documented fill rule on the same live hours (primary for the verdicts).**
-The producer logs every candidate and every arm's score each hour
+**B. Documented fill rule on the live hours (primary for the verdicts).** The
+producer logs every candidate and every arm's score each hour
 (`runs/live/scores/`). The Kalshi trade tape for those hours is fetched and
-`simulate_maker.py` is run unchanged (pessimistic, optimistic, strict fills)
-with the logged scores as the policy. Run as a Lumid workflow reporting each
-arm's net P&L into a Lumid study if feasible; otherwise run locally and
-labelled so. Channel B uses the same fill rule as the A12 test, so live and
-backtest results are directly comparable, and gives event-cluster CIs.
+`simulate_maker.py` is run unchanged (pessimistic, optimistic, strict fills) with
+the logged scores as each arm's policy. Same fill rule as A12/A13, so live,
+validation and backtest results are directly comparable; event-cluster CIs. Run
+as a Lumid workflow/study if feasible, otherwise locally and labelled so.
 
-**A. Platform paper lane (always reported beside B).** The forward-test
-scorecards for each arm: fills, buy/sell split, `net_usd`, `fees_usd`,
-markouts, and the platform's Sharpe and max drawdown.
+**A. Platform paper lane (reported beside B whenever available).** Forward-test
+scorecards per arm: fills, buy/sell split, `net_usd`, `fees_usd`, markouts, the
+platform's Sharpe and max drawdown. As of 2026-10-06 the platform was returning
+503 errors, and a deployed probe strategy had never run a cycle
+(`live_enabled: false`); channel A starts when deployed strategies run.
 
 **Why B decides.** The platform's rule for filling resting limit orders is
-undocumented (asked; answer recorded here when received). A verdict that
-depended on it would measure the fill model as much as the policy. This choice
-is fixed before any live result.
+undocumented. A verdict that depended on it would measure the fill model as much
+as the policy. Fixed before any live result.
 
-## 5. Verdicts (fixed now)
+## 5. Verdicts (fixed now; channel B, pessimistic fills, final cut)
 
-| claim | holds if (channel B, pessimistic fills) |
+| claim | holds if |
 |---|---|
-| **G profitable live** | net return > 0 with the event-cluster 95% CI excluding 0 |
-| **The model adds value live** | paired difference G - random > 0 with the CI excluding 0 |
+| **G2 profitable live** | `g2` net return > 0 with the event-cluster 95% CI excluding 0 |
+| **G2 adds value live** | paired difference `g2` - `rnd2` > 0 with the CI excluding 0 |
+| G2+ profitable / adds value | the same tests for `g2p` (vs `rnd2p`); secondary |
+| Decay confirmed | `g2` - `g` > 0 with the CI excluding 0; secondary |
 
-Channel A is reported for every arm whatever it shows. Where A and B differ in
-sign for either claim, the difference is reported and discussed as a finding
-about fill models; it does not change the verdict. If channel A produces no
-usable scorecards (e.g. the platform cannot fill resting orders), that is
-reported.
+Channel A is reported for every arm whatever it shows; where A and B differ in
+sign, the difference is discussed as a finding about fill models and does not
+change the verdict.
 
 ## 6. Metrics
 
-- Net return = net P&L after fees / capital committed at fill prices (as in
-  A12); net c/contract; fills; events; 1-hour markout.
-- **Benchmarks.** Daily P&L divided by the peak capital committed over the
-  period gives a daily return series. Reported: annualised return, volatility,
-  Sharpe (excess over the T-bill rate), max drawdown, and correlation with the
-  index. Benchmarks over the same dates: S&P 500 total return (SPY adjusted
-  close) and the 3-month T-bill rate (FRED `DTB3`). With a window of weeks,
-  these are descriptive; no verdict rests on them.
+- Net return = net P&L after fees / capital committed at fill prices; net
+  c/contract; fills; events; 1-hour markout.
+- **Benchmarks (descriptive).** Daily P&L divided by the peak capital committed
+  gives a daily return series: annualised return, volatility, Sharpe (excess over
+  the T-bill rate), max drawdown, correlation with the index. Same dates: S&P 500
+  total return (SPY adjusted close) and the 3-month T-bill rate (FRED `DTB3`).
 
 ## 7. Splits (reported, never verdicts)
 
-- **Generalisation groups:** (i) series with G training fills (2024-11..2025-05);
-  (ii) other series in categories G was trained on; (iii) categories G never saw
-  (scored as unknown category, e.g. Economics, Commodities, Elections).
-- Category; taker-only vs maker-fee series; week.
+Category; the 23 training series vs other series; taker-only vs maker-fee
+series; week.
 
 ## 8. Predictions (before any live result)
 
-- G pessimistic net return positive but below the test months: **+0.5% to +3%**.
-- G > random; random and quote-everything near zero or negative.
-- G's selection share near **40%** (dry runs), not the 20% of the test months,
-  because of the different market mix.
-- Group (i) >= group (ii) > group (iii); group (iii) near zero or negative.
-- Channel A differs from channel B in fill counts by a large factor, in a
-  direction that depends on the platform's fill model.
+- `g2`: positive but small, **0% to +2%**; CI likely includes 0 at the interim cut.
+- `g2` > `rnd2` and > `cand`; `rnd2`, `rnd2p`, `cand` negative, around -1% to -2%.
+- `g` near `cand` (decayed).
+- `g2p` close to `g2`, not clearly better.
+- Selection shares around 35-45%.
 
 ## 9. Known limitations (stated now)
 
-- The platform's fill rule for resting limit orders is undocumented.
+- The platform's fill rule for resting limit orders is undocumented; channel A
+  may not run at all if user strategies stay disabled.
 - `.lqts` rules are re-evaluated on every market update, so an arm may re-submit
-  within an hour; the simulator posts one order per side per hour.
-- The 200-contract per-event limit of the simulator cannot be expressed in
-  `.lqts` and is not enforced.
-- Live quotes at H are a listing snapshot taken just after the top of the hour;
-  the backtest used candle closes. The 24h-ago quote comes from the producer's
-  own store or the candle ending at H-24h.
-- Scores persist on the platform until overwritten. A producer outage leaves the
-  last scores in force; outages are logged (`runs/live/runs.jsonl`) and reported.
-- A window of a few weeks gives far fewer events than the four test months;
-  wide CIs are expected.
-- The live basket rule uses Kalshi's mutually-exclusive flag and recent settled
-  history, not the full-history family scan of `build_mece_membership.py`.
+  within an hour; the simulator posts one order per side per hour. The
+  simulator's 200-contract per-event limit is not expressible in `.lqts`.
+- Quotes at H are a listing snapshot just after the top of the hour; the backtest
+  used candle closes. Earlier quotes are candle closes, as in the backtest.
+- The producer runs on one machine; hours it misses (machine off, outage) are
+  logged as gaps in `runs/live/runs.jsonl` and reported. On the platform, scores
+  persist until overwritten, so an outage leaves the last scores in force.
+- A few weeks give far fewer events than the four 2025 test months; wide CIs
+  are expected, especially at the interim cut.
+- The validation window selected the models (best of three windows per design),
+  so validation returns are optimistic; this test is their first unseen data.
 
 ## 10. What may change after the freeze
 
-- **Before the first confirmed publish:** plumbing only (the `signal.publish`
-  envelope, authentication, scheduling). No change to arms, model, threshold,
+- Plumbing only (the `signal.publish` envelope, authentication, scheduling, the
+  machine the producer runs on). No change to arms, models, threshold,
   candidates, features or verdicts.
-- **After it:** nothing, except a bug that makes the producer publish something
-  other than this document specifies. Any such fix is a dated amendment, and the
-  platform cohort is checkpointed so rows before and after are not pooled.
+- A model tuned later (walk-forward on training months only, declared in an
+  amendment first) may be **added** as a new arm from the day it is ready,
+  reported separately with its shorter window; existing arms are untouched.
+- Any bug fix that changes what is published is a dated amendment, and rows
+  before and after are not pooled.
