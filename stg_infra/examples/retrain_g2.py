@@ -125,8 +125,11 @@ def api_legs(months, series):
                 raise FileNotFoundError(f"missing API cache {p.name}: run fetch_kalshi_api_months.py")
             for r in pickle.loads(p.read_bytes()):
                 legs[r["ticker"]] = {"event": r["event"], "series": ser, "yes": r["result"] == "yes",
-                                     "close": int(r["close_ns"]), "e": r["e"], "bid": r["bid"].astype(float),
-                                     "ask": r["ask"].astype(float), "tt": r["tt"], "tp": r["tp"].astype(float),
+                                     # float32 cache -> exact cents again (0.41f32 = 0.40999..., which
+                                     # would make a 2c spread read as 1.9999c)
+                                     "close": int(r["close_ns"]), "e": r["e"], "bid": np.round(r["bid"].astype(float), 4),
+                                     "ask": np.round(r["ask"].astype(float), 4), "tt": r["tt"],
+                                     "tp": np.round(r["tp"].astype(float), 4),
                                      "tc": r["tc"].astype(float), "ts": r["ts"].astype(float)}
                 events.setdefault(r["event"], []).append(r["ticker"])
     return legs, events
@@ -370,6 +373,16 @@ def self_test() -> bool:
           np.isnan(plus_features({**L, "e": np.array([H - 4 * H_NS, H - H_NS, H], np.int64)}, H, 1, 41, "x")["dmid_3h"]))
     import maker_policy as mp
     check("G2+ feature list = G's 14 + the 6 A14 additions", feats("G2P") == mp.FEATS_G + PLUS and feats("G2") == mp.FEATS_G)
+    import tempfile, fetch_kalshi_api_months as fk
+    with tempfile.TemporaryDirectory() as d:
+        old = fk.OUT; fk.OUT = Path(d)
+        rec = {"ticker": "Q-1", "event": "Q", "result": "yes", "close_ns": 0, "e": np.array([0], np.int64),
+               "bid": np.array([0.41], np.float32), "ask": np.array([0.43], np.float32), "tt": np.empty(0, np.int64),
+               "tp": np.array([41.0], np.float32), "tc": np.empty(0, np.float32), "ts": np.empty(0, np.int8)}
+        (Path(d) / "KXQ_2026-06.pkl").write_bytes(pickle.dumps([rec]))
+        lg, _ = api_legs(["2026-06"], ["KXQ"]); fk.OUT = old
+    check("API cache prices come back as exact cents (float32 0.41/0.43 -> spread exactly 2c)",
+          lg["Q-1"]["ask"][0] * 100 - lg["Q-1"]["bid"][0] * 100 == 2.0 and lg["Q-1"]["bid"][0] == 0.41)
     check("G2+ simulates both levels; G2 the BROAD config",
           sim_cfg("G2P").levels == "both" and sim_cfg("G2").levels == "")
     print("SELF-TEST", "PASSED" if ok else "FAILED")
