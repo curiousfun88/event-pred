@@ -545,3 +545,29 @@ features to the live market's (the producer's 2026-10-05 snapshot), using featur
 
 **Live arms if G2 is selected:** G2, G (the 2025 model, as a decay reference), random at G2's hourly share,
 quote everything.
+
+## Amendment A14 (2026-10-06, BEFORE any G2 training or validation result): adverse-selection variant G2+
+
+**Why.** The 2026 diagnosis (A13) points to adverse selection: quote-everything markouts in weather turned
+negative (+0.31c -> -0.67c per contract). G2+ adds defences against it. It is declared now, before any G2
+result, so that G2 and G2+ are a planned comparison, not a retry after a failure.
+
+**G2+ = G2 plus three changes (fixed now):**
+1. **Both quote levels as candidates.** For each side, a candidate at the touch and, when the spread is
+   >= 3c, a candidate 1c inside (new simulator option `levels="both"`; default off, every earlier result
+   and cache key unchanged). The policy posts, per side, the candidate with the higher prediction if it is
+   above t = 1c. Training fills come from posting both levels.
+2. **Toxicity features** at H, from the trade tape and quotes only: prints in (H-1h, H]; signed taker
+   imbalance in (H-1h, H] ((buy - sell contracts) / total, 0 if no trades); mid change since H-1h and
+   since H-3h (missing if no quote); an indicator for the improved level.
+3. **Time to close for non-sports series**, in hours (missing for category Sports, where close_time is the
+   actual match end and would leak).
+Everything else as G2: candidates' other rules, the 14 G features, hyperparameters, target, threshold,
+series, windows W1-W3, validation window.
+
+**Selection.** The A13 rule applied to all six models (G2 and G2+ x W1-W3): each design's selected window is
+its highest positive pessimistic validation return. Both designs may go live as separate arms if both have a
+selected window. Comparing six models on one validation window makes the best figure optimistic; the live
+forward test is the test.
+
+**Live arms if both pass:** G2, G2+, G (2025 model), random at each model's hourly share, quote everything.
