@@ -352,6 +352,29 @@ def candle_history(k: Kalshi, legs_needed, H):
 
 # ---------------------------------------------------------------- one run
 
+ACTIVE_URL = "https://lum.id/lqt-data/market/kalshi-active-instruments"
+
+
+def scope_signals(sig, now_pub, lumid, series, prev=()):
+    """Keep rows for instruments on Lumid's tradable list (lumid=None: no list filter) or in `series`, and always
+    for instruments published last hour, so their sentinels are sent even after they leave the list."""
+    keep = lambda tk: (lumid is not None and tk in lumid) or tk.split("-")[0] in series or (lumid is None and not series)
+    return [r for r in sig if keep(r["instrument_id"]) or r["instrument_id"] in prev], {tk for tk in now_pub if keep(tk)}
+
+
+def publish_paced(sig, pat, stamp, batch, pace, post):
+    """Small batches `pace` seconds apart; stop at the first non-200 so a struggling server is never hammered."""
+    sent = []
+    for i in range(0, len(sig), batch):
+        if i:
+            time.sleep(pace)
+        r = post(envelope(sig[i:i + batch], pat, f"maker-{stamp}-{i // batch}"))
+        sent.append((r.status_code, r.text[:200]))
+        if r.status_code != 200:
+            break
+    return sent
+
+
 def load_models():
     """{arm: (design, blob, sha1)} for G and the A13/A14 selections."""
     import hashlib
@@ -447,12 +470,18 @@ def run_once(args) -> dict:
     if args.publish:
         pat = Path(args.pat_file).expanduser().read_text().strip()
         import requests
-        sent = []
-        for i in range(0, len(sig), args.batch):
-            body = envelope(sig[i:i + args.batch], pat, f"maker-{stamp}-{i // args.batch}")
-            r = requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"}, timeout=60)
-            sent.append((r.status_code, r.text[:200]))
-        if all(c == 200 for c, _ in sent):
+        allowed = set(args.publish_series or [])
+        if args.publish_scope == "lumid":
+            r = requests.get(ACTIVE_URL, params={"limit": 20000}, headers={"Authorization": f"Bearer {pat}"}, timeout=60)
+            r.raise_for_status()
+            lumid = {x["instrument_id"] for x in r.json()}
+        else:
+            lumid = None
+        sig, now_pub = scope_signals(sig, now_pub, lumid, allowed, published)
+        sent = publish_paced(sig, pat, stamp, args.batch, args.pace,
+                             lambda body: requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"},
+                                                        timeout=60))
+        if sent and all(c == 200 for c, _ in sent) and sum(1 for _ in sent) == -(-len(sig) // args.batch):
             save_state("published.pkl", now_pub)
     save_state("snaps.pkl", snaps)
     save_state("trades2.pkl", tstore)
@@ -462,7 +491,8 @@ def run_once(args) -> dict:
                "share_g2": round(share2, 4), "share_g2p": round(share2p, 4), "signal_rows": len(sig),
                "hist_legs": len(hist), "trade_legs": len(trades), "api_calls": k.calls,
                "secs": round(time.time() - t0, 1), "models": {a: m[2] for a, m in models.items()},
-               "published": sent if sent is not None else "dry-run"}
+               "published": sent if sent is not None else "dry-run",
+               "published_rows": len(sig) if sent is not None else 0}
     print(json.dumps(summary), flush=True)
     with open(LIVE_DIR / "runs.jsonl", "a") as f:
         f.write(json.dumps(summary) + "\n")
@@ -560,6 +590,17 @@ def self_test() -> bool:
     check("envelope carries topic and the PAT owner credential",
           env["records"][0]["topic"] == "signal.publish" and env["records"][0]["payload"]["auth"]["pat"] == "PAT")
     check("time helpers", iso_ns("2026-10-05T15:48:45.5Z") % 1_000_000_000 == 500_000_000 and hour_floor(H + 5) == H)
+    sg = [{"instrument_id": t} for t in ("KXA-1", "KXB-1", "KXC-1", "KXOLD-1")]
+    kept, pub = scope_signals(sg, {"KXA-1", "KXB-1", "KXC-1"}, {"KXA-1"}, {"KXB"}, {"KXOLD-1"})
+    check(f"publish scope: on Lumid's list or whitelisted series, plus last hour's legs for sentinels: {[r['instrument_id'] for r in kept]}",
+          [r["instrument_id"] for r in kept] == ["KXA-1", "KXB-1", "KXOLD-1"] and pub == {"KXA-1", "KXB-1"})
+
+    class R:
+        def __init__(self, c): self.status_code, self.text = c, ""
+    codes = iter([200, 503, 200])
+    calls = []
+    out = publish_paced([{"x": i} for i in range(250)], "P", "s", 100, 0, lambda b: (calls.append(b), R(next(codes)))[1])
+    check("paced publishing stops at the first error (2 of 3 batches sent)", [c for c, _ in out] == [200, 503] and len(calls) == 2)
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -572,7 +613,11 @@ def main():
     ap.add_argument("--series", nargs="*", help="limit to these series (default: every open Kalshi event)")
     ap.add_argument("--publish", action="store_true")
     ap.add_argument("--pat-file", default="~/.lumid_pat")
-    ap.add_argument("--batch", type=int, default=500)
+    ap.add_argument("--batch", type=int, default=100)
+    ap.add_argument("--pace", type=float, default=3.0, help="seconds between publish batches")
+    ap.add_argument("--publish-scope", choices=["all", "lumid"], default="lumid",
+                    help="lumid: only instruments on Lumid's kalshi-active-instruments list (re-fetched each hour)")
+    ap.add_argument("--publish-series", nargs="*", default=[], help="series always published in addition")
     ap.add_argument("--rps", type=float, default=8.0)
     a = ap.parse_args()
     if a.self_test:
