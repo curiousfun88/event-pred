@@ -585,6 +585,10 @@ def main():
                 run_once(a)
             except Exception as e:
                 print(json.dumps({"error": repr(e), "at": time.time()}), flush=True)
+                # a failed cycle is retried within the same hour while there is time to finish it
+                if (time.time_ns() - hour_floor(time.time_ns())) < 25 * 60 * 1_000_000_000:
+                    time.sleep(180)
+                    continue
             nxt = hour_floor(time.time_ns()) + H_NS + 60 * 1_000_000_000
             time.sleep(max(30, (nxt - time.time_ns()) / 1e9))
     else:
