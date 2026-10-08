@@ -355,10 +355,12 @@ def candle_history(k: Kalshi, legs_needed, H):
 ACTIVE_URL = "https://lum.id/lqt-data/market/kalshi-active-instruments"
 
 
-def scope_signals(sig, now_pub, lumid, series, prev=()):
-    """Keep rows for instruments on Lumid's tradable list (lumid=None: no list filter) or in `series`, and always
-    for instruments published last hour, so their sentinels are sent even after they leave the list."""
-    keep = lambda tk: (lumid is not None and tk in lumid) or tk.split("-")[0] in series or (lumid is None and not series)
+def scope_signals(sig, now_pub, lumid, series, prev=(), exclude=()):
+    """Keep rows for instruments on Lumid's tradable list (lumid=None: no list filter) or in `series`, minus series
+    starting with an `exclude` prefix (amendment L1: weather); always keep instruments published last hour, so
+    their sentinels are sent even after they leave the scope."""
+    inc = lambda tk: (lumid is not None and tk in lumid) or tk.split("-")[0] in series or (lumid is None and not series)
+    keep = lambda tk: inc(tk) and not tk.startswith(tuple(exclude))
     return [r for r in sig if keep(r["instrument_id"]) or r["instrument_id"] in prev], {tk for tk in now_pub if keep(tk)}
 
 
@@ -477,7 +479,7 @@ def run_once(args) -> dict:
             lumid = {x["instrument_id"] for x in r.json()}
         else:
             lumid = None
-        sig, now_pub = scope_signals(sig, now_pub, lumid, allowed, published)
+        sig, now_pub = scope_signals(sig, now_pub, lumid, allowed, published, args.publish_exclude_prefix)
         sent = publish_paced(sig, pat, stamp, args.batch, args.pace,
                              lambda body: requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"},
                                                         timeout=60))
@@ -594,6 +596,11 @@ def self_test() -> bool:
     kept, pub = scope_signals(sg, {"KXA-1", "KXB-1", "KXC-1"}, {"KXA-1"}, {"KXB"}, {"KXOLD-1"})
     check(f"publish scope: on Lumid's list or whitelisted series, plus last hour's legs for sentinels: {[r['instrument_id'] for r in kept]}",
           [r["instrument_id"] for r in kept] == ["KXA-1", "KXB-1", "KXOLD-1"] and pub == {"KXA-1", "KXB-1"})
+    sw = [{"instrument_id": t} for t in ("KXHIGHLAX-1", "KXLOWTMIA-1", "KXMLSGAME-1", "KXHIGHNY-9")]
+    kw, pw = scope_signals(sw, {"KXHIGHLAX-1", "KXLOWTMIA-1", "KXMLSGAME-1"}, {"KXLOWTMIA-1"}, {"KXHIGHLAX", "KXMLSGAME"},
+                           {"KXHIGHNY-9"}, ["KXHIGH", "KXLOW"])
+    check(f"weather excluded even when listed or whitelisted; last hour's weather leg still gets its sentinel: {[r['instrument_id'] for r in kw]}",
+          [r["instrument_id"] for r in kw] == ["KXMLSGAME-1", "KXHIGHNY-9"] and pw == {"KXMLSGAME-1"})
 
     class R:
         def __init__(self, c): self.status_code, self.text = c, ""
@@ -618,6 +625,8 @@ def main():
     ap.add_argument("--publish-scope", choices=["all", "lumid"], default="lumid",
                     help="lumid: only instruments on Lumid's kalshi-active-instruments list (re-fetched each hour)")
     ap.add_argument("--publish-series", nargs="*", default=[], help="series always published in addition")
+    ap.add_argument("--publish-exclude-prefix", nargs="*", default=[],
+                    help="never publish tickers starting with these (amendment L1: KXHIGH KXLOW)")
     ap.add_argument("--rps", type=float, default=8.0)
     a = ap.parse_args()
     if a.self_test:
