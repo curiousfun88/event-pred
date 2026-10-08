@@ -152,3 +152,30 @@ series; week.
   reported separately with its shorter window; existing arms are untouched.
 - Any bug fix that changes what is published is a dated amendment, and rows
   before and after are not pooled.
+
+---
+
+## Amendment L1 (2026-10-08, BEFORE any strategy has traded on Lumid and before any live P&L is seen)
+
+**Why.** (1) The supervisor requires the forward test to be evaluated on Lumid. (2) Validation by
+market group (G2-W3, 2026-09-07..10-04, pessimistic): non-weather series **+6.73%** (CI +2.4 to +11.4,
+1,725 fills), weather series **-1.60%** (CI -5.2 to +2.0, 3,490 fills). (3) Lumid's universe and its
+signal mailbox are capacity-limited (first full publish: 75,000 rows, all 503/504).
+Already established before this amendment: custom signals published via `signal.publish` are recorded
+(backtest of `g2_maker_v1` on `KXBTCD-26OCT0723-T82899.99`: "Real on all three axes: prices, signals,
+settlement", 0 actions with the sentinel values published).
+
+**Changes (fixed now):**
+1. **Evaluation = Lumid's paper lane (channel A becomes primary).** The verdicts of §5 are taken on the
+   Lumid fills of each arm. If Lumid reports P&L for user strategies, its figure is used; if it reports only
+   decisions/fills, P&L is computed from Lumid's recorded fills, settlement results and the Kalshi maker fee
+   schedule. CIs by event-cluster bootstrap. The own-simulator replay (channel B) is kept as a supplementary
+   check on the same universe.
+2. **Universe: weather series excluded** (Kalshi daily-high/low temperature series, `KXHIGH*`, `KXLOW*`),
+   on the validation result above, decided at the group level (weather vs non-weather), not by series.
+   All other qualifying basket series in Lumid's universe are traded by all arms.
+3. **Start of the Lumid test:** the first hour in which all six arms are deployed and publishing covers
+   the non-weather series in the monitored universe; recorded in `runs/live/runs.jsonl` and in the report.
+   If Lumid's universe is later widened by the operator, the widening date is recorded and results are
+   reported for the periods before and after it.
+4. Unchanged: arms, models, threshold, signals, interim (2026-10-28) and final (2026-11-11) cuts.
