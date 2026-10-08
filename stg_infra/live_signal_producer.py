@@ -473,12 +473,15 @@ def run_once(args) -> dict:
         pat = Path(args.pat_file).expanduser().read_text().strip()
         import requests
         allowed = set(args.publish_series or [])
+        lumid = None
         if args.publish_scope == "lumid":
-            r = requests.get(ACTIVE_URL, params={"limit": 20000}, headers={"Authorization": f"Bearer {pat}"}, timeout=60)
-            r.raise_for_status()
-            lumid = {x["instrument_id"] for x in r.json()}
-        else:
-            lumid = None
+            try:          # a brief outage of the list endpoint must not cost the hour: fall back to the series list
+                r = requests.get(ACTIVE_URL, params={"limit": 20000}, headers={"Authorization": f"Bearer {pat}"}, timeout=60)
+                r.raise_for_status()
+                lumid = {x["instrument_id"] for x in r.json()}
+            except Exception as e:
+                print(json.dumps({"warning": f"active list unavailable, publishing the series list only: {e!r}"}), flush=True)
+                lumid = set()
         sig, now_pub = scope_signals(sig, now_pub, lumid, allowed, published, args.publish_exclude_prefix)
         sent = publish_paced(sig, pat, stamp, args.batch, args.pace,
                              lambda body: requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"},
