@@ -46,13 +46,22 @@ DATA. Kalshi public API, unauthenticated, read-only, throttled. State and logs:
   runs/live/payloads/     the exact signal batch built each hour (dry-run or sent)
 
 PUBLISHING. Off unless --publish. Envelope per lqt-strategies.md with topic
-"signal.publish" and the batch shape of lqt-signals.md. TO VERIFY on first send.
+"signal.publish" and the batch shape of lqt-signals.md. Operator guidance
+(2026-10-10): one request at a time, 100-200 signals and < 2 MB per request, at most
+~10 requests a minute; on 429/503/504 back off (honour Retry-After) and retry with the
+SAME message id (de-duplicated); resend what failed during an ingest outage. So:
+batches are --pace (7 s) apart; a retryable failure is retried with its msg_id
+within a time budget; the exact rows sent each hour (payloads/sent_<H>.json) and the
+accepted batches (state/publish_log.pkl) are kept; before each live publish, hours
+since --resend-since that were not fully accepted are resent oldest first (their
+original msg_ids), so the current hour is always the last write.
 
 USAGE (from repo root):
     python stg_infra/live_signal_producer.py --self-test
     python stg_infra/live_signal_producer.py --once                  # dry run
     python stg_infra/live_signal_producer.py --loop                  # hourly, logging only
     python stg_infra/live_signal_producer.py --loop --publish --pat-file ~/.lumid_pat
+    python stg_infra/live_signal_producer.py --pending                # hours awaiting resend
 """
 from __future__ import annotations
 
@@ -312,24 +321,32 @@ def series_meta(k: Kalshi, series_list, cache, now_s):
 
 def update_trades(k: Kalshi, tickers, store, H):
     """Incremental trade store (time, count, taker side): keep trades in (H-25h, H]; fetch only what is new."""
+    # Each trade's id is stored WITH the trade, so "already seen" can only mean "stored". Until
+    # 2026-10-11 (amendment L2) the seen-set also held ids of trades fetched after H and then
+    # dropped by the (t <= H) filter; the next hour skipped them as seen, so every trade made
+    # between the top of the hour and the fetch was lost for good and trades_24h was undercounted.
+    # Entries in the old format (no per-trade "id") are refetched over the full window once.
     lo = H - 25 * H_NS
-    empty = {"t": np.empty(0, np.int64), "c": np.empty(0), "s": np.empty(0), "ids": set()}
+    empty = {"t": np.empty(0, np.int64), "c": np.empty(0), "s": np.empty(0), "id": np.empty(0, object)}
     for tk in tickers:
         have = store.get(tk, empty)
+        if "id" not in have:
+            have = empty
         min_s = int(max(lo, int(have["t"].max()) if len(have["t"]) else lo) // 1_000_000_000) - 1
-        new, ids = [], set(have["ids"])
+        new, seen = [], set(have["id"].tolist())
         for tr in k.pages("markets/trades", "trades", ticker=tk, min_ts=min_s, limit=1000):
-            if tr["trade_id"] in ids:
+            if tr["trade_id"] in seen:
                 continue
-            ids.add(tr["trade_id"])
+            seen.add(tr["trade_id"])
             new.append((iso_ns(tr["created_time"]), float(tr.get("count_fp", tr.get("count", 0))),
-                        1.0 if tr["taker_side"] == "yes" else -1.0))
+                        1.0 if tr["taker_side"] == "yes" else -1.0, tr["trade_id"]))
         t = np.concatenate([have["t"], np.array([x[0] for x in new], np.int64)])
         c = np.concatenate([have["c"], np.array([x[1] for x in new], float)])
         s_ = np.concatenate([have["s"], np.array([x[2] for x in new], float)])
-        o = np.argsort(t, kind="stable"); t, c, s_ = t[o], c[o], s_[o]
+        i_ = np.concatenate([have["id"], np.array([x[3] for x in new], object)])
+        o = np.argsort(t, kind="stable"); t, c, s_, i_ = t[o], c[o], s_[o], i_[o]
         keep = (t > lo) & (t <= H)
-        store[tk] = {"t": t[keep], "c": c[keep], "s": s_[keep], "ids": ids if len(ids) < 50_000 else set()}
+        store[tk] = {"t": t[keep], "c": c[keep], "s": s_[keep], "id": i_[keep]}
     return store
 
 
@@ -364,17 +381,94 @@ def scope_signals(sig, now_pub, lumid, series, prev=(), exclude=()):
     return [r for r in sig if keep(r["instrument_id"]) or r["instrument_id"] in prev], {tk for tk in now_pub if keep(tk)}
 
 
-def publish_paced(sig, pat, stamp, batch, pace, post):
-    """Small batches `pace` seconds apart; stop at the first non-200 so a struggling server is never hammered."""
-    sent = []
-    for i in range(0, len(sig), batch):
-        if i:
-            time.sleep(pace)
-        r = post(envelope(sig[i:i + batch], pat, f"maker-{stamp}-{i // batch}"))
-        sent.append((r.status_code, r.text[:200]))
+RETRYABLE = {429, 502, 503, 504}
+MAX_BODY = 2_000_000
+
+
+def retry_after_s(r, attempt, floor):
+    """Seconds to wait before retrying: the server's Retry-After if given, else exponential backoff."""
+    h = getattr(r, "headers", None) or {}
+    v = h.get("Retry-After") if hasattr(h, "get") else None
+    if v is not None:
+        try:
+            return max(float(v), floor)
+        except ValueError:
+            try:
+                from email.utils import parsedate_to_datetime
+                return max((parsedate_to_datetime(v).timestamp() - time.time()), floor)
+            except Exception:
+                pass
+    return max(floor, min(10.0 * 2 ** attempt, 300.0))
+
+
+class _Err:
+    status_code, text, headers = 0, "", {}
+
+    def __init__(self, e):
+        self.text = repr(e)[:200]
+
+
+def publish_paced(sig, pat, stamp, batch, pace, post, budget_s=900.0, done=(), clock=time.time, sleep=time.sleep):
+    """Send `sig` in batches of `batch`, one request at a time, >= `pace` s apart. A retryable failure (429/502/503/
+    504 or no response) is retried with the same msg_id, honouring Retry-After, while the budget lasts; any other
+    error, or an exhausted budget, stops the hour (nothing more is sent). Batches in `done` are skipped.
+    Returns [(batch_index, status, text)] for the final attempt of every batch tried."""
+    sent, last = [], None
+    deadline = clock() + budget_s
+    for k, i in enumerate(range(0, len(sig), batch)):
+        if k in done:
+            continue
+        body = envelope(sig[i:i + batch], pat, f"maker-{stamp}-{k}")
+        if len(json.dumps(body)) > MAX_BODY:
+            raise ValueError(f"batch {k} of {stamp} exceeds 2 MB: lower --batch")
+        attempt = 0
+        while True:
+            if last is not None and clock() - last < pace:
+                sleep(pace - (clock() - last))
+            last = clock()
+            try:
+                r = post(body)
+            except Exception as e:
+                r = _Err(e)
+            if r.status_code == 200 or (r.status_code not in RETRYABLE and r.status_code != 0):
+                break
+            wait = retry_after_s(r, attempt, pace)
+            if clock() + wait > deadline:
+                break
+            sleep(wait)
+            attempt += 1
+        sent.append((k, r.status_code, r.text[:200]))
         if r.status_code != 200:
             break
     return sent
+
+
+def n_batches(n_rows, batch):
+    return -(-n_rows // batch)
+
+
+def pending_hours(since, plog, runs_path, payload_dir):
+    """Hours >= `since` (YYYYmmddTHH) whose rows were not all accepted, oldest first:
+    [(stamp, rows, batch, done_batches, legacy)]. Legacy = published before sent_<H>.json existed; its rows are
+    rebuilt from signals_<H>.json by the caller and resent in full."""
+    out = []
+    for stamp, rec in sorted(plog.items()):
+        if stamp >= since and len(rec["ok"]) < n_batches(rec["n"], rec["batch"]):
+            out.append((stamp, None, rec["batch"], set(rec["ok"]), False))
+    seen = set(plog)
+    if runs_path.exists():
+        for line in runs_path.read_text().splitlines():
+            try:
+                d = json.loads(line)
+            except ValueError:
+                continue
+            st, pub = d.get("H"), d.get("published")
+            if (st and st >= since and st not in seen and isinstance(pub, list)
+                    and any((x[0] if len(x) == 2 else x[1]) != 200 for x in pub)
+                    and (payload_dir / f"signals_{st}.json").exists()):
+                out.append((st, None, None, set(), True))
+                seen.add(st)
+    return sorted(out)
 
 
 def load_models():
@@ -387,6 +481,53 @@ def load_models():
              "g2p": ("G2P", rg.model_path(sel["G2P"]["selected"], "G2P"))}
     return {arm: (d, pickle.loads(p.read_bytes()), hashlib.sha1(p.read_bytes()).hexdigest()[:16])
             for arm, (d, p) in paths.items()}
+
+
+def legacy_rows(args, stamp):
+    """Rows of an hour published before sent_<H>.json existed: its saved batch, scoped with the series list only
+    (Lumid's tradable list at that hour is unknown), weather excluded as in amendment L1."""
+    sig = json.loads((LIVE_DIR / "payloads" / f"signals_{stamp}.json").read_text())
+    rows, _ = scope_signals(sig, set(), set(), set(args.publish_series or []), (), args.publish_exclude_prefix)
+    return rows
+
+
+def resend_backlog(args, pat, post, plog, exclude_stamp=None):
+    """Resend hours since --resend-since that were not fully accepted, oldest first, within --resend-budget seconds.
+    Returns [(stamp, batches_accepted_now, complete)]."""
+    out, t_end = [], time.time() + args.resend_budget
+    for stamp, _, batch, done, legacy in pending_hours(args.resend_since, plog, LIVE_DIR / "runs.jsonl",
+                                                       LIVE_DIR / "payloads"):
+        left = t_end - time.time()
+        if stamp == exclude_stamp or left <= 0:
+            continue
+        if legacy:
+            rows, batch, tag = legacy_rows(args, stamp), args.batch, f"{stamp}r"
+        else:
+            rows, tag = json.loads((LIVE_DIR / "payloads" / f"sent_{stamp}.json").read_text()), stamp
+        sent = publish_paced(rows, pat, tag, batch, args.pace, post, budget_s=left, done=done)
+        ok = sorted(set(done) | {k for k, c, _ in sent if c == 200})
+        plog[stamp] = {"n": len(rows), "batch": batch, "ok": ok, **({"legacy": True} if legacy else {})}
+        save_state("publish_log.pkl", plog)
+        complete = len(ok) == n_batches(len(rows), batch)
+        out.append((stamp, len(ok) - len(done), complete))
+        if not complete:
+            break          # the server is still failing: keep the remaining backlog for the next hour
+    return out
+
+
+def hour_done(stamp, runs_path=None):
+    """True if runs.jsonl already records a completed cycle for hour `stamp`: a restart must not re-run it (that
+    would overwrite the hour's logged scores with a later snapshot than the one published)."""
+    runs_path = runs_path or LIVE_DIR / "runs.jsonl"
+    if not runs_path.exists():
+        return False
+    for line in runs_path.read_text().splitlines()[-200:]:
+        try:
+            if json.loads(line).get("H") == stamp:
+                return True
+        except ValueError:
+            continue
+    return False
 
 
 def run_once(args) -> dict:
@@ -468,7 +609,7 @@ def run_once(args) -> dict:
                       for r, kk, p, v in zip(r2, k2, p_g2p, u)]).write_parquet(LIVE_DIR / "scores" / f"two_{stamp}.parquet")
     (LIVE_DIR / "payloads" / f"signals_{stamp}.json").write_text(json.dumps(sig))
 
-    sent = None
+    sent, accepted_rows, ok_b, resent = None, 0, [], None
     if args.publish:
         pat = Path(args.pat_file).expanduser().read_text().strip()
         import requests
@@ -483,10 +624,16 @@ def run_once(args) -> dict:
                 print(json.dumps({"warning": f"active list unavailable, publishing the series list only: {e!r}"}), flush=True)
                 lumid = set()
         sig, now_pub = scope_signals(sig, now_pub, lumid, allowed, published, args.publish_exclude_prefix)
-        sent = publish_paced(sig, pat, stamp, args.batch, args.pace,
-                             lambda body: requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"},
-                                                        timeout=60))
-        if sent and all(c == 200 for c, _ in sent) and sum(1 for _ in sent) == -(-len(sig) // args.batch):
+        (LIVE_DIR / "payloads" / f"sent_{stamp}.json").write_text(json.dumps(sig))
+        post = lambda body: requests.post(SUBMIT_URL, json=body, headers={"Authorization": f"Bearer {pat}"}, timeout=60)
+        plog = load_state("publish_log.pkl", {})
+        resent = resend_backlog(args, pat, post, plog, exclude_stamp=stamp)
+        sent = publish_paced(sig, pat, stamp, args.batch, args.pace, post, budget_s=args.publish_budget)
+        ok_b = sorted(k for k, c, _ in sent if c == 200)
+        plog[stamp] = {"n": len(sig), "batch": args.batch, "ok": ok_b}
+        save_state("publish_log.pkl", plog)
+        accepted_rows = sum(len(sig[k * args.batch:(k + 1) * args.batch]) for k in ok_b)
+        if len(ok_b) == n_batches(len(sig), args.batch):
             save_state("published.pkl", now_pub)
     save_state("snaps.pkl", snaps)
     save_state("trades2.pkl", tstore)
@@ -497,7 +644,9 @@ def run_once(args) -> dict:
                "hist_legs": len(hist), "trade_legs": len(trades), "api_calls": k.calls,
                "secs": round(time.time() - t0, 1), "models": {a: m[2] for a, m in models.items()},
                "published": sent if sent is not None else "dry-run",
-               "published_rows": len(sig) if sent is not None else 0}
+               "published_rows": accepted_rows if sent is not None else 0,
+               "publish_complete": (len(ok_b) == n_batches(len(sig), args.batch)) if sent is not None else None,
+               "resent": resent if sent is not None else None}
     print(json.dumps(summary), flush=True)
     with open(LIVE_DIR / "runs.jsonl", "a") as f:
         f.write(json.dumps(summary) + "\n")
@@ -517,6 +666,34 @@ def self_test() -> bool:
     import simulate_maker as s
     import maker_policy as mp
     import retrain_g2 as rg
+
+    # trade store (amendment L2): a trade made after H but fetched during H's cycle must be
+    # counted at the next hour, not skipped as already seen
+    def _iso(ns):
+        return dt.datetime.fromtimestamp(ns / 1e9, dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    H1 = 100 * H_NS; H2 = H1 + H_NS
+    tape = [("t1", H1 - 30 * 60 * 10**9), ("t2", H1 + 10 * 60 * 10**9), ("t3", H1 + 40 * 60 * 10**9)]
+
+    class _K:
+        def __init__(self, now):
+            self.now = now
+
+        def pages(self, path, key, ticker, min_ts, limit):
+            for tid, t in tape:
+                if min_ts * 10**9 <= t <= self.now:
+                    yield {"trade_id": tid, "created_time": _iso(t), "count": 1, "taker_side": "yes"}
+    st = update_trades(_K(H1 + 15 * 60 * 10**9), ["X"], {}, H1)
+    check("trade store: H1 keeps only trades <= H1", list(st["X"]["id"]) == ["t1"])
+    st = update_trades(_K(H2 + 15 * 60 * 10**9), ["X"], st, H2)
+    check(f"trade store: the trade made 10 min after H1 (fetched in H1's cycle) is counted at H2 "
+          f"({list(st['X']['id'])})", list(st["X"]["id"]) == ["t1", "t2", "t3"])
+    st = update_trades(_K(H2 + 15 * 60 * 10**9), ["X"], st, H2)
+    check("trade store: re-running an hour adds no duplicates", list(st["X"]["id"]) == ["t1", "t2", "t3"])
+    old = {"X": {"t": np.array([H1 - 30 * 60 * 10**9]), "c": np.array([1.0]), "s": np.array([1.0]),
+                 "ids": {"t1", "t2"}}}
+    st = update_trades(_K(H2 + 15 * 60 * 10**9), ["X"], old, H2)
+    check("trade store: an old-format entry is refetched in full (repairs earlier losses)",
+          list(st["X"]["id"]) == ["t1", "t2", "t3"])
 
     H = 1_791_212_400 * 1_000_000_000          # a top-of-hour, 2026-10
     close = "2026-10-06T07:59:00Z"
@@ -606,11 +783,59 @@ def self_test() -> bool:
           [r["instrument_id"] for r in kw] == ["KXMLSGAME-1", "KXHIGHNY-9"] and pw == {"KXMLSGAME-1"})
 
     class R:
-        def __init__(self, c): self.status_code, self.text = c, ""
-    codes = iter([200, 503, 200])
-    calls = []
-    out = publish_paced([{"x": i} for i in range(250)], "P", "s", 100, 0, lambda b: (calls.append(b), R(next(codes)))[1])
-    check("paced publishing stops at the first error (2 of 3 batches sent)", [c for c, _ in out] == [200, 503] and len(calls) == 2)
+        def __init__(self, c, ra=None):
+            self.status_code, self.text, self.headers = c, "", ({"Retry-After": ra} if ra else {})
+
+    class Clock:
+        def __init__(self): self.t = 0.0
+        def __call__(self): return self.t
+        def sleep(self, d): self.t += max(0.0, d)
+
+    def run(codes, n=250, budget=900.0, done=(), pace=7.0):
+        clk, calls = Clock(), []
+        it = iter(codes)
+
+        def post(b):
+            calls.append((clk.t, b["records"][0]["msg_id"]))
+            c = next(it)
+            if isinstance(c, Exception):
+                raise c
+            return R(*c) if isinstance(c, tuple) else R(c)
+        out = publish_paced([{"x": i} for i in range(n)], "P", "s", 100, pace, post, budget_s=budget, done=done,
+                            clock=clk, sleep=clk.sleep)
+        return out, calls
+    out, calls = run([200, (503, "30"), 200, 200])
+    check("a 503 is retried with the SAME msg_id after Retry-After (30 s), then all 3 batches accepted",
+          [c for _, c, _ in out] == [200, 200, 200] and [m for _, m in calls] == ["maker-s-0", "maker-s-1", "maker-s-1", "maker-s-2"]
+          and calls[2][0] - calls[1][0] == 30.0)
+    check("requests are >= 7 s apart (<= ~9 a minute)", all(b[0] - a[0] >= 7.0 for a, b in zip(calls, calls[1:])))
+    out, calls = run([200, ConnectionError("x"), 200, 200])
+    check("no response (connection error) is retried", [c for _, c, _ in out] == [200, 200, 200] and len(calls) == 4)
+    out, calls = run([200, 400, 200])
+    check("a non-retryable 400 is not retried and stops the hour", [c for _, c, _ in out] == [200, 400] and len(calls) == 2)
+    out, calls = run([200] + [503] * 50, budget=100.0)
+    check("an exhausted budget stops the hour; nothing after the failing batch is sent",
+          out[-1][1] == 503 and {m for _, m in calls} == {"maker-s-0", "maker-s-1"} and calls[-1][0] <= 100.0)
+    out, calls = run([200], done={0, 1})
+    check("batches already accepted are skipped on a resend", [m for _, m in calls] == ["maker-s-2"])
+    check("Retry-After as an HTTP date is honoured (>= pace floor)", retry_after_s(R(503, "Wed, 21 Oct 2015 07:28:00 GMT"), 0, 7.0) == 7.0)
+    check("backoff without Retry-After grows and is capped", retry_after_s(R(503), 0, 7.0) == 10.0 and retry_after_s(R(503), 9, 7.0) == 300.0)
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        td = Path(td)
+        (td / "signals_20261009T15.json").write_text("[]")
+        (td / "signals_20261008T16.json").write_text("[]")
+        (td / "runs.jsonl").write_text("\n".join(json.dumps(x) for x in [
+            {"H": "20261008T16", "published": [[503, ""]]},            # before --resend-since
+            {"H": "20261009T15", "published": [[503, "<html>"]]},       # legacy, failed
+            {"H": "20261009T16", "published": [[200, ""]]}]))           # legacy, fine
+        plog = {"20261010T07": {"n": 250, "batch": 100, "ok": [0, 2]}, "20261010T08": {"n": 250, "batch": 100, "ok": [0, 1, 2]}}
+        pend = pending_hours("20261009T11", plog, td / "runs.jsonl", td)
+        check(f"pending: failed legacy hour + partially accepted hour, oldest first: {[(p[0], sorted(p[3]), p[4]) for p in pend]}",
+              [(p[0], sorted(p[3]), p[4]) for p in pend] == [("20261009T15", [], True), ("20261010T07", [0, 2], False)])
+        (td / "r2.jsonl").write_text(json.dumps({"H": "20261010T08"}) + "\n")
+        check("a restart skips an hour already completed", hour_done("20261010T08", td / "r2.jsonl")
+              and not hour_done("20261010T09", td / "r2.jsonl"))
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -624,7 +849,14 @@ def main():
     ap.add_argument("--publish", action="store_true")
     ap.add_argument("--pat-file", default="~/.lumid_pat")
     ap.add_argument("--batch", type=int, default=100)
-    ap.add_argument("--pace", type=float, default=3.0, help="seconds between publish batches")
+    ap.add_argument("--pace", type=float, default=7.0,
+                    help="seconds between publish requests (operator guidance: at most ~10 requests a minute)")
+    ap.add_argument("--publish-budget", type=float, default=600.0,
+                    help="seconds allowed for this hour's publish, retries included")
+    ap.add_argument("--resend-since", default="20261009T11",
+                    help="resend hours from this one (YYYYmmddTHH, UTC) not fully accepted; default = ingest outage start")
+    ap.add_argument("--resend-budget", type=float, default=300.0, help="seconds per cycle for resending the backlog")
+    ap.add_argument("--pending", action="store_true", help="list hours awaiting resend and exit")
     ap.add_argument("--publish-scope", choices=["all", "lumid"], default="lumid",
                     help="lumid: only instruments on Lumid's kalshi-active-instruments list (re-fetched each hour)")
     ap.add_argument("--publish-series", nargs="*", default=[], help="series always published in addition")
@@ -634,10 +866,22 @@ def main():
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
+    if a.pending:
+        for st, _, batch, done, legacy in pending_hours(a.resend_since, load_state("publish_log.pkl", {}),
+                                                        LIVE_DIR / "runs.jsonl", LIVE_DIR / "payloads"):
+            print(f"{st}  {'legacy (full resend, series list only)' if legacy else f'batches accepted {sorted(done)}'}")
+        return
     if a.once:
         run_once(a)
     elif a.loop:
         while True:
+            now_stamp = dt.datetime.fromtimestamp(hour_floor(time.time_ns()) / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H")
+            if hour_done(now_stamp):
+                print(json.dumps({"info": f"hour {now_stamp} already completed; waiting for the next hour"}), flush=True)
+                nxt = hour_floor(time.time_ns()) + H_NS + 60 * 1_000_000_000
+                while time.time_ns() < nxt:
+                    time.sleep(20)
+                continue
             try:
                 run_once(a)
             except Exception as e:

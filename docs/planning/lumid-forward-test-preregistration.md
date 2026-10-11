@@ -179,3 +179,36 @@ settlement", 0 actions with the sentinel values published).
    If Lumid's universe is later widened by the operator, the widening date is recorded and results are
    reported for the periods before and after it.
 4. Unchanged: arms, models, threshold, signals, interim (2026-10-28) and final (2026-11-11) cuts.
+
+---
+
+## Amendment L2 (2026-10-11 ~15:55 UTC, BEFORE any live fill, outcome or P&L is seen): trade-store bug fix, and the producer moves to a Lumid sandbox
+
+**Bug.** `live_signal_producer.update_trades` kept the ids of trades fetched after the hour H in its
+"already seen" set, but dropped those trades from the store (`t <= H`). At the next hour they were skipped
+as already seen, so every trade made between the top of the hour and the fetch was lost for good. The
+feature `trades_24h` (one of the 14 G/G2 features; G2+ also uses prints in the last hour) was therefore
+undercounted in every live hour since the producer started (2026-10-06). Training and validation used the
+archive's complete tape and are unaffected. Found 2026-10-11 by comparing two producer instances for the
+15:00 UTC hour and checking 8 legs against Kalshi's own trade records (e.g. 95 and 107 stored vs 150 true);
+reproduced with a planted feed (now in the producer's self-test). The earlier replay check (0 mismatches)
+used stored historical trades, not the live fetch, so it could not see this.
+
+**Fix.** Each trade's id is stored with the trade, so "seen" means "stored"; entries in the old format are
+refetched over the full 25 h window once, which also repairs the counts carried over.
+
+**Consequences (fixed now).**
+1. **Hours before the fix are scored and reported separately and never pooled with hours after it** (§10).
+   The first hour on the fixed code is recorded in `runs/live/runs.jsonl` and in the report. Hours before it
+   are reported as "pre-fix (features undercounted)".
+2. Models, arms, threshold, candidates, other features and verdicts are unchanged.
+3. The effect of the bug on the arms' selections is measured once (the share of candidates whose
+   post/do-not-post decision flips when `trades_24h` is recomputed from Kalshi's records for one pre-fix
+   hour) and reported; it changes nothing above.
+
+**Producer host (plumbing, §10).** The producer moves from the laptop to a Lumid sandbox (site `office`;
+Kalshi throttles the `home` site's shared address), kept alive across the 24 h sandbox limit by
+`stg_infra/lumid_sandbox_keeper.py`. Same code and models: for 15:00 UTC on 2026-10-11 the laptop and the
+sandbox gave identical predictions on every candidate whose inputs agreed (max difference 0.0); inputs
+differed only through quotes moving between the two snapshots (0.2 s apart) and the trade-store state.
+The laptop producer stops once the sandbox publishes; hours are attributed to the host that produced them.
