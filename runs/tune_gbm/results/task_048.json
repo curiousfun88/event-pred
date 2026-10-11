@@ -1,0 +1,16 @@
+{
+ "amendment": "A15",
+ "task": 48,
+ "setting": "early_stop_last_month",
+ "test_month": "2026-07",
+ "device": "cpu",
+ "n_train": 607549,
+ "n_test": 39466,
+ "fit_s": 28.8,
+ "best_iter": 520,
+ "kept": 8159,
+ "share": 0.20673491106268688,
+ "ret": 1.438745641658816,
+ "ret_all": -1.0680263710475613,
+ "net_c_per_contract": 0.9903393843725335
+}
