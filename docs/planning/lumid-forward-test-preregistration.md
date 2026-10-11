@@ -212,3 +212,11 @@ Kalshi throttles the `home` site's shared address), kept alive across the 24 h s
 sandbox gave identical predictions on every candidate whose inputs agreed (max difference 0.0); inputs
 differed only through quotes moving between the two snapshots (0.2 s apart) and the trade-store state.
 The laptop producer stops once the sandbox publishes; hours are attributed to the host that produced them.
+
+**L2 effect, measured 2026-10-12 00:35 SGT (16:35 UTC, as committed in item 3; still before any live P&L is
+seen).** Hour 2026-10-11 15:00 UTC (laptop, pre-fix), `trades_24h` (and G2+'s `prints_1h`, `imb_1h`)
+recomputed from the fixed store, all else as logged; the logged predictions are reproduced exactly from the
+logged features. Decisions (prediction > 1c) flipped: **G 0.2%, G2 0.5%, G2+ 0.5%** of candidates; posted
+shares unchanged to 0.1 point (G2 43.9% both). `trades_24h` changed on about 9% of candidates; about 70% of
+candidates are legs with no trades in 24 h, which the bug cannot affect. Log:
+`logs/v2_forecast/live_tradestore_bug_effect_20261011T15.log`. Item 1 (no pooling) stands.
