@@ -571,3 +571,39 @@ selected window. Comparing six models on one validation window makes the best fi
 forward test is the test.
 
 **Live arms if both pass:** G2, G2+, G (2025 model), random at each model's hourly share, quote everything.
+
+## Amendment A15 (2026-10-11, BEFORE any fold is scored): walk-forward hyperparameter sensitivity of G2
+
+**Why.** G2's hyperparameters were fixed by judgement in A12 and never searched. This asks whether G2's
+results depend on them. It is a sensitivity analysis for the report and, secondarily, a possible new
+forward-test arm under the "tuned model" clause of the Lumid pre-registration (walk-forward on training
+months only, declared first). **G2 and every existing arm are unchanged.**
+
+**Data.** G2-W3's exact training fills: 679,400 rows, 2024-11..2026-08, built by
+`stg_infra/examples/tune_gbm.py build`. Refitting the A12 model on this table reproduces the saved G2-W3
+model exactly (max prediction difference 0.0). The September 2026 validation window and all forward-test
+hours are not read.
+
+**Folds.** Five, strictly forward: test months 2026-04, 05, 06, 07 and 08, each trained on every month
+before it.
+
+**Settings (fixed now, `tune_gbm.GRID`).** G2's model (scikit-learn `HistGradientBoostingRegressor`), 14 rows:
+`hgb_a12` (G2 itself); leaf size 100 and 1000; 15 and 63 leaves; learning rate 0.1 with 120 trees; 800
+trees; L2 penalty 10; 80% of features per split; early stopping on the last training month instead of a
+random 10% holdout; recency half-lives of 3 and 6 months; absolute-error loss; a 5-member bootstrap bag.
+Each row changes one thing from G2, except the learning-rate row, which changes rate and trees together.
+`xgb_a12` (XGBoost, A12-matched, CPU or GPU) is a library **benchmark only** and is never selected.
+
+**Score.** Per fold: candidate fills predicted above 1c (A12 threshold); return = net / capital,
+pessimistic fills. Offline: no inventory interaction.
+
+**Selection.** The highest worst-fold return among the 14 rows with at least 200 kept fills in every fold.
+If none qualifies, nothing is selected. If `hgb_a12` is selected, G2's settings are confirmed.
+
+**What follows.** All 15 rows are reported fold by fold, with quote-everything alongside. The selected row
+and `hgb_a12` are re-run in the full simulator on the same five months. The September validation window is
+looked at once, descriptively. A new forward-test arm is added only through a separate dated amendment. No
+setting, fold, threshold or rule is changed once any fold is scored.
+
+**Prediction (before measuring).** No row beats `hgb_a12` by much: differences within about +/-1 point of
+worst-fold return, because the limit is the noisy target, not the settings.
