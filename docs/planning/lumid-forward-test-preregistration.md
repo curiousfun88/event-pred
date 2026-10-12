@@ -220,3 +220,64 @@ logged features. Decisions (prediction > 1c) flipped: **G 0.2%, G2 0.5%, G2+ 0.5
 shares unchanged to 0.1 point (G2 43.9% both). `trades_24h` changed on about 9% of candidates; about 70% of
 candidates are legs with no trades in 24 h, which the bug cannot affect. Log:
 `logs/v2_forecast/live_tradestore_bug_effect_20261011T15.log`. Item 1 (no pooling) stands.
+
+## Amendment L3 (2026-10-13, BEFORE any live fill, outcome or P&L is seen): decision latency, evaluation engine, added baseline arms
+
+**Why.** (1) **Decision timing.** The backtest posts orders at H and lets them rest over (H, H+1h]. Live, the
+snapshot is taken about 1.6 min after H, and an hour's decisions exist only when the producer's cycle ends,
+25-31 min after H (`runs/live/runs.jsonl`, `secs` 1,510-1,853 on 2026-10-11/12). Trades in (H, snapshot] are
+already reflected in the snapshot the models scored, so counting them as fills is look-ahead. Trades in
+(snapshot, cycle end] were not seen by the models; counting them assumes the decision was computed
+instantly, an execution assumption (the backtest makes the same one), not a leak. Found in a methodology
+audit on 2026-10-13; nothing has been evaluated. (2) **Channel A is unavailable.** As of 2026-10-12 every deployed
+strategy has `live_enabled: false` (Lumid API), so the platform has never run a cycle for any arm; the
+supervisor's reply also judged the platform's paper fills unrealistic. (3) **Baselines.** Simple in-market
+baselines answer "is the model only picking wide spreads / liquid legs?" and "is boosting needed?".
+
+**Changes (fixed now).**
+1. **Evaluation = channel B (reverses L1 item 1).** Verdicts (§5) are taken on the documented fill rule
+   applied to Kalshi's real trade tape, pessimistic fills, as originally pre-registered. Channel A is reported
+   only if the platform ever runs the arms.
+2. **Order window.**
+   - **Primary (verdicts): from the snapshot.** For hour H, orders rest over (`snap_ns`, H+1h], cut at the
+     market's close. This removes the look-ahead and keeps the backtest's instant-execution assumption, so
+     live and backtest results stay comparable. The report states that the primary result assumes decisions
+     are executed at the snapshot time.
+   - **Sensitivity (as executed; reported, never a verdict): from the decision time.** Orders rest over
+     (D_H, H+1h], where D_H is when that hour's cycle ended: what the current producer actually achieves.
+     The producer logs D_H from now on (`t_decided_ns`, plumbing under §10). For earlier hours
+     D_H = `snap_ns` + `secs`, never earlier than the true cycle end (the snapshot is taken after the cycle
+     starts). An hour with D_H >= H+1h has no orders in this sensitivity.
+   - Counting from H is not reported: it contains the look-ahead above.
+3. **Engine: hourly paper trader, plus replay.** A paper trader on the Lumid sandbox settles each hour's fills
+   shortly after H+1h from Kalshi's trades for (D_H, H+1h], with `simulate_maker.py`'s own fill, fee, limit and
+   settlement code (positions carry across hours per event, as in the simulator). It starts at hour S, recorded
+   in its log and in the report. The same engine run on the fetched tape (replay) covers hours before S and any
+   hour the paper trader missed. On hours covered by both, fills must agree exactly; any disagreement is
+   reported and explained, and the replay figure is used for that hour. Within an hour, fills are allocated in
+   the simulator's fixed order (leg by leg, order by order), not by trade time; this matters only when a
+   position limit binds.
+4. **Added arms (secondary, descriptive; §10: reported separately, never verdicts).** Computed from the
+   candidate features the producer already logs at H, on the same one-level candidates, scope and fill rule:
+
+   | arm | rule |
+   |---|---|
+   | `wide3` | post a candidate iff its spread >= 3c |
+   | `liq` | post iff its `trades_24h` >= that hour's median `trades_24h` over the hour's candidates |
+   | `lin2` | ridge regression (alpha 1.0; standardised features; category one-hot; missing `dmid_24h` set to 0 with a missing-indicator) on G's 14 features, trained on exactly G2-W3's training fills and targets; post if predicted > 1c. Its sha1 is recorded here before any live hour is evaluated |
+
+   Paired differences reported: `g2` - `wide3`, `g2` - `liq`, `g2` - `lin2`.
+5. **Inference sensitivity.** Every CI is also computed with clusters = UTC day of the order hour (events on the
+   same day may move together); reported beside the event-cluster CI, which stays the basis of the verdicts.
+6. **Recording.** Each cut's results are posted to Lumid Research Fleet as a FlowMesh job (metrics and a
+   summary); fills, logs and the report stay in the sandbox home and are copied into the repo.
+7. **Unchanged:** models, thresholds, candidates, features, scope (L1: platform-listed and whitelisted
+   series, weather excluded, identical for all arms), verdicts (§5), benchmarks (§6), cuts (interim
+   2026-10-28, final 2026-11-11), no pooling across the L2 fix.
+
+**Predictions (before any live result).** The primary window removes about 1.6 min of each hour (~3%):
+fills and returns close to what counting from H would give. The as-executed sensitivity removes roughly
+40-50% of each hour's fill opportunities: fewer fills and lower total P&L for every arm; the effect on
+return per unit of capital is unclear in sign. `wide3`: -1% to
++1%. `liq`: -2% to 0%. `lin2`: between `rnd2` and `g2`. `g2` - `lin2` positive but with a CI including 0 at
+the interim cut.
