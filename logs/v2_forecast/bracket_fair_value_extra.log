@@ -1,0 +1,44 @@
+  2025-12 done
+  2026-01 done
+  2026-02 done
+  2026-03 done
+  2026-04 done
+  2026-05 done
+  2026-06 done
+  2026-07 done
+  2026-08 done
+
+E1  filter minus quote everything, 2025-12..2026-08, event-paired bootstrap
+  edge > 0c [pess  ]: +3.80 pts CI [+2.77, +4.85]
+  edge > 2c [pess  ]: +4.24 pts CI [+3.03, +5.46]
+  edge > 2c [strict]: +4.45 pts CI [+3.06, +5.90]
+
+E2  by hours to close (quoting hour H to the leg's close), pessimistic, 2025-12..2026-08
+  quote everything
+    [1,2)h  fills  4,176  events  392  net $ -1115.37  ret -16.39% CI [-19.41, -13.48]  markout +0.51c
+    [2,4)h  fills  5,505  events  409  net $  -831.46  ret  -6.52% CI [ -8.83,  -4.33]  markout -1.71c
+    [4,8)h  fills  9,102  events  413  net $  -878.09  ret  -3.48% CI [ -4.80,  -1.95]  markout -1.46c
+    [8,24)h  fills  5,352  events  407  net $  +641.66  ret  +3.83% CI [ +1.53,  +6.16]  markout +1.58c
+    [24,72)h  fills  2,772  events  135  net $  +376.60  ret  +3.63% CI [ +0.83,  +6.49]  markout +2.48c
+    [72,inf)h  fills  1,799  events   64  net $  +357.58  ret  +4.94% CI [ +2.68,  +7.05]  markout +1.22c
+    KXINX        fills 13,876  events  189  net $   -69.22  ret  -0.17% CI [ -1.31,  +0.97]  markout -0.42c
+    KXNASDAQ100  fills  9,956  events  188  net $ -1125.35  ret  -3.92% CI [ -5.38,  -2.60]  markout -1.37c
+    KXEURUSD     fills  4,874  events  152  net $  -254.51  ret  -2.34% CI [ -5.56,  +0.81]  markout +4.20c
+  edge > 2c
+    [1,2)h  fills  1,867  events  375  net $  -250.25  ret -10.13% CI [-17.53,  -2.75]  markout +3.56c
+    [2,4)h  fills  2,396  events  367  net $  -154.77  ret  -2.80% CI [ -7.50,  +1.92]  markout -0.60c
+    [4,8)h  fills  4,617  events  387  net $  -136.57  ret  -0.92% CI [ -3.24,  +1.57]  markout -0.77c
+    [8,24)h  fills  2,995  events  375  net $  +794.10  ret  +7.11% CI [ +4.17, +10.09]  markout +2.71c
+    [24,72)h  fills  1,474  events  130  net $  +490.70  ret  +7.02% CI [ +3.45, +10.89]  markout +3.75c
+    [72,inf)h  fills  1,077  events   64  net $  +376.19  ret  +6.86% CI [ +3.75,  +9.83]  markout +1.79c
+    KXINX        fills  7,216  events  189  net $  +588.38  ret  +2.51% CI [ +0.37,  +4.78]  markout +0.84c
+    KXNASDAQ100  fills  5,159  events  188  net $   -71.12  ret  -0.40% CI [ -3.04,  +2.03]  markout +0.03c
+    KXEURUSD     fills  2,051  events  149  net $  +602.14  ret +11.04% CI [ +6.75, +15.84]  markout +6.18c
+
+E3  validation 2026-09-07..2026-10-05: quote everything with and without the filter
+  no filter      [pess  ] fills  3,332  events   57  net $  -313.39  ret  -4.56% CI [ -7.59,  -1.56]  markout -0.95c
+  edge >   0c   [pess  ] fills  2,154  events   57  net $  -180.13  ret  -4.15% CI [ -8.80,  +0.47]  markout -0.35c
+  edge >   2c   [pess  ] fills  1,855  events   57  net $  -150.34  ret  -3.88% CI [ -9.23,  +1.52]  markout -0.08c
+  no filter      [strict] fills  2,388  events   57  net $  -450.56  ret  -8.55% CI [-12.13,  -5.32]  markout -2.44c
+  edge >   0c   [strict] fills  1,541  events   57  net $  -246.87  ret  -7.28% CI [-13.04,  -1.70]  markout -1.72c
+  edge >   2c   [strict] fills  1,356  events   57  net $  -195.62  ret  -6.50% CI [-12.99,  -0.18]  markout -1.49c

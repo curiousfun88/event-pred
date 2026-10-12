@@ -1,0 +1,48 @@
+== 2025-12..2026-08, API cache, series ['KXINX', 'KXNASDAQ100', 'KXEURUSD']
+  2025-12: legs 1,650  with strikes 1,650  fair value missing on 0 fills so far
+  2026-01: legs 1,560  with strikes 1,560  fair value missing on 0 fills so far
+  2026-02: legs 1,440  with strikes 1,440  fair value missing on 0 fills so far
+  2026-03: legs 1,650  with strikes 1,650  fair value missing on 0 fills so far
+  2026-04: legs 1,590  with strikes 1,590  fair value missing on 0 fills so far
+  2026-05: legs 1,500  with strikes 1,500  fair value missing on 0 fills so far
+  2026-06: legs 1,575  with strikes 1,575  fair value missing on 0 fills so far
+  2026-07: legs 1,650  with strikes 1,650  fair value missing on 0 fills so far
+  2026-08: legs 1,575  with strikes 1,575  fair value missing on 0 fills so far
+
+A  calibration over 164,224 quoted leg-hours: Brier fair 0.07056  Kalshi mid 0.07279  (fair / mid = 0.969)
+
+B  quote everything, pessimistic, by fair-value edge of the side posted
+    edge [-inf,  -5)c  fills  5,298  events  458  net $ -1977.74  ret -16.29% CI [-20.51, -12.14]  markout -3.42c
+    edge [  -5,  -2)c  fills  3,168  events  446  net $  -346.64  ret  -5.98% CI [-10.05,  -1.53]  markout +1.03c
+    edge [  -2,   0)c  fills  2,666  events  440  net $  -185.46  ret  -3.11% CI [ -6.39,  +0.10]  markout -0.38c
+    edge [   0,   2)c  fills  2,889  events  426  net $  -102.04  ret  -1.28% CI [ -3.72,  +1.20]  markout -0.82c
+    edge [   2,   5)c  fills  4,303  events  453  net $   -86.70  ret  -0.60% CI [ -2.72,  +1.42]  markout +0.10c
+    edge [   5, inf)c  fills 10,382  events  520  net $ +1249.50  ret  +3.81% CI [ +1.52,  +6.17]  markout +1.61c
+
+C  quote everything, with and without 'post only if fair-value edge > t'
+  no filter      [pess  ] fills 28,706  events  529  net $ -1449.08  ret  -1.83% CI [ -2.78,  -0.93]  markout -0.02c
+  edge >   0c   [pess  ] fills 16,452  events  527  net $ +1022.64  ret  +1.97% CI [ +0.57,  +3.40]  markout +0.97c
+  edge >   2c   [pess  ] fills 14,426  events  526  net $ +1119.40  ret  +2.41% CI [ +0.80,  +3.97]  markout +1.26c
+  no filter      [strict] fills 21,583  events  514  net $ -3254.27  ret  -5.18% CI [ -6.27,  -4.09]  markout -1.84c
+  edge >   0c   [strict] fills 12,637  events  508  net $  -608.22  ret  -1.48% CI [ -3.06,  +0.20]  markout -0.89c
+  edge >   2c   [strict] fills 11,059  events  506  net $  -264.52  ret  -0.72% CI [ -2.65,  +1.13]  markout -0.62c
+
+== D  validation 2026-09-07..2026-10-05: G2-W3 on ['KXINX', 'KXNASDAQ100', 'KXEURUSD']
+  G2-W3 [pess] by fair-value edge
+    edge [-inf,  -5)c  fills     31  events   13  net $   +30.05  ret +28.10% CI [ +7.92, +47.66]  markout +4.70c
+    edge [  -5,  -2)c  fills     25  events    9  net $   +11.25  ret +17.37% CI [-14.82, +37.35]  markout -2.32c
+    edge [  -2,   0)c  fills     23  events   10  net $   +13.95  ret +46.42% CI [ -5.34, +111.56]  markout +9.70c
+    edge [   0,   2)c  fills     29  events   10  net $    +6.90  ret  +7.18% CI [-11.02, +26.84]  markout +0.90c
+    edge [   2,   5)c  fills     39  events   13  net $   +19.89  ret +13.25% CI [ -2.08, +25.65]  markout -1.07c
+    edge [   5, inf)c  fills    473  events   40  net $   +33.73  ret  +2.71% CI [ -5.73, +10.88]  markout +2.22c
+  G2-W3            [pess  ] fills    620  events   48  net $  +115.77  ret  +6.84% CI [ +0.09, +13.75]  markout +2.12c
+  G2-W3 + edge > 0 [pess  ] fills    534  events   43  net $   +49.41  ret  +3.35% CI [ -4.39, +10.95]  markout +1.94c
+  G2-W3 [strict] by fair-value edge
+    edge [-inf,  -5)c  fills     19  events   12  net $   +22.35  ret +35.11% CI [ +4.23, +71.42]  markout +4.31c
+    edge [  -5,  -2)c  fills     17  events    6  net $    +2.58  ret  +7.08% CI [-48.94, +42.45]  markout -6.44c
+    edge [  -2,   0)c  fills     13  events    4  net $   +12.54  ret +81.11% CI [ -5.41, +271.33]  markout +8.29c
+    edge [   0,   2)c  fills     18  events    7  net $    -1.40  ret  -2.83% CI [-29.32, +24.96]  markout +0.89c
+    edge [   2,   5)c  fills     18  events    8  net $   +17.84  ret +19.57% CI [+13.30, +33.30]  markout -2.31c
+    edge [   5, inf)c  fills    319  events   36  net $   +22.52  ret  +2.40% CI [ -7.94, +13.85]  markout +1.53c
+  G2-W3            [strict] fills    404  events   45  net $   +76.43  ret  +6.39% CI [ -2.32, +15.72]  markout +1.32c
+  G2-W3 + edge > 0 [strict] fills    351  events   38  net $   +36.82  ret  +3.43% CI [ -6.33, +14.44]  markout +1.32c

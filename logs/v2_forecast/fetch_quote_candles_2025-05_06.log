@@ -90,3 +90,19 @@ Traceback (most recent call last):
   File "/home/fyp/event-pred/.venv/lib/python3.12/site-packages/requests/adapters.py", line 742, in send
     raise ReadTimeout(e, request=request)
 requests.exceptions.ReadTimeout: HTTPSConnectionPool(host='api.elections.kalshi.com', port=443): Read timed out. (read timeout=30)
+5,990 MECE legs in ['2025-05', '2025-06']; 3,170 already fetched; 2,820 to fetch
+  250/2,820 legs, 250 requests, 0 errors, 2.4 min
+  500/2,820 legs, 500 requests, 0 errors, 4.5 min
+  750/2,820 legs, 750 requests, 0 errors, 6.7 min
+  1,000/2,820 legs, 1,000 requests, 0 errors, 8.8 min
+  1,250/2,820 legs, 1,250 requests, 0 errors, 11.0 min
+  1,500/2,820 legs, 1,500 requests, 0 errors, 13.2 min
+  1,750/2,820 legs, 1,750 requests, 0 errors, 15.4 min
+  2,000/2,820 legs, 2,000 requests, 0 errors, 17.5 min
+  2,250/2,820 legs, 2,250 requests, 0 errors, 19.7 min
+  2,500/2,820 legs, 2,500 requests, 0 errors, 21.9 min
+  2,750/2,820 legs, 2,750 requests, 0 errors, 24.0 min
+
+wrote /home/fyp/event-pred/data/quotes/candles_1h_2025-05_06.parquet: 155,954 candles, 5,990 tickers (0 legs returned no candles), 0 request errors
+two-sided candles: 66.9%; quoted spread median 4.0c, mean 6.35c
+exit: 0

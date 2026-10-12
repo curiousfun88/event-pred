@@ -1,0 +1,15 @@
+02:08:16 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"c64d5f84-0109-458a-88c7-f5091d2a0adc","target_schema":"mailbox","target_table":
+02:13:45 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"4d23e7aa-a702-4885-bdfe-8d81a149873d","target_schema":"mailbox","target_table":
+02:19:12 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"3ea60a0d-7ced-4650-b1ed-8180459d35a8","target_schema":"mailbox","target_table":
+02:24:41 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"775b9ec8-a987-4c41-82ff-69e9c70507c3","target_schema":"mailbox","target_table":
+02:34:10 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"f6285bfd-c366-4966-8b98-3f98094413f7","target_schema":"mailbox","target_table":
+02:39:37 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"d70f623d-c53b-4549-82fd-ab7c1d589607","target_schema":"mailbox","target_table":
+02:45:05 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"86d1a12d-acd5-48b0-87ae-43d3008090cf","target_schema":"mailbox","target_table":
+02:50:33 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"03ad7a91-996c-4d53-8adc-55e6e6ae3d12","target_schema":"mailbox","target_table":
+02:56:16 ['KXBTCD-26OCT0723-T82899.99', 'KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"f321cd1c-766f-4595-a960-dfa3ac83cbe3","target_schema":"mailbox","target_table":
+03:01:45 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"96548470-ce19-4087-aa62-4907a6a4cfd2","target_schema":"mailbox","target_table":
+03:07:12 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"d4d4211b-b8b6-4aa1-9478-eb614338c19f","target_schema":"mailbox","target_table":
+03:12:40 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"c44818e3-0f4e-4855-94b8-61227ac640e7","target_schema":"mailbox","target_table":
+03:18:07 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"9ec35558-a46a-4a61-a228-1eb848aca94a","target_schema":"mailbox","target_table":
+03:24:17 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"6f559f17-2fd9-4293-b213-18f6a385979e","target_schema":"mailbox","target_table":
+03:29:59 ['KXBTCD-26OCT0817-T83249.99'] 200 {"run_id":"d5b16403-5c2c-4d94-a341-1bd8e4f7741a","target_schema":"mailbox","target_table":

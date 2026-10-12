@@ -1,0 +1,429 @@
+% ---------------------------------------------------------------------------
+% Week 9 progress report for the supervisor. Compiles with pdflatex
+% (Overleaf: New Project -> Upload Project, or paste into main.tex).
+% Style follows 2026-10-01_progress_update.tex (cent sign via \cent).
+% Sources: docs/planning/maker-simulator-preregistration.md (A12-A15),
+% docs/planning/lumid-forward-test-preregistration.md (incl. L1),
+% logs/v2_forecast/{smoke_test_2026-09,g2_W3_final_selection,tune_gbm_a15_summary}.log,
+% runs/live/ (producer record).
+% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\newcommand{\cent}{\text{\textcent}}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\emergencystretch}{3em}
+
+\title{FYP Week 9 Progress Report:\\Learned Market-Making on Kalshi Event Contracts}
+\date{Week 9 (12--16 October 2026)}
+\author{}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\section{Introduction}
+
+This project asks whether a learned model can trade Kalshi event contracts profitably, and where it adds value
+over simple rules. Since the last update (1 October), the learned market-making policy was carried from 2025 into
+2026 conditions. Its 2025 version stopped working, a retrained version recovered most of the edge on validation,
+and the strategy now publishes live signals to Lumid every hour. This report covers that work and asks for your
+guidance on the questions in Section~\ref{sec:questions}, several of which decide how the forward test can be run.
+
+\paragraph{Summary of progress.}
+\begin{enumerate}
+  \item \textbf{The 2025 policy (G) decayed in 2026.} On 7 September -- 4 October 2026 it returned $-1.41\%$, no
+        better than quoting everything ($-1.45\%$). The weather markets it relied on changed character.
+  \item \textbf{A retrained policy (G2) recovers the edge on validation.} Trained on Nov 2024 -- Aug 2026, it
+        returned $+1.41\%$ on the same window, $+2.86$ points above quoting everything.
+  \item \textbf{The edge holds month by month.} Walk-forward over five unseen months (Apr--Aug 2026), G2's model
+        beat quoting everything in every month, by $+3.49$ points pooled (CI $+2.20$ to $+4.78$), with a pooled
+        return of $+2.63\%$ (CI $+1.25$ to $+3.94\%$).
+  \item \textbf{G2's results are not an artefact of its hyperparameters.} A pre-registered walk-forward sensitivity
+        analysis (14 settings, 5 monthly folds) found every squared-error setting positive in every fold, while
+        quoting everything was negative in every fold.
+  \item \textbf{The live pipeline runs, but the Lumid forward test has not started.} The signal producer publishes
+        hourly, but my deployed strategy has never run a decision cycle, and Lumid's tradable universe barely
+        overlaps the markets the strategy trades.
+\end{enumerate}
+
+\section{Background}
+
+\paragraph{Kalshi event contracts.} Each contract pays \$1 if an event occurs and \$0 otherwise, so its price is
+a probability in cents. Many events are listed as \emph{mutually exclusive baskets}: several contracts (``legs''),
+exactly one of which resolves YES, e.g.\ the outcomes of a football match, the bucket for a Fed decision, or the
+range of tomorrow's high temperature. This project trades only such baskets.
+
+\paragraph{Why mutually exclusive baskets.}
+\begin{itemize}
+  \item \textbf{They carry a hard constraint.} Because exactly one leg pays \$1, the fair prices of the legs must
+        sum to \$1. Any departure is measurable at every moment, against a known target, without a model of the
+        underlying event. This gave the project its original question: does a learned model add value over the
+        constraint itself, or does the constraint suffice?
+  \item \textbf{Each leg is priced in context.} The other legs of the same basket say something about each leg's
+        fair price. A leg whose basket sums to more than \$1 is more likely overpriced. The policy uses this
+        directly: four of its 14 features describe the basket (its size, how many of its legs are quoted, the sum
+        of its mids, and the best other leg). The same structure defined the STGAT's graph, which linked each leg to its basket.
+  \item \textbf{Outcomes are clean to score.} Each basket settles with exactly one YES, so every fill's P\&L at
+        settlement is unambiguous. A basket that does not settle that way (e.g.\ a voided event) is easy to detect
+        and exclude.
+  \item \textbf{They cover many market types.} Sports results, economic releases, Fed decisions and weather all
+        list as baskets. One method then applies across categories, and the results can be compared category by
+        category.
+\end{itemize}
+
+\paragraph{Makers and takers.} A \emph{taker} crosses the spread and trades immediately; a \emph{maker} posts a
+limit order and waits to be filled. Takers pay the spread and a fee on every trade. Makers earn the spread when
+filled, but are exposed to \emph{adverse selection}: they tend to be filled precisely when an informed trader
+knows the price is about to move against them.
+
+\paragraph{Lumid.} The supervisor's platform (Lumid Studio) runs strategies written in a deterministic rule
+language (LQT). A model cannot run inside a strategy, so model scores are computed outside, published to the
+platform as named signals, and read by the strategy each cycle. The platform offers backtests on settled
+contracts and a live paper-trading lane for forward tests.
+
+\section{Motivation}
+
+Earlier phases established three things that shape the current work:
+\begin{enumerate}
+  \item \textbf{Taker strategies on basket mispricing do not pay.} About 92.5\% of the apparent deviation of basket
+        prices from \$1 is the bid--ask overround, not mispricing. At quoted prices, selling a basket at the bids
+        nets $-0.07\cent$ before fees, against taker fees of $1.3$--$5.8\cent$ per basket.
+  \item \textbf{The STGAT forecasts prices but does not improve trading.} It beats a shrinkage oracle on basket
+        forecasting, but adding its forecasts to the trading policy changed test return by $-0.65$ points
+        (CI $-1.40$ to $+0.09$).
+  \item \textbf{A learned maker policy does pay, at least in 2025.} Policy G (a gradient-boosted model choosing
+        which maker quotes to post) returned $+3.55\%$ net of fees on Aug--Nov 2025 (CI $+2.51$ to $+4.60\%$,
+        34,086 fills), while posting every eligible quote lost $0.34\%$.
+\end{enumerate}
+The open questions this period were whether G's edge survives into 2026, how to evaluate it live on Lumid, and
+whether its untuned hyperparameters matter.
+
+\section{Method}
+
+\subsection{Simulator}
+A tape-driven replay of real Kalshi trades and hourly quotes. Each hour, candidate maker quotes are generated
+for every eligible basket leg (join the touch, or improve by $1\cent$ when the spread is at least $3\cent$;
+10 contracts; position limits per leg and per event). A resting quote is filled when later trades print through
+it. Three queue-position models bound the outcome: \emph{optimistic}, \emph{pessimistic} (the pre-registered
+verdict) and \emph{strict} (competing makers improve too). P\&L includes Kalshi's maker fee schedule and is
+taken at settlement.
+
+\subsection{Learned policy (G, G2)}
+For each candidate quote, a gradient-boosted regression model (scikit-learn
+\texttt{HistGradient\allowbreak{}Boosting\allowbreak{}Regressor}) predicts net P\&L per contract at settlement,
+after fees, under pessimistic fills. The quote is posted only if the prediction exceeds $1\cent$. The model uses
+14 features known at the quoting hour: side, price, price relative to mid, spread, mid, trades in the last 24h,
+24h mid change, basket size, number of quoted legs, sum of basket mids, best other leg, hour, fee status and
+category. Hyperparameters were fixed by judgement before any training (400 trees, learning rate 0.03, 31 leaves,
+at least 300 samples per leaf, L2 penalty 1.0) and never searched on results.
+
+\paragraph{G2.} The same design retrained on recent data. Three training windows were pre-registered and the
+best one chosen on validation (Section~\ref{sec:setup}).
+
+\subsection{Hyperparameter sensitivity (amendment A15)}
+Fourteen settings of G2's own model, each changing one thing from G2 (leaf size, number of leaves, learning
+rate, trees, L2 penalty, feature subsampling, time-ordered early stopping, recency weighting, absolute-error
+loss, bagging), plus XGBoost with matched settings as a library benchmark. Each is trained walk-forward on
+training months only and scored on the following month. The rule, fixed before scoring, selects the highest
+\emph{worst-fold} return among settings keeping at least 200 fills in every fold. The aim is robustness, not peak
+return.
+
+\subsection{Live pipeline}
+A producer on my machine runs hourly: it lists open Kalshi baskets, builds candidates and features with the
+simulator's own code, scores them with each model, logs every score, and publishes the scores to Lumid as
+signals. Replaying the validation window through this live path reproduced the offline scores exactly (0
+mismatches in 2,142 scores). Six strategy arms are prepared for Lumid: G2 (primary), G2+ (an adverse-selection
+variant), G (decay reference), two random-selection controls at the models' hourly share, and quote-everything.
+
+\paragraph{Pre-registration.} Every model, window, threshold, selection rule and verdict was committed to the
+repository before the corresponding result was computed, with dated amendments (A12--A15 for the policy, L1 for
+the forward test).
+
+\section{Experimental setup}\label{sec:setup}
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{l L L}
+\toprule
+Study & Training & Evaluation \\
+\midrule
+G (2025) & Nov 2024 -- May 2025 & validation Jun--Jul 2025; \textbf{test Aug--Nov 2025} (scored once) \\
+2026 check of G & (frozen G) & 7 Sep -- 4 Oct 2026 \\
+G2 (2026 retrain) & W1: Jun--Aug 2026; W2: Mar--Aug 2026; W3: Nov 2024 -- Aug 2026 & \textbf{validation} 7 Sep -- 4 Oct 2026
+  (window selection) \\
+A15 sensitivity & every month before the fold's test month & 5 folds: Apr, May, Jun, Jul, Aug 2026 (training months only) \\
+Forward test & (frozen G2-W3, G2+-W3, G) & live, from 6 Oct 2026; interim cut 28 Oct; end 11 Nov 2026 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Metric.} Return = net P\&L after fees $/$ capital committed at fill prices, pessimistic fills.
+        95\% confidence intervals by event-cluster bootstrap (fills in the same event are not independent).
+  \item \textbf{Baselines.} Quoting every eligible candidate (no model), and random selection of the same share of
+        candidates the model posts. Beating the random control shows that the model's \emph{choice} adds value,
+        not just posting less.
+  \item \textbf{Data.} Kalshi trades, hourly quotes and settlements: the historical archive to Nov 2025, and the
+        Kalshi API for Dec 2025 onwards. The 23 basket series that qualified in 2025 are used for training.
+\end{itemize}
+
+\section{Results}
+
+\subsection{The 2025 policy decayed in 2026}
+Run unchanged on 7 September -- 4 October 2026, G returned $-1.41\%$ (CI $-4.10$ to $+1.36\%$; 10,599 fills,
+329 events), the same as quoting everything ($-1.45\%$) and only slightly above random selection ($-1.95\%$).
+The cause is a change in the weather markets, which made up 72\% of G's fills: 4.6 times more trade prints,
+tighter spreads (the share of $2\cent$ spreads rose from 15\% to 45\% of candidates), and quote-everything
+markouts turning negative ($+0.31$ to $-0.67\cent$ per contract). G's most confident decile, $+4.1\cent$ per
+contract in 2025, was $-0.7\cent$ in 2026.
+
+\subsection{Retrained G2 on validation}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{L r c r c r}
+\toprule
+Policy (validation, 7 Sep -- 4 Oct 2026) & Return & 95\% CI & \shortstack[r]{vs quote\\everything} & 95\% CI & Fills \\
+\midrule
+G (2025 model, unchanged) & $-1.41\%$ & $-4.10$ to $+1.36$ & $+0.04$ & $-2.35$ to $+2.63$ & 10,599 \\
+G2-W1 (Jun--Aug 2026) & $+1.25\%$ & $-0.70$ to $+3.35$ & $+2.70$ & $+0.73$ to $+4.51$ & 9,293 \\
+G2-W2 (Mar--Aug 2026) & $-0.36\%$ & $-2.76$ to $+2.26$ & $+1.09$ & $-1.40$ to $+3.38$ & 7,446 \\
+\textbf{G2-W3 (Nov 2024 -- Aug 2026), selected} & $\mathbf{+1.41\%}$ & $-1.47$ to $+4.31$ & $\mathbf{+2.86}$ & $-0.23$ to $+5.69$ & 5,215 \\
+Quote everything & $-1.45\%$ & $-2.40$ to $-0.53$ & -- & -- & 29,452 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Retraining recovers the model's added value.} G2-W3 is $+2.86$ points above quoting everything and
+        $+3.0$ points above random selection of the same share ($-1.60\%$). Its absolute return is positive but
+        its CI includes 0: one month of validation is short.
+  \item \textbf{In September, G2-W3's edge was outside weather.} Split by market group, G2-W3 returned $+6.73\%$ outside weather
+        (CI $+2.4$ to $+11.4\%$; 1,725 fills) and $-1.60\%$ on weather (CI $-5.2$ to $+2.0\%$; 3,490 fills). On
+        this, decided at group level and before any Lumid trading, weather series are excluded from the Lumid
+        forward test (amendment L1). Section~\ref{sec:noise} qualifies this.
+  \item \textbf{The three windows cannot be told apart.} Paired on the same events, W1 $-$ W2 is $+1.61$ points
+        (CI $-1.06$ to $+4.20$), W3 $-$ W2 $+1.77$ (CI $-0.56$ to $+3.97$) and W3 $-$ W1 $+0.15$ (CI $-3.11$ to
+        $+3.27$). W1 and W3 also earn in different places: W1, trained on recent months only, makes $+1.93\%$ on
+        weather and loses outside it; W3, trained on two years, makes $+6.73\%$ outside weather and loses on it.
+        A plausible reading is that recent data suits the changed weather market, while the smaller non-weather
+        markets need a longer history; W2 sits between the two.
+  \item The validation window was used to choose among three windows, so these figures are optimistic. The forward
+        test is the first unseen data for G2.
+\end{itemize}
+
+\subsection{Hyperparameter sensitivity (A15)}
+Offline return of the quotes each setting keeps (pessimistic fills), per walk-forward fold:
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{l r r r r r r r}
+\toprule
+Setting & Apr & May & Jun & Jul & Aug & \textbf{Worst} & Mean \\
+\midrule
+\textbf{G2 as is} & $+1.95$ & $+2.30$ & $+3.26$ & $+3.46$ & $+2.59$ & $\mathbf{+1.95}$ & $+2.71$ \\
+\textbf{15 leaves (selected)} & $+2.61$ & $+3.08$ & $+2.71$ & $+3.60$ & $+2.56$ & $\mathbf{+2.56}$ & $+2.91$ \\
+L2 penalty 10 & $+2.52$ & $+2.36$ & $+2.61$ & $+3.87$ & $+2.32$ & $+2.32$ & $+2.73$ \\
+80\% of features per split & $+2.84$ & $+2.46$ & $+2.56$ & $+3.46$ & $+1.91$ & $+1.91$ & $+2.65$ \\
+Other 9 squared-error settings & \multicolumn{5}{c}{all positive in every fold} & $+0.78$ to $+1.66$ & $+1.54$ to $+2.41$ \\
+Absolute-error loss & $-0.51$ & $-0.07$ & $+0.48$ & $-0.47$ & $-0.29$ & $-0.51$ & $-0.17$ \\
+XGBoost, matched (benchmark) & $+3.21$ & $+3.48$ & $+3.66$ & $+1.70$ & $+2.01$ & $+1.70$ & $+2.81$ \\
+\midrule
+Quote everything & $-0.73$ & $-0.79$ & $-0.26$ & $-1.07$ & $-1.67$ & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{The result does not depend on the settings.} Every squared-error setting is positive in every
+        month; quoting everything is negative in every month.
+  \item \textbf{The selected setting (15 leaves, simpler trees) is only modestly better:} $+0.61$ points on the
+        worst fold, $+0.20$ on the mean, within the $\pm1$ point predicted before scoring. Choosing the best of 14
+        flatters its margin, and it keeps fewer quotes (about 15\% of candidates vs 18--22\% for G2).
+  \item \textbf{Changing library gains nothing:} XGBoost's mean is within $0.1$ points of G2's, with a lower worst
+        fold.
+  \item \textbf{Absolute-error loss fails}, as expected in hindsight: it predicts the median payoff, not the mean,
+        so the $1\cent$ threshold keeps half of all candidates.
+  \item These are offline scores without inventory interaction. The pre-registered next step re-runs the selected
+        setting and G2 in the full simulator on the same months.
+\end{itemize}
+
+\subsection{Is G2's edge real or noise?}\label{sec:noise}
+To judge this beyond one validation month, G2's exact model (A12 settings) was scored on each of the five A15
+walk-forward months, with event-clustered 95\% CIs added after the pre-registered analysis:
+
+\begin{center}
+\small
+\begin{tabular}{l r c r c r}
+\toprule
+Test month & \shortstack[r]{Return of\\quotes kept} & 95\% CI & \shortstack[r]{Minus quote\\everything} & 95\% CI & Events \\
+\midrule
+Apr 2026 & $+1.95\%$ & $-0.36$ to $+4.23$ & $+2.68$ & $+0.40$ to $+4.97$ & 496 \\
+May 2026 & $+2.30\%$ & $-0.43$ to $+5.02$ & $+3.09$ & $+0.48$ to $+5.68$ & 496 \\
+Jun 2026 & $+3.26\%$ & $-0.38$ to $+6.84$ & $+3.52$ & $-0.18$ to $+7.12$ & 303 \\
+Jul 2026 & $+3.46\%$ & $+0.09$ to $+6.90$ & $+4.53$ & $+1.42$ to $+7.76$ & 344 \\
+Aug 2026 & $+2.59\%$ & $-0.90$ to $+5.89$ & $+4.25$ & $+0.90$ to $+7.62$ & 418 \\
+\midrule
+\textbf{Pooled} & $\mathbf{+2.63\%}$ & $+1.25$ to $+3.94$ & $\mathbf{+3.49}$ & $+2.20$ to $+4.78$ & 2,012 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{Real: the model's choice of quotes adds value.} It beats quoting everything in all five months
+        (four of five CIs exclude 0), as it did on the 2025 test and the September validation.
+  \item \textbf{Real but modest: absolute profit,} about $+2.6\%$ pooled. In a single month the CI usually
+        includes 0 even though the pooled CI does not.
+  \item \textbf{Noise: the ranking of training windows and single-month group figures.} Over these five months,
+        weather quotes returned $+2.34\%$ (CI $+0.61$ to $+4.05$) and non-weather $+3.12\%$ (CI $+1.22$ to
+        $+5.01$). September's weather loss for W3, on which the weather exclusion (L1) was decided, may therefore
+        be one poor month rather than a lasting change. L1 stands as pre-registered, but this is reported.
+  \item \textbf{Implication for the forward test.} A few weeks, at the current coverage, will most likely give a CI
+        that includes 0 even if the edge is real. The paired comparison against quoting everything and random
+        selection is the claim the forward test can best support.
+  \item These are offline scores (no inventory limits, pessimistic fills). Under the strict fill model, where
+        competing makers also improve, most of the edge disappeared in earlier tests.
+\end{itemize}
+
+\subsection{Live pipeline and Lumid status}
+\begin{itemize}
+  \item \textbf{Producer.} Running since 6 October. A full cycle covers about 1,900 open baskets and 12,800 legs
+        and takes about 32 minutes. Signal publishing to Lumid succeeds (every batch accepted in the latest hours),
+        after a Lumid ingest outage from 9 October 11:20 UTC to 10 October 07:00 UTC.
+  \item \textbf{Coverage is low.} Only 25 of the roughly 110 hours between 6 October 16:00 UTC and 11 October 05:00
+        UTC were logged, mainly because my machine and home connection are off overnight. Missed hours cannot be
+        scored afterwards, and the gaps fall at the same times each day.
+  \item \textbf{The strategy has never run on Lumid.} \texttt{g2\_maker\_v1} (registered 7 October, region
+        \texttt{eu-west-1}) shows \texttt{live\_enabled = false}, and its decision-cycle feed is empty.
+  \item \textbf{The universe barely overlaps.} On 10 October, Lumid's Kalshi tradable list held 84 instruments,
+        mostly crypto price-threshold contracts. Of G2's 13,358 candidate quotes that hour, only 176 were in series
+        on the list; at instrument level the overlap was a few Fed-decision legs. Some listed sports markets were
+        stale (finished games still marked active, current fixtures missing).
+  \item Your reply that paper fills are instant at the limit price, with no P\&L computed, means the paper lane
+        cannot measure maker fills as specified in amendment L1 (Section~\ref{sec:questions}, Q1--Q2).
+\end{itemize}
+
+\section{Limitations}
+\begin{itemize}
+  \item One month of 2026 validation, already used for model selection; wide CIs.
+  \item The simulator's fill rule is an assumption about queue position; the strict model shows the edge
+        largely disappears if competing makers also improve their quotes.
+  \item The A15 scores ignore inventory limits; the full-simulator re-check is pending.
+  \item Forward-test coverage is currently limited by my machine's uptime, and a few weeks of data have little
+        power: a real edge of the size seen above would often not reach significance.
+  \item The weather exclusion rests on a single month, which the five-month evidence does not support as strongly.
+\end{itemize}
+
+\section{Next steps}
+\begin{enumerate}
+  \item \textbf{Finalise the experimental setup,} based on your answers to Q1--Q6, and record it as a dated
+        amendment before any live result is seen:
+        \begin{itemize}
+          \item \emph{Backtesting:} which historical windows are reported (2025 held-out test, 2026 walk-forward,
+                or both), how P\&L is computed (my simulator on recorded tape, settlement and fees), and the
+                standard a result must meet (test length, significance).
+          \item \emph{Forward testing:} the forward-test period and its interim cut, how its P\&L is measured
+                (forward-period replay of logged scores, the Lumid paper lane, or both), and the start date if
+                Lumid's universe is widened.
+        \end{itemize}
+  \item \textbf{Fix the required baselines:} the strategy baselines (quoting everything, random selection of the
+        same share, the rule-based maker, the 2025 model), the model baselines (XGBoost, STGAT features, and a
+        linear model if wanted), and the financial benchmarks (S\&P 500 and T-bills: Sharpe ratio, maximum
+        drawdown, correlation), and which periods each covers.
+  \item \textbf{Decide which model executes the strategy:} keep G2 (A12 settings) as the primary model, or add the
+        tuned setting (15 leaves) as an extra arm after a full-simulator re-check against G2 on the same months.
+  \item Improve producer uptime (a long-running host instead of my laptop).
+  \item Interim forward-test cut on 28 October; final report due 3 November.
+\end{enumerate}
+
+\section{Questions for you}\label{sec:questions}
+
+\subsection*{Evaluation}
+Your reply on fills explained that the paper lane fills a resting limit order immediately at its limit price, with
+no queue and no fees, and computes no P\&L for user strategies, and that the more reliable route to an edge
+estimate is a backtest on recorded Kalshi tape with resolved settlement and Kalshi's fee schedule. My simulator does
+exactly this, so I would like to confirm how that applies to the FYP evaluation.
+\begin{enumerate}
+  \item \textbf{Is P\&L evaluated by backtest?} Should the P\&L I report come from backtests on recorded Kalshi tape
+        using my own simulator (queue-aware fills, settlement and fees), rather than from Lumid's paper lane? This
+        would apply to two kinds of backtest:
+        \begin{itemize}
+          \item \emph{historical:} held-out months the model never trained on (e.g.\ the 2025 test);
+          \item \emph{forward-period:} the live weeks, replayed through the same simulator using the scores my
+                producer logged each hour before outcomes were known.
+        \end{itemize}
+        If a queue-aware paper fill model becomes available on Lumid before the report, should its P\&L replace
+        the backtest or be reported beside it?
+  \item \textbf{Purpose of the Lumid forward test.} Given that the paper lane records decisions only, is the forward
+        test on Lumid mainly to show that the strategy runs live on the platform, with its P\&L measured by the
+        forward-period backtest? Or is performance on the paper lane itself part of the evaluation?
+  \item \textbf{Is a historical backtest required, and on which windows?} I propose three layers, each strictly
+        forward in time:
+        \begin{itemize}
+          \item \emph{2025 held-out test:} train Nov 2024 -- May 2025, validation Jun--Jul 2025, test Aug--Nov 2025
+                (the 7/2/4 split you approved on 28 September; scored once);
+          \item \emph{2026 walk-forward:} five monthly folds, Apr--Aug 2026, each trained only on earlier months.
+                This tests G2's training recipe rather than the exact deployed model, whose training data include
+                these months;
+          \item \emph{forward period:} the deployed G2 (trained to Aug 2026, validated 7 Sep -- 4 Oct 2026) on the
+                live weeks to 11 November (interim cut 28 October). This is the only data G2 itself has not seen.
+        \end{itemize}
+        Is this appropriate, or would you prefer one long backtest on a single split? Is a historical backtest
+        needed at all if the forward-period backtest is the main result? Changing the windows is cheapest now; some
+        test months have already been scored once, and reusing them in a new split would have to be disclosed.
+  \item \textbf{Standard for the backtest.} Is there a minimum test length or number of events? Must the profit be
+        statistically significant (95\% CI excluding 0), or is a positive return reported with its CI acceptable?
+        A few weeks of forward data will most likely give a CI that includes 0 even if the edge is real.
+  \item \textbf{Which baselines?} I currently compare against:
+        \begin{itemize}
+          \item \emph{strategy baselines} on the same markets and hours: quoting every eligible order (no model),
+                random selection of the same share of quotes, a hand-set rule-based maker, and the 2025 model;
+          \item \emph{model baselines}: XGBoost, and the policy with STGAT features added.
+        \end{itemize}
+        For the financial benchmarks you mentioned, I plan to compare risk-adjusted returns (Sharpe ratio, maximum
+        drawdown, correlation) with the S\&P 500 and 3-month T-bills over the same dates. Should this comparison
+        cover the historical backtests as well as the forward period? Are there other baselines you expect, for
+        example a simple linear model, or a buy-and-hold position in the same contracts?
+  \item \textbf{Tuned or original model?} The sensitivity analysis selected a simpler setting (15 leaves) that is
+        $+0.61$ points better on the worst fold. Is it worthwhile to add it as an extra forward-test arm, or should
+        I keep the original G2 as the only model and report the analysis as a robustness check? Adding it would
+        give it a shorter live window than the other arms.
+\end{enumerate}
+
+\subsection*{The Lumid universe and platform}
+\begin{enumerate}[resume]
+  \item \textbf{The live universe.} The Kalshi universe on Lumid is too incomplete for my strategy to trade.
+        It trades mutually exclusive baskets (e.g.\ football match outcomes, Fed-decision buckets), but the tradable
+        list on my account held 84 instruments on 10 October, mostly crypto price-threshold contracts. Only 176 of
+        13,358 candidate quotes in one hour were in series on that list. Some listed markets are also stale: the
+        only MLS games were finished matches from 1 and 6 October still marked active, while current fixtures were
+        missing. Could the series my strategy trades be included in the universe refresh for my account? If that
+        is not possible, how would you like me to run the forward test?
+  \item \textbf{My strategy has never run on the paper lane.} \texttt{g2\_maker\_v1} (strategy id
+        \texttt{af1a4954-e659-4c18-b9a9-93c999719dd8}, registered 7 October 21:01 UTC, region
+        \texttt{eu-west-1}) shows \texttt{live\_enabled = false} with no \texttt{live\_enabled\_at}, and its
+        decision-cycle feed is empty. The documentation says a strategy forward-tests from deployment, with no
+        start button. Could the operator check whether it needs enabling, or whether I have missed a step?
+  \item \textbf{Forward-test attribution.} The platform's evaluator reports that scorecards carry no
+        \texttt{strategy\_id} because the build predates attribution, and that the fleet needs redeploying. Could
+        the operator redeploy it, so that decisions can be attributed to my strategies?
+  \item \textbf{Confirming that signals arrive.} My producer's batches are accepted (HTTP 200), but I cannot query
+        the signal history to confirm that \texttt{g2\_bid} / \texttt{g2\_ask} rows are stored. Could the operator
+        confirm that they are?
+  \item \textbf{A long-running host for the producer.} Could I have a sandbox without the 24-hour expiry to host my
+        signal producer? My home connection is cut overnight, so only about a quarter of hours have been logged
+        so far, and the gaps fall at the same times each day.
+\end{enumerate}
+
+\end{document}

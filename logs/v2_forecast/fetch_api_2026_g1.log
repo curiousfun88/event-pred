@@ -1,0 +1,54 @@
+  KXHIGHAUS 2026-08: 186 legs in 31 events  (calls 509, 278s)
+  KXHIGHAUS 2026-07: 186 legs in 31 events  (calls 931, 451s)
+  KXHIGHAUS 2026-06: 180 legs in 30 events  (calls 1316, 608s)
+  KXHIGHCHI 2026-08: 186 legs in 31 events  (calls 1853, 876s)
+  KXHIGHCHI 2026-07: 186 legs in 31 events  (calls 2387, 1116s)
+  KXHIGHCHI 2026-06: 180 legs in 30 events  (calls 2856, 1309s)
+  KXHIGHDEN 2026-08: 186 legs in 31 events  (calls 3318, 1543s)
+  KXHIGHDEN 2026-07: 186 legs in 31 events  (calls 3778, 1778s)
+  KXHIGHDEN 2026-06: 180 legs in 30 events  (calls 4213, 2006s)
+  KXINX 2026-08: 630 legs in 21 events  (calls 5702, 2781s)
+  KXINX 2026-07: 660 legs in 22 events  (calls 7120, 3438s)
+  KXINX 2026-06: 630 legs in 21 events  (calls 8419, 3990s)
+  KXAPRPOTUS 2026-08: 32 legs in 4 events  (calls 8511, 4039s)
+  KXAPRPOTUS 2026-07: 40 legs in 5 events  (calls 8616, 4084s)
+  KXAPRPOTUS 2026-06: 32 legs in 4 events  (calls 8695, 4116s)
+  KXBUNDESLIGAGAME 2026-08: 27 legs in 9 events  (calls 8809, 4174s)
+  KXBUNDESLIGAGAME 2026-07: 0 legs in 0 events  (calls 8809, 4174s)
+  KXBUNDESLIGAGAME 2026-06: 0 legs in 0 events  (calls 8809, 4174s)
+  KXEPLGAME 2026-08: 60 legs in 20 events  (calls 9514, 4526s)
+  KXEPLGAME 2026-07: 0 legs in 0 events  (calls 9514, 4526s)
+  KXEPLGAME 2026-06: 0 legs in 0 events  (calls 9514, 4526s)
+  KXEURUSD 2026-08: 315 legs in 21 events  (calls 10220, 4854s)
+  KXEURUSD 2026-07: 330 legs in 22 events  (calls 10880, 5116s)
+  KXEURUSD 2026-06: 315 legs in 21 events  (calls 11511, 5366s)
+  KXHIGHAUS 2026-05: 186 legs in 31 events  (calls 425, 171s)
+  KXHIGHAUS 2026-04: 180 legs in 30 events  (calls 845, 339s)
+  KXHIGHAUS 2026-03: 186 legs in 31 events  (calls 1295, 527s)
+  KXHIGHCHI 2026-05: 186 legs in 31 events  (calls 1812, 744s)
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 189, in <module>
+    main()
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 185, in main
+    run(a)
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 125, in run
+    tr += list(k.pages(ep, "trades", ticker=m["ticker"], min_ts=s_ - 86400,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/live_signal_producer.py", line 250, in pages
+    d = self.get(path, **({**params, "cursor": cur} if cur else params))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/live_signal_producer.py", line 245, in get
+    raise RuntimeError(f"Kalshi GET failed: {path} {params}")
+RuntimeError: Kalshi GET failed: historical/trades {'ticker': 'KXHIGHCHI-26APR05-B56.5', 'min_ts': 1775224800, 'max_ts': 1775458740, 'limit': 1000}
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 189, in <module>
+    main()
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 185, in main
+    run(a)
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 102, in run
+    cut = k.get("historical/cutoff")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/live_signal_producer.py", line 245, in get
+    raise RuntimeError(f"Kalshi GET failed: {path} {params}")
+RuntimeError: Kalshi GET failed: historical/cutoff {}
+DONE

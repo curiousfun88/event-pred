@@ -1,0 +1,5 @@
+37,951 MECE legs in 2024-11..2025-11 (legs from membership); 37,816 already fully on disk; 135 need fetching (135 ranges), 8 workers at <= 10.0/s
+
+wrote /home/fyp/event-pred/data/quotes/candles_1h_2024-11_2025-11.parquet: 421,177 candles, 24,494 tickers; 6 request errors
+tickers that FAILED (network/HTTP; left unmarked, retried next run): 6
+exit: 0

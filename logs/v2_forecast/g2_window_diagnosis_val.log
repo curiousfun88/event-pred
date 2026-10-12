@@ -1,0 +1,33 @@
+TRAINING DATA BY WINDOW (all G2 training fills; y = net c/contract)
+  W1: 110,999 fills  weather 82%  mean y all -0.53c  weather -0.28c  non-weather -1.72c
+  W2: 248,141 fills  weather 80%  mean y all -0.40c  weather -0.31c  non-weather -0.78c
+  W3: 679,400 fills  weather 84%  mean y all -0.16c  weather -0.08c  non-weather -0.64c
+    2026-03: 48,079  weather 79%  y weather -0.23c  non-weather +0.96c
+    2026-04: 44,862  weather 76%  y weather -0.17c  non-weather -0.91c
+    2026-05: 44,201  weather 79%  y weather -0.61c  non-weather -0.52c
+    2026-06: 39,148  weather 85%  y weather +0.09c  non-weather -1.54c
+    2026-07: 39,466  weather 83%  y weather -0.50c  non-weather -1.26c
+    2026-08: 32,385  weather 78%  y weather -0.47c  non-weather -2.33c
+
+VALIDATION 2026-09-07..10-04, pessimistic
+  W1: all +1.25% (9,293)  weather +1.93% (7,199, net $+317)  non-weather -0.48% (2,094, net $-31)  share posted 40%
+  W2: all -0.36% (7,446)  weather -0.78% (5,296, net $-107)  non-weather +0.54% (2,150, net $+35)  share posted 45%
+  W3: all +1.41% (5,215)  weather -1.60% (3,490, net $-154)  non-weather +6.73% (1,725, net $+367)  share posted 36%
+
+PAIRED DIFFERENCES (event-cluster bootstrap, same events)
+  W1 - W2: +1.61 pts CI [-1.06, +4.20]
+  W3 - W2: +1.77 pts CI [-0.56, +3.97]
+  W3 - W1: +0.15 pts CI [-3.11, +3.27]
+
+POSTED SHARE BY CATEGORY (candidates predicted > 1c)
+  Climate and Weather    n=17,558  W1 33%  W2 26%  W3 15%
+  Economics              n=    40  W1 32%  W2 12%  W3 50%
+  Financials             n=47,658  W1 42%  W2 41%  W3 28%
+  Politics               n= 3,214  W1 46%  W2 30%  W3 22%
+  Science and Technology n= 1,170  W1 41%  W2 55%  W3 61%
+  Sports                 n=80,308  W1 40%  W2 52%  W3 46%
+
+AGREEMENT between windows' posting decisions
+  W1 vs W2: agree 73%  both post 29%  only W1 11%  only W2 16%
+  W2 vs W3: agree 74%  both post 28%  only W2 17%  only W3 9%
+  W1 vs W3: agree 71%  both post 24%  only W1 16%  only W3 13%
