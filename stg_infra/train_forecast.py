@@ -42,6 +42,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import dataclasses
 from datetime import timedelta
 import json
 import random
@@ -152,7 +153,8 @@ def _mece_context(ct, features):
     ts = ct["timestamps"]
     ends = [t + WINDOW for t in ts]
     closes = ct["node_close"]
-    closed = torch.tensor([[c is not None and c <= e for c in closes] for e in ends], dtype=torch.bool)
+    closed = torch.tensor([[c is not None and c <= e for c in closes] for e in ends], dtype=torch.bool,
+                          device=features.device)
     return {"hub_legs_total": features[..., 3], "settle": ct["node_settle"].to(features.dtype),
             "closed_by_end": closed}
 
@@ -222,6 +224,24 @@ def _chunk_loss(model, head, objective, ct, label="", supervise="active",
         else:
             out["mid"] = {"n": 0, "sse": 0.0, "sse_zero": 0.0}
     return out
+
+
+def _to_device(obj, device):
+    """Moves a materialized chunk (dict of tensors, per-snapshot lists of
+    edge dataclasses, timestamps, ids) to ``device``. Non-tensor leaves are
+    returned unchanged. A no-op on CPU, so CPU runs are untouched."""
+    if device.type == "cpu":
+        return obj
+    if torch.is_tensor(obj):
+        return obj.to(device, non_blocking=True)
+    if isinstance(obj, dict):
+        return {k: _to_device(v, device) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return type(obj)(_to_device(v, device) for v in obj)
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return dataclasses.replace(obj, **{f.name: _to_device(getattr(obj, f.name), device)
+                                           for f in dataclasses.fields(obj) if f.init})
+    return obj
 
 
 def _accum_mid(dst, out):
@@ -355,6 +375,10 @@ def main():
     ap.add_argument("--quotes-dir", default="data/quotes/by_month",
                     help="monthly quote partitions (partition_quotes.py), used by --quote-features / --w-mid")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--device", default="cpu",
+                    help="'cpu' (default; reproduces every reported run), 'cuda', or 'auto' "
+                         "(cuda if available). GPU runs are not bit-identical to CPU runs: "
+                         "treat them as new runs, never as replacements for reported figures.")
     ap.add_argument("--checkpoint-dir", default="runs/v2_forecast")
     ap.add_argument("--mece-rule", choices=["whole_settle", "whole_unsettled", "legacy"], default="whole_settle",
                     help="which MECE baskets are scored and against what (see "
@@ -376,6 +400,14 @@ def main():
     from data_windows import active_split
     print(f"SPLIT BOUNDARIES in force: train <= {active_split()[0]} < val <= {active_split()[1]} < test", flush=True)
     torch.manual_seed(args.seed)
+    if args.device == "auto":
+        args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(args.device)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise SystemExit("--device cuda but torch.cuda.is_available() is False "
+                         "(CPU-only torch build, or no GPU allocated to this job).")
+    print(f"DEVICE: {device}" + (f" ({torch.cuda.get_device_name(device)})"
+                                 if device.type == "cuda" else ""), flush=True)
 
     cache_dir = Path(args.cache)
     if not cache_dir.is_absolute():
@@ -466,6 +498,10 @@ def main():
           f"mece={args.w_mece} | supervise={args.supervise} "
           f"| select_on={args.select_on} "
           f"| monitor_unweighted={args.monitor_unweighted}\n", flush=True)
+    model.to(device)
+    head.to(device)
+    if mid_head is not None:
+        mid_head.to(device)
     params = list(model.parameters()) + list(head.parameters())
     if mid_head is not None and args.w_mid > 0:
         params += list(mid_head.parameters())
@@ -529,7 +565,7 @@ def main():
         for pos, idx in enumerate(order):
             c = train_chunks[idx]
             lbl = f"e{epoch} train {pos + 1}/{len(order)}"
-            ct = src.materialize_chunk(c)
+            ct = _to_device(src.materialize_chunk(c), device)
             out = _chunk_loss(model, head, objective, ct, lbl, args.supervise,
                               drop_edges=tuple(args.drop_edges),
                               mid_head=mid_head, w_mid=args.w_mid)
@@ -563,7 +599,7 @@ def main():
         va_node, va_node_p = 0.0, 0.0
         with torch.no_grad():
             for pos, c in enumerate(val_chunks):
-                ct = src.materialize_chunk(c)
+                ct = _to_device(src.materialize_chunk(c), device)
                 out = _chunk_loss(model, head, objective, ct,
                                   f"e{epoch} val {pos + 1}", args.supervise,
                                   drop_edges=tuple(args.drop_edges),
