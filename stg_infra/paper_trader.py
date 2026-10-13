@@ -50,7 +50,8 @@ sys.path.insert(0, str(_THIS))
 sys.path.insert(0, str(_THIS / "examples"))
 
 H_NS = 3_600_000_000_000
-LIVE = _REPO / "runs/live"
+import os
+LIVE = Path(os.environ.get("LIVE_DIR", _REPO / "runs/live"))   # the producer's live directory
 PAPER = LIVE / "paper"
 TAPE = PAPER / "tape"
 L2_FIX = "20261011T15"
@@ -339,7 +340,8 @@ def cmd_run(since, rps, write=True, check_only=False):
                 evs.setdefault(ev, set()).add(tk)
     markets = refresh_markets(k, {e: sorted(t) for e, t in evs.items()}, markets)
     mpath.write_bytes(pickle.dumps(markets))
-    fee_types = {se: c.get("fee_type") for se, c in lp.load_state("series.pkl", {}).items()}
+    sp = LIVE / "state" / "series.pkl"
+    fee_types = {se: c.get("fee_type") for se, c in (pickle.loads(sp.read_bytes()) if sp.exists() else {}).items()}
     legs, events, charged = build_legs(one, two, tape, markets, fee_types)
     for tk, L in legs.items():
         L["_settled"] = markets.get(tk, {}).get("result") in ("yes", "no")
