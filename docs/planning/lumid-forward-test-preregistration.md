@@ -401,3 +401,23 @@ its settings.
 **Predictions (before training).** `mlp2` posts a share within 20 points of `g2`'s; its return lies between
 `lin2`'s and `g2`'s; `g2` - `mlp2` has a CI including 0. `lin2`'s and `mlp2`'s training posting shares are
 recorded with their hashes.
+
+**L3/L6 record: baseline models frozen (2026-10-13 ~07:55 UTC, before any live hour is evaluated).**
+Trained on the `batch` sandbox (`stg_infra/examples/train_baselines.py --verify-g2`,
+log `logs/v2_forecast/train_baselines_sandbox.log`):
+
+| arm | file | sha1 | training rows | posts on training rows (> 1c) |
+|---|---|---|---|---|
+| `lin2` | `runs/maker/policy_lin2_W3_model.pkl` | `d11f158330cd2575` | 679,400 | 10.0% |
+| `mlp2` | `runs/maker/policy_mlp2_W3_model.pkl` | `bc334d5dba6032b1` | 679,400 (fit on the earlier 611,460; best epoch 6) | 30.1% |
+
+`dmid_24h` is missing on 67.8% of training rows (no two-sided quote 24 h earlier), so the missing-indicator
+carries much of that feature's information.
+
+**Row check, changed method (disclosed).** The planned check compared the refit G2-W3's pickle sha1 with
+`de87439617ba9476`. Pickle bytes depend on the Python build: the frozen model itself, loaded and re-saved on
+the sandbox (Python 3.11.17; it was trained under 3.12.3), hashes to `931fa452d57b6485`, and the refit to
+`b23e29fbbdfe9d24`. The check was therefore replaced by prediction equality: on all 679,400 rebuilt rows the
+refit and the frozen G2-W3 give identical predictions (max difference 0.0, 400 iterations each, same post
+decision on every row), and the per-month row counts equal the original training log. The rows are G2-W3's
+rows exactly (`stg_infra/examples/verify_g2_refit.py`, `logs/v2_forecast/verify_g2_refit_sandbox.log`).

@@ -1,0 +1,34 @@
+  2024-11 (local): 17,120 training fills
+  2024-12 (local): 20,575 training fills
+  2025-01 (local): 21,300 training fills
+  2025-02 (local): 20,934 training fills
+  2025-03 (local): 23,280 training fills
+  2025-04 (local): 22,143 training fills
+  2025-05 (local): 22,712 training fills
+  2025-06 (local): 24,184 training fills
+  2025-07 (local): 27,703 training fills
+  2025-08 (local): 28,896 training fills
+  2025-09 (local): 29,818 training fills
+  2025-10 (local): 29,445 training fills
+  2025-11 (local): 18,588 training fills
+  2025-12..2026-08 (API): 372,702 training fills
+rows: 679,400 (G2-W3 recorded 679,400)
+G2-W3 refit sha1 b23e29fbbdfe9d24 (DIFFERS FROM de87439617ba9476)
+{"arm": "lin2", "window": "W3", "rows_from": "G2-W3", "n_train": 679400, "rows_match_n": true, "dmid_24h_missing_share": 0.6783, "g2_w3_refit_sha1": "b23e29fbbdfe9d24", "g2_w3_refit_matches": false, "model_sha1": "d11f158330cd2575", "threshold_c": 1.0, "categories": ["Climate and Weather", "Economics", "Financials", "Politics", "Science and Technology", "Sports"], "features": ["side", "price", "rel_price", "spread", "mid", "trades_24h", "dmid_24h", "n_legs", "n_quoted", "basket_sum", "second_mid", "hour_utc", "charged", "dmid_24h_missing", "cat=Climate and Weather", "cat=Economics", "cat=Financials", "cat=Politics", "cat=Science and Technology", "cat=Sports"], "train_share_posted": 0.0997, "train_rmse_c": 40.0585, "alpha": 1.0}
+  mlp2 epoch   1  holdout mse 1.01210  best 1.01210 @ 1
+  mlp2 epoch   2  holdout mse 1.01229  best 1.01210 @ 1
+  mlp2 epoch   3  holdout mse 1.01221  best 1.01210 @ 1
+  mlp2 epoch   4  holdout mse 1.01206  best 1.01206 @ 4
+  mlp2 epoch   5  holdout mse 1.01213  best 1.01206 @ 4
+  mlp2 epoch   6  holdout mse 1.01198  best 1.01198 @ 6
+  mlp2 epoch   7  holdout mse 1.01215  best 1.01198 @ 6
+  mlp2 epoch   8  holdout mse 1.01201  best 1.01198 @ 6
+  mlp2 epoch   9  holdout mse 1.01240  best 1.01198 @ 6
+  mlp2 epoch  10  holdout mse 1.01268  best 1.01198 @ 6
+  mlp2 epoch  11  holdout mse 1.01284  best 1.01198 @ 6
+  mlp2 epoch  12  holdout mse 1.01314  best 1.01198 @ 6
+  mlp2 epoch  13  holdout mse 1.01327  best 1.01198 @ 6
+  mlp2 epoch  14  holdout mse 1.01407  best 1.01198 @ 6
+  mlp2 epoch  15  holdout mse 1.01388  best 1.01198 @ 6
+  mlp2 epoch  16  holdout mse 1.01374  best 1.01198 @ 6
+{"arm": "mlp2", "window": "W3", "rows_from": "G2-W3", "n_train": 679400, "rows_match_n": true, "dmid_24h_missing_share": 0.6783, "g2_w3_refit_sha1": "b23e29fbbdfe9d24", "g2_w3_refit_matches": false, "model_sha1": "bc334d5dba6032b1", "threshold_c": 1.0, "categories": ["Climate and Weather", "Economics", "Financials", "Politics", "Science and Technology", "Sports"], "features": ["side", "price", "rel_price", "spread", "mid", "trades_24h", "dmid_24h", "n_legs", "n_quoted", "basket_sum", "second_mid", "hour_utc", "charged", "dmid_24h_missing", "cat=Climate and Weather", "cat=Economics", "cat=Financials", "cat=Politics", "cat=Science and Technology", "cat=Sports"], "train_share_posted": 0.3013, "train_rmse_c": 39.989, "mlp": {"hidden_layer_sizes": [64, 32], "activation": "relu", "solver": "adam", "learning_rate_init": 0.001, "alpha": 0.0001, "batch_size": 1024, "random_state": 0}, "best_epoch": 6, "holdout_mse_std": 1.0119839072877757, "n_fit": 611460, "n_holdout": 67940}

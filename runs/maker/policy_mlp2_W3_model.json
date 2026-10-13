@@ -1,0 +1,60 @@
+{
+ "arm": "mlp2",
+ "window": "W3",
+ "rows_from": "G2-W3",
+ "n_train": 679400,
+ "rows_match_n": true,
+ "dmid_24h_missing_share": 0.6783,
+ "g2_w3_refit_sha1": "b23e29fbbdfe9d24",
+ "g2_w3_refit_matches": false,
+ "model_sha1": "bc334d5dba6032b1",
+ "threshold_c": 1.0,
+ "categories": [
+  "Climate and Weather",
+  "Economics",
+  "Financials",
+  "Politics",
+  "Science and Technology",
+  "Sports"
+ ],
+ "features": [
+  "side",
+  "price",
+  "rel_price",
+  "spread",
+  "mid",
+  "trades_24h",
+  "dmid_24h",
+  "n_legs",
+  "n_quoted",
+  "basket_sum",
+  "second_mid",
+  "hour_utc",
+  "charged",
+  "dmid_24h_missing",
+  "cat=Climate and Weather",
+  "cat=Economics",
+  "cat=Financials",
+  "cat=Politics",
+  "cat=Science and Technology",
+  "cat=Sports"
+ ],
+ "train_share_posted": 0.3013,
+ "train_rmse_c": 39.989,
+ "mlp": {
+  "hidden_layer_sizes": [
+   64,
+   32
+  ],
+  "activation": "relu",
+  "solver": "adam",
+  "learning_rate_init": 0.001,
+  "alpha": 0.0001,
+  "batch_size": 1024,
+  "random_state": 0
+ },
+ "best_epoch": 6,
+ "holdout_mse_std": 1.0119839072877757,
+ "n_fit": 611460,
+ "n_holdout": 67940
+}
