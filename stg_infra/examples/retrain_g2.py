@@ -136,6 +136,12 @@ def api_legs(months, series):
 
 
 def local_legs(mo, series):
+    import os
+    if os.environ.get("A13_LOCAL_DIR"):   # compact copy from extract_a13_legs.py (sandbox, no raw archive)
+        from extract_a13_legs import load
+        legs, events, charged = load(Path(os.environ["A13_LOCAL_DIR"]) / f"{mo}.pkl")
+        assert {L["series"] for L in legs.values()} <= set(series)
+        return legs, events, charged
     import simulate_maker as s
     legs, events, charged = s.load([mo], "mece")
     keep = {t for t, L in legs.items() if L["series"] in series}
@@ -161,12 +167,12 @@ def fills_to_rows(design, fl, legs, events, charged, lookup):
 
 # ---------------------------------------------------------------- train
 
-def train(w, design):
+def training_rows(w, design):
+    """(feature rows, y) for window w and design: exactly the rows train() fits on (lin2 reuses them, L3)."""
     import maker_policy as mp
     import simulate_maker as s
     import live_signal_producer as lp
     from fetch_kalshi_api_months import SERIES_A13
-    from sklearn.ensemble import HistGradientBoostingRegressor
     lookup = mp.category_lookup()
     months = WINDOWS[w]
     rows, ys = [], []
@@ -199,6 +205,15 @@ def train(w, design):
         r, y = fills_to_rows(design, fl, legs, events, charged, lookup)
         rows += r; ys += y
         print(f"  {api[0]}..{api[-1]} (API): {len(r):,} training fills", flush=True)
+    return rows, ys
+
+
+def train(w, design):
+    import maker_policy as mp
+    from fetch_kalshi_api_months import SERIES_A13
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    months = WINDOWS[w]
+    rows, ys = training_rows(w, design)
     cats = sorted({r["cat"] for r in rows})
     f = feats(design)
     m = HistGradientBoostingRegressor(**mp.HP, categorical_features=[x == "cat_i" for x in f]).fit(

@@ -637,8 +637,9 @@ def run_once(args) -> dict:
             save_state("published.pkl", now_pub)
     save_state("snaps.pkl", snaps)
     save_state("trades2.pkl", tstore)
+    t_decided_ns = time.time_ns()   # D_H in L3: the cycle's end, after publishing
 
-    summary = {"H": stamp, "events": len(evs), "legs": len(legs), "cand_one": len(k1), "cand_two": len(k2),
+    summary = {"H": stamp, "snap_ns": snap_ns, "t_decided_ns": t_decided_ns, "events": len(evs), "legs": len(legs), "cand_one": len(k1), "cand_two": len(k2),
                "share_g": round(float(np.mean(p_g > THRESHOLD_C)) if len(p_g) else 0.0, 4),
                "share_g2": round(share2, 4), "share_g2p": round(share2p, 4), "signal_rows": len(sig),
                "hist_legs": len(hist), "trade_legs": len(trades), "api_calls": k.calls,
