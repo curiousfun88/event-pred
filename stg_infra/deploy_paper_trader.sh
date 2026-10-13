@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy the paper trader into the production sandbox (L3 item 3, L7). Run from the laptop repo root.
-#   bash stg_infra/deploy_paper_trader.sh check    # copy files, then (in the producer's quiet minutes) run the
+#   bash stg_infra/deploy_paper_trader.sh check    # copy files, then start (detached on the sandbox) the
 #                                                  # P&L-free candidate check; computes no fills or P&L
 #   bash stg_infra/deploy_paper_trader.sh enable   # write ~/.lumid/paper_cmd and restart the KEEPER only (the
 #                                                  # producer keeps running); the keeper then starts the paper trader
@@ -27,9 +27,9 @@ check)
       runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_mlp2_W3_model.json \
     | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1" \
     || { echo "ABORT: copy or self-test failed"; exit 2; }
-  wait_quiet
-  echo "$(date -u +%H:%M) running the P&L-free check (fetches missing tape and market results, quiet-gated, 2 req/s)"
-  $S "cd $R && $PY stg_infra/paper_trader.py --fetch-tape --check 2>&1 | tail -5"
+  # detached on the sandbox: every Kalshi call waits for the producer's quiet minutes, so this can take hours
+  $S "cd $R && (nohup $PY stg_infra/paper_trader.py --fetch-tape --check > logs/paper_check.log 2>&1 < /dev/null &) ; sleep 2; pgrep -af '[p]aper_trader.py --fetch-tape' | cut -c1-80"
+  echo "check started on the sandbox; progress: logs/paper_check.log there (Claude reads it)"
   ;;
 enable)
   $S "echo '$PY stg_infra/paper_trader.py --loop' > /home/curiouslearner842/.lumid/paper_cmd && cat /home/curiouslearner842/.lumid/paper_cmd" || exit 3
