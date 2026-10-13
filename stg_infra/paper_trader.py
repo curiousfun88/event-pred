@@ -56,7 +56,11 @@ PAPER = LIVE / "paper"
 TAPE = PAPER / "tape"
 L2_FIX = "20261011T15"
 POOL = _REPO / "docs/planning/l4_candidate_pool.json"
-SEL = _REPO / "results/live/l4_g2_sel_selection.json"
+# L7: g2_sel folds (quoting hours, UTC): (selection from, selection to, trades from, trades to)
+FOLDS = (("20261011T15", "20261018T00", "20261018T00", "20261025T00"),
+         ("20261018T00", "20261025T00", "20261025T00", "20261101T00"),
+         ("20261025T00", "20261101T00", "20261101T00", "20261111T00"))
+MIN_EVENTS = 20
 ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "lin2", "mlp2")
 TWO_ARMS = ("g2p", "rnd2p")
 SELECTED_C, SENTINEL_C, THRESHOLD_C = 2.0, -100.0, 1.0
@@ -219,7 +223,7 @@ def run_arms(legs, events, charged, months, scores, arms):
 
 # ---------------------------------------------------------------- universes and summaries
 
-def universes(pool, l1_tickers, selected_cats):
+def universes(pool, l1_tickers):
     """{name: predicate(event, ticker, series, category)}."""
     ps = {x["series"] for x in pool["series"]}
     weather = lambda se: se.startswith(("KXHIGH", "KXLOW"))
@@ -228,7 +232,6 @@ def universes(pool, l1_tickers, selected_cats):
     return {"primary_L4": lambda tk, se, cat: se in ps,
             "new_series": lambda tk, se, cat: (se not in ps) and not weather(se),
             "L1": lambda tk, se, cat: tk in l1_tickers and not weather(se),
-            "g2_sel": lambda tk, se, cat: se in ps and cat in selected_cats,
             "train23": lambda tk, se, cat: se in ps and se in a13,
             "other": lambda tk, se, cat: se in ps and se not in a13}
 
@@ -247,7 +250,74 @@ def summarise_by(fills, key):
     return {g: s.summarise(v) for g, v in sorted(groups.items())}
 
 
+def event_settled_at(events, markets):
+    """{event: time all its legs were settled (ns)}, None while any leg is unsettled."""
+    out = {}
+    for ev, tks in events.items():
+        ts = [markets.get(t, {}).get("settled_ns") for t in tks]
+        ok = all(markets.get(t, {}).get("result") in ("yes", "no") for t in tks) and all(x is not None for x in ts)
+        out[ev] = max(ts) if ok else None
+    return out
+
+
+def walk_forward_selection(g2_fills, settled_at, cat_f, in_primary):
+    """L7: per fold, g2's fills in the selection window (primary universe), events settled by the window's
+    end only; a category is selected iff net return > 0 and >= MIN_EVENTS events with fills."""
+    import simulate_maker as s
+    out = []
+    for sel_lo, sel_hi, tr_lo, tr_hi in FOLDS:
+        lo, hi = ns_of(sel_lo), ns_of(sel_hi)
+        sub = [f for f in g2_fills if lo <= int(f[9]) < hi and in_primary(f)
+               and settled_at.get(f[0]) is not None and settled_at[f[0]] <= hi]
+        table = {c: s.summarise(v) for c, v in sorted(_group(sub, cat_f).items())}
+        sel = sorted(c for c, r in table.items() if r["events"] >= MIN_EVENTS and r["ret"] > 0)
+        out.append({"selection": [sel_lo, sel_hi], "trades": [tr_lo, tr_hi], "selected": sel,
+                    "table": table})
+    return out
+
+
+def g2_sel_fills(g2_fills, folds, cat_f, in_primary):
+    """g2's fills in each fold's trading week, in that fold's selected categories (L7)."""
+    out = []
+    for fd in folds:
+        lo, hi, sel = ns_of(fd["trades"][0]), ns_of(fd["trades"][1]), set(fd["selected"])
+        out += [f for f in g2_fills if lo <= int(f[9]) < hi and in_primary(f) and cat_f(f) in sel]
+    return out
+
+
+def _group(fills, key):
+    g = {}
+    for f in fills:
+        g.setdefault(key(f), []).append(f)
+    return g
+
+
 # ---------------------------------------------------------------- Kalshi I/O
+
+def producer_quiet(lines, now_utc) -> bool:
+    """L7 item 4: Kalshi calls only after the producer logged the current hour and before minute 58."""
+    stamp = now_utc.strftime("%Y%m%dT%H")
+    return now_utc.minute < 58 and any(f'"H": "{stamp}"' in ln and '"events"' in ln for ln in lines[-30:])
+
+
+def quiet_kalshi(rps):
+    """Kalshi client that waits for the producer's quiet minutes before every request."""
+    import live_signal_producer as lp
+
+    class Q(lp.Kalshi):
+        _ok_until = 0.0
+
+        def get(self, path, **params):
+            while time.time() > self._ok_until:
+                runs = LIVE / "runs.jsonl"
+                lines = runs.read_text().splitlines() if runs.exists() else []
+                if producer_quiet(lines, dt.datetime.now(dt.timezone.utc)):
+                    self._ok_until = time.time() + 30
+                    break
+                time.sleep(30)
+            return super().get(path, **params)
+    return Q(rps=rps)
+
 
 def fetch_tape_hour(k, H, tickers):
     """Every Kalshi trade in (H, H+1h] on `tickers`, from the platform-wide trades feed."""
@@ -285,7 +355,9 @@ def refresh_markets(k, events, cache):
             continue
         for m in k.pages("markets", "markets", event_ticker=ev, limit=1000):
             cache[m["ticker"]] = {"result": m.get("result") or "", "status": m.get("status"),
-                                  "close_ns": st.ts_ns(m["close_time"]) if m.get("close_time") else None}
+                                  "close_ns": st.ts_ns(m["close_time"]) if m.get("close_time") else None,
+                                  "settled_ns": st.ts_ns(m["settlement_ts"]) if m.get("settlement_ts") else
+                                  (st.ts_ns(m["close_time"]) if m.get("close_time") and m.get("result") in ("yes", "no") else None)}
     return cache
 
 
@@ -301,10 +373,9 @@ def complete(h, now_ns):
 
 
 def cmd_fetch_tape(since, rps):
-    import live_signal_producer as lp
     import polars as pl
     TAPE.mkdir(parents=True, exist_ok=True)
-    k = lp.Kalshi(rps=rps)
+    k = quiet_kalshi(rps)
     for h in scored_hours(since):
         p = TAPE / f"trades_{h}.parquet"
         if p.exists() or not complete(h, time.time_ns()):
@@ -332,7 +403,7 @@ def cmd_run(since, rps, write=True, check_only=False):
     PAPER.mkdir(parents=True, exist_ok=True)
     mpath = PAPER / "markets.pkl"
     markets = pickle.loads(mpath.read_bytes()) if mpath.exists() else {}
-    k = lp.Kalshi(rps=rps)
+    k = quiet_kalshi(rps)
     evs = {}
     for d in (one, two):
         if d is not None:
@@ -374,13 +445,19 @@ def cmd_run(since, rps, write=True, check_only=False):
     l1 = set()
     for f in (LIVE / "payloads").glob("sent_*.json"):
         l1 |= {r["instrument_id"] for r in json.loads(f.read_text())}
-    sel = json.loads(SEL.read_text()).get("selected", []) if SEL.exists() else []
-    U = universes(pool, l1, set(sel))
-    result = {"hours": [hours[0], hours[-1], len(hours)], "check": chk, "g2_sel_categories": sel,
-              "tape_hours": len(hours), "windows": {}}
-    for w in WINDOWS:
+    U = universes(pool, l1)
+    cat_f = lambda f: cat_of.get(legs[f[1]]["series"], "?")
+    in_primary = lambda f: U["primary_L4"](f[1], legs[f[1]]["series"], cat_f(f))
+    settled_at = event_settled_at(events, markets)
+    result = {"hours": [hours[0], hours[-1], len(hours)], "check": chk, "tape_hours": len(hours), "windows": {}}
+    folds = None
+    for w in WINDOWS:                    # primary first: the L7 selection uses g2's primary-window fills
         Lw = apply_window(legs, cuts, w)
         fills = run_arms(Lw, events, charged, months, scores, ONE_ARMS + TWO_ARMS)
+        if folds is None:
+            folds = walk_forward_selection(fills["g2"], settled_at, cat_f, in_primary)
+            result["g2_sel_folds"] = folds
+        fills["g2_sel"] = g2_sel_fills(fills["g2"], folds, cat_f, in_primary)
         res = {}
         for arm, fl in fills.items():
             mask = settled_mask(fl, Lw, events)
@@ -461,13 +538,47 @@ def self_test() -> bool:
         L["_settled"] = tk != "KXT-E1-B"
     check("an event with any unsettled leg is not scored", settled_mask(F["primary"], legs, events) == [False])
     pool = {"series": [{"series": "KXT", "cat": "Sports"}]}
-    U = universes(pool, {"KXT-E1-A"}, {"Sports"})
-    check("universes: pool, L1 by ticker, g2_sel by category",
+    U = universes(pool, {"KXT-E1-A"})
+    check("universes: pool, L1 by ticker, weather never new",
           U["primary_L4"]("KXT-E1-B", "KXT", "Sports") and not U["L1"]("KXT-E1-B", "KXT", "Sports")
-          and U["g2_sel"]("KXT-E1-A", "KXT", "Sports") and not U["g2_sel"]("KXT-E1-A", "KXT", "Crypto")
           and not U["new_series"]("KXHIGHNY-X", "KXHIGHNY", "Climate and Weather"))
+
+    # L7 walk-forward: fold 1 selects on [10-11 15:00, 10-18), trades [10-18, 10-25)
+    sel_h, tr_h, hi1 = ns_of("20261015T12"), ns_of("20261020T12"), ns_of("20261018T00")
+    F, cat, settled = [], {}, {}
+    def add(ev, c, net, H, settle):
+        F.append((ev, ev + "-L", 1, 50, 10, 0.0, net, 500.0, 0.0, H)); cat[ev + "-L"] = c; settled[ev] = settle
+    for i in range(20):
+        add(f"S{i}", "Sports", +10.0, sel_h, hi1 - H_NS)            # positive, 20 events, settled in time
+        add(f"C{i}", "Crypto", -10.0, sel_h, hi1 - H_NS)            # negative
+        add(f"P{i}", "Politics", +50.0, sel_h, hi1 + H_NS)          # positive but settled AFTER the window
+    for i in range(19):
+        add(f"E{i}", "Economics", +50.0, sel_h, hi1 - H_NS)         # positive, only 19 events
+    for c in ("Sports", "Crypto", "Politics", "Economics"):
+        add("T" + c, c, 1.0, tr_h, None)                            # trading-week fills
+    cf = lambda f: cat[f[1]]
+    folds = walk_forward_selection(F, settled, cf, lambda f: True)
+    check(f"walk-forward: only Sports selected in fold 1 ({folds[0]['selected']})", folds[0]["selected"] == ["Sports"])
+    check("walk-forward: events settled after the selection window are not counted (purged)",
+          "Politics" not in folds[0]["table"])
+    check("walk-forward: 19 events < minimum 20 fails despite a positive return",
+          folds[0]["table"]["Economics"]["events"] == 19 and "Economics" not in folds[0]["selected"])
+    gs = g2_sel_fills(F, folds, cf, lambda f: True)
+    check("g2_sel: fold 1 trades only its trading week, only selected categories",
+          [f[0] for f in gs] == ["TSports"])
+    check("walk-forward: later folds see no fills here and select nothing", folds[1]["selected"] == folds[2]["selected"] == [])
+    m = {"A": {"result": "yes", "settled_ns": 5}, "B": {"result": "no", "settled_ns": 9}, "C": {"result": "", "settled_ns": None}}
+    check("event settled at = latest leg settlement; None while any leg is open",
+          event_settled_at({"E": ["A", "B"], "F": ["A", "C"]}, m) == {"E": 9, "F": None})
     lines = [json.dumps({"H": "20261013T06", "events": 1, "snap_ns": 5, "t_decided_ns": 9, "secs": 1.0}),
              json.dumps({"H": "20261013T05", "events": 1, "secs": 2.0}), '{"info": "x"}']
+    T = dt.datetime(2026, 10, 13, 14, 40, tzinfo=dt.timezone.utc)
+    logged = [json.dumps({"H": "20261013T14", "events": 3})]
+    check("quiet: hour logged and minute < 58 -> calls allowed", producer_quiet(logged, T))
+    check("quiet: hour not yet logged -> wait", not producer_quiet([json.dumps({"H": "20261013T13", "events": 3})], T))
+    check("quiet: minute 58 or later -> wait", not producer_quiet(logged, T.replace(minute=58)))
+    check("quiet: an info line for the hour is not a logged cycle",
+          not producer_quiet([json.dumps({"info": "hour 20261013T14 already completed", "H": "20261013T14"})], T))
     check("cut times: t_decided_ns when logged; older lines need the scores files", cut_times(lines) == {ns_of("20261013T06"): (5, 9)})
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
@@ -481,7 +592,7 @@ def main():
     ap.add_argument("--loop", action="store_true")
     ap.add_argument("--check", action="store_true", help="candidate regeneration only: never simulates fills or P&L")
     ap.add_argument("--since", default=L2_FIX)
-    ap.add_argument("--rps", type=float, default=4.0)
+    ap.add_argument("--rps", type=float, default=2.0, help="L7: <= 2 requests/s")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
@@ -490,15 +601,12 @@ def main():
     if a.check:
         cmd_run(a.since, a.rps, write=False, check_only=True)
     if a.run:
-        if not SEL.exists():
-            raise SystemExit("L4: the g2_sel selection must be committed before any live P&L is computed")
         cmd_run(a.since, a.rps)
     if a.loop:
         while True:
             try:
                 cmd_fetch_tape(a.since, a.rps)
-                if SEL.exists():
-                    cmd_run(a.since, a.rps)
+                cmd_run(a.since, a.rps)
             except Exception as e:
                 print(json.dumps({"error": repr(e)[:300], "at": time.time()}), flush=True)
             now = dt.datetime.now(dt.timezone.utc)
