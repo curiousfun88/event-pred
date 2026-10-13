@@ -482,3 +482,32 @@ Effect: hour 20261013T13 was produced only from 13:57 (its order window is about
 late. Together with T09 and T11 (not produced) and T08, T10, T12 (late), these hours are reported as gaps
 or late hours and are not repaired. Rule added to L7 item 4: no non-production sandbox is held while a
 producer handover can occur; batch work runs inside the production sandbox's quiet minutes.
+
+## Amendment L8 (2026-10-13 ~15:00 UTC, BEFORE any live fill, outcome or P&L is computed): one-sided verdict tests; the unselected A13 windows as live arms; day-cluster CIs implemented
+
+**Why.** (1) Both verdict hypotheses of §5 are directional ("G2 is profitable", "G2 adds value over random
+selection"); a one-sided test at 5% is the matching test, and it is fixed here before any live result.
+(2) G2-W3 was chosen among three pre-specified training windows on one month of validation (A13), a choice
+whose result is optimistic (Cawley and Talbot 2010) and whose dependence on the window should be checked
+(Rossi and Inoue 2012). The two windows not selected are already trained and frozen, so they can be tested
+on the same live hours at no cost. (3) L3 item 5 (day-clustered CIs) is implemented in the paper trader.
+
+**Changes (fixed now).**
+1. **Verdicts (§5), one-sided.** "G2 profitable live" holds iff the one-sided 95% lower bound of `g2`'s net
+   return (event-cluster bootstrap, 2,000 draws, seed 0; the 5th percentile) is > 0. "G2 adds value live"
+   holds iff the one-sided 95% lower bound of `g2` - `rnd2` (paired, union of events, same draw) is > 0.
+   The same rule applies to the secondary G2+ and decay claims. Two-sided 95% CIs are reported beside every
+   one-sided bound, and the report states which test decides.
+2. **Arms `g2w1` and `g2w2` (secondary, descriptive; never verdicts).** G2-W1 (sha1 `e14a70b183731891`,
+   111,033 training fills, 2026-06..08) and G2-W2 (sha1 `6774af73c6b5bb46`, 248,333 fills, 2026-03..08),
+   trained 2026-10-06 on data ending 2026-08 (`logs/v2_forecast/g2_W{1,2}_train_validate.log`; hashes in
+   the A13 metadata committed in 9fc486a; the model files are committed now). Same features, candidates,
+   universe, fill rule and 1c threshold as `g2`; scored on the logged hourly features. Reported with
+   `g2` - `g2w1` and `g2` - `g2w2`: whether the one-month selection mattered.
+3. **Day-cluster sensitivity (L3 item 5)**: every return and paired difference is also reported with the
+   UTC day of the order hour as the cluster. Event clusters remain the basis of the verdicts.
+4. **Unchanged:** everything else (L3-L7).
+
+**Prediction (before any live P&L).** `g2w1` and `g2w2` within 2 points of `g2`, all three differences
+with CIs including 0. With the one-sided test, "G2 profitable live" is more likely than under the
+two-sided rule, and still uncertain at the interim cut.

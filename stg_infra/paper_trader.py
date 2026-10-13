@@ -61,7 +61,9 @@ FOLDS = (("20261011T15", "20261018T00", "20261018T00", "20261025T00"),
          ("20261018T00", "20261025T00", "20261025T00", "20261101T00"),
          ("20261025T00", "20261101T00", "20261101T00", "20261111T00"))
 MIN_EVENTS = 20
-ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "lin2", "mlp2")
+ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "lin2", "mlp2", "g2w1", "g2w2")
+PAIRS = (("g2", "rnd2"), ("g2p", "rnd2p"), ("g2", "g"), ("g2", "cand"), ("g2", "wide3"), ("g2", "liq"),
+         ("g2", "lin2"), ("g2", "mlp2"), ("g2", "g2w1"), ("g2", "g2w2"), ("g2_sel", "g2"))   # first two: verdicts (§5)
 TWO_ARMS = ("g2p", "rnd2p")
 SELECTED_C, SENTINEL_C, THRESHOLD_C = 2.0, -100.0, 1.0
 MAX_MISMATCH = 0.005
@@ -146,7 +148,11 @@ def arm_scores(one, two, baselines=None):
         import train_baselines as tb
         rows = one.select(tb.numeric_feats() + ["cat"]).to_dicts()
         for arm, blob in baselines.items():
-            out[arm] = dict(zip(k1, tb.predict(blob, rows).tolist()))
+            if arm in ("g2w1", "g2w2"):          # L8: the A13 windows not selected, G2 design (retrain_g2.matrix)
+                import retrain_g2 as rg
+                out[arm] = dict(zip(k1, blob["model"].predict(rg.matrix("G2", rows, blob["cats"])).tolist()))
+            else:
+                out[arm] = dict(zip(k1, tb.predict(blob, rows).tolist()))
     if two is not None and len(two):
         k2 = list(zip(two["ticker"].to_list(), two["H_ns"].to_list(), [int(x) for x in two["side"].to_list()],
                       [int(x) for x in two["price"].to_list()]))
@@ -240,6 +246,63 @@ def settled_mask(fills, legs, events):
     """True for fills in events whose every leg has a yes/no result (scored); others are reported apart."""
     done = {ev: all(legs[t]["_settled"] for t in tks) for ev, tks in events.items()}
     return [done[f[0]] for f in fills]
+
+
+def by_cluster(fills, key):
+    """{cluster: (net_c, capital_c)}; key = event (primary CIs) or UTC day of the order hour (L3 item 5)."""
+    out = {}
+    for f in fills:
+        k = key(f)
+        a = out.get(k, (0.0, 0.0))
+        out[k] = (a[0] + float(f[6]), a[1] + float(f[7]))
+    return out
+
+
+DAY = lambda f: int(f[9]) // (24 * H_NS)
+EVENT = lambda f: f[0]
+
+
+def boot_ret(cl, n=2000, seed=0):
+    """Bootstrap draws of net return (%) over clusters; the cluster_ci resampling of simulate_maker."""
+    v = np.array(list(cl.values()), float).reshape(-1, 2)
+    if len(v) < 2 or v[:, 1].sum() <= 0:
+        return None
+    idx = np.random.default_rng(seed).integers(0, len(v), (n, len(v)))
+    return v[idx, 0].sum(1) / np.maximum(v[idx, 1].sum(1), 1e-9) * 100
+
+
+def verdict_stats(fills):
+    """Return with two-sided 95% CI and the L8 one-sided 95% lower bound, by event (primary) and by day."""
+    out = {}
+    for name, key in (("event", EVENT), ("day", DAY)):
+        cl = by_cluster(fills, key)
+        d = boot_ret(cl)
+        cap = sum(c for _, c in cl.values())
+        out[name] = {"ret": 100 * sum(n for n, _ in cl.values()) / cap if cap else float("nan"),
+                     "clusters": len(cl),
+                     "lo95": float(np.percentile(d, 2.5)) if d is not None else float("nan"),
+                     "hi95": float(np.percentile(d, 97.5)) if d is not None else float("nan"),
+                     "lo_one_sided": float(np.percentile(d, 5.0)) if d is not None else float("nan")}
+    return out
+
+
+def paired_stats(fa, fb, n=2000, seed=0):
+    """ret(A) - ret(B) over the union of clusters (same draw for both), by event and by day; adds the L8
+    one-sided 95% lower bound. Mirrors simulate_maker.paired_diff_ci."""
+    out = {}
+    for name, key in (("event", EVENT), ("day", DAY)):
+        A, B = by_cluster(fa, key), by_cluster(fb, key)
+        ks = sorted(set(A) | set(B), key=str)
+        if len(ks) < 2:
+            out[name] = {"diff": float("nan"), "lo95": float("nan"), "hi95": float("nan"), "lo_one_sided": float("nan")}
+            continue
+        a = np.array([A.get(k, (0.0, 0.0)) for k in ks]); b = np.array([B.get(k, (0.0, 0.0)) for k in ks])
+        r = lambda x: x[..., 0].sum(-1) / np.maximum(x[..., 1].sum(-1), 1e-9) * 100
+        idx = np.random.default_rng(seed).integers(0, len(ks), (n, len(ks)))
+        d = r(a[idx]) - r(b[idx])
+        out[name] = {"diff": float(r(a) - r(b)), "lo95": float(np.percentile(d, 2.5)),
+                     "hi95": float(np.percentile(d, 97.5)), "lo_one_sided": float(np.percentile(d, 5.0))}
+    return out
 
 
 def summarise_by(fills, key):
@@ -437,6 +500,10 @@ def cmd_run(since, rps, write=True, check_only=False):
         return {"check": chk}
 
     base = {a: pickle.loads(tb.model_path(a).read_bytes()) for a in ("lin2", "mlp2") if tb.model_path(a).exists()}
+    import retrain_g2 as rg
+    for a, w in (("g2w1", "W1"), ("g2w2", "W2")):
+        if rg.model_path(w, "G2").exists():
+            base[a] = pickle.loads(rg.model_path(w, "G2").read_bytes())
     scores = arm_scores(one, two, base)
     pool = json.loads(POOL.read_text())
     cat_of = {x["series"]: x["cat"] for x in pool["series"]}
@@ -467,14 +534,25 @@ def cmd_run(since, rps, write=True, check_only=False):
                 inu = lambda f: pred(f[1], legs[f[1]]["series"], cat_of.get(legs[f[1]]["series"], "?"))
                 sub = [f for f in done if inu(f)]
                 res.setdefault(arm, {})[un] = {
-                    "all": s.summarise(sub), "unsettled_fills": sum(1 for f in open_ if inu(f)),
+                    "all": s.summarise(sub), "verdict_stats": verdict_stats(sub),
+                    "unsettled_fills": sum(1 for f in open_ if inu(f)),
                     "by_category": summarise_by(sub, lambda f: cat_of.get(legs[f[1]]["series"], "?"))}
+                res[arm][un]["_fills"] = sub
             if write:
                 import polars as pl
                 pl.DataFrame([{"event": f[0], "ticker": f[1], "side": int(f[2]), "price": int(f[3]), "qty": int(f[4]),
                                "fee_c": float(f[5]), "net_c": float(f[6]), "capital_c": float(f[7]),
                                "markout_c": float(f[8]), "H_ns": int(f[9]), "settled": bool(m)}
                               for f, m in zip(fl, mask)] or [{"event": ""}]).write_parquet(PAPER / f"fills_{w}_{arm}.parquet")
+        pairs = {}
+        for a_, b_ in PAIRS:
+            if a_ in res and b_ in res:
+                pairs[f"{a_}-{b_}"] = {un: paired_stats(res[a_][un]["_fills"], res[b_][un]["_fills"])
+                                       for un in res[a_] if un in res[b_]}
+        for arm in res:
+            for un in res[arm]:
+                res[arm][un].pop("_fills", None)
+        res["_paired"] = pairs
         result["windows"][w] = res
     if write:
         (PAPER / "summary.json").write_text(json.dumps(result, indent=1, default=float))
@@ -572,6 +650,28 @@ def self_test() -> bool:
           event_settled_at({"E": ["A", "B"], "F": ["A", "C"]}, m) == {"E": 9, "F": None})
     lines = [json.dumps({"H": "20261013T06", "events": 1, "snap_ns": 5, "t_decided_ns": 9, "secs": 1.0}),
              json.dumps({"H": "20261013T05", "events": 1, "secs": 2.0}), '{"info": "x"}']
+    # L8 statistics
+    rng = np.random.default_rng(1)
+    fl = [(f"E{i}", f"E{i}-L", 1, 50, 10, 0.0, float(rng.normal(20, 100)), 500.0, 0.0, H0 + (i % 7) * 24 * H_NS)
+          for i in range(400)]
+    vs = verdict_stats(fl)
+    ev = vs["event"]
+    check(f"one-sided 95% lower bound lies between the two-sided bounds' lower end and the estimate "
+          f"({ev['lo95']:.2f} <= {ev['lo_one_sided']:.2f} <= {ev['ret']:.2f})", ev["lo95"] <= ev["lo_one_sided"] <= ev["ret"])
+    check("event clusters = events, day clusters = UTC days of the order hour", ev["clusters"] == 400 and vs["day"]["clusters"] == 7)
+    same = paired_stats(fl, fl)
+    check("paired: an arm minus itself is exactly 0 with a zero-width CI",
+          same["event"]["diff"] == 0 and same["event"]["lo95"] == 0 == same["event"]["hi95"])
+    better = [f[:6] + (f[6] + 50.0,) + f[7:] for f in fl]
+    pb = paired_stats(better, fl)["event"]
+    check(f"paired: +50c per event on 500c capital = +10 points, lower bound > 0 ({pb['diff']:.2f}, {pb['lo_one_sided']:.2f})",
+          abs(pb["diff"] - 10.0) < 1e-9 and pb["lo_one_sided"] > 0)
+
+    class M:
+        def predict(self, X): return X[:, 0] * 0 + 7.0
+    sc2 = arm_scores(one, None, {"g2w1": {"model": M(), "cats": ["Sports"]}})
+    check("W1/W2 arms scored with the G2 design matrix", set(sc2["g2w1"].values()) == {7.0} and len(sc2["g2w1"]) == len(one))
+
     T = dt.datetime(2026, 10, 13, 14, 40, tzinfo=dt.timezone.utc)
     logged = [json.dumps({"H": "20261013T14", "events": 3})]
     check("quiet: hour logged and minute < 58 -> calls allowed", producer_quiet(logged, T))
