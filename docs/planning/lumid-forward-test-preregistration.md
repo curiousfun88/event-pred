@@ -281,3 +281,54 @@ fills and returns close to what counting from H would give. The as-executed sens
 return per unit of capital is unclear in sign. `wide3`: -1% to
 +1%. `liq`: -2% to 0%. `lin2`: between `rnd2` and `g2`. `g2` - `lin2` positive but with a CI including 0 at
 the interim cut.
+
+## Amendment L4 (2026-10-13, BEFORE any live fill, outcome or P&L is seen, and BEFORE the validation data it selects on is fetched): primary universe chosen on validation data; P&L reported by category
+
+**Why.** L1 limited the universe to Lumid-listed series (plus the publish whitelist) because Lumid's own
+fills (channel A) were to decide the verdicts. Since L3 the verdicts use channel B, which can score any
+Kalshi market. The L1 universe is small: 157 tickers and 56 distinct events in the first 36 hours after the
+L2 fix (141 G2-posted candidates per hour), so the event-cluster CIs of §5 will be wide. The producer
+already scores about 3,000 non-weather events in the same hours (about 4,100 G2-posted candidates per
+hour), but G2-W3 has been validated only on its 23 training series (non-weather +6.73%, CI +2.4 to +11.4,
+153 events). Which of the other series to trade is decided here on validation data, not on live results.
+Nothing live has been evaluated: no fill, P&L or fill count has been computed for any arm.
+
+**Changes (fixed now).**
+1. **Candidate pool.** The 290 non-weather series (not `KXHIGH*`/`KXLOW*`, as L1) that appear in the live
+   producer's scores from 2026-10-11 15:00 to 2026-10-13 02:00 UTC, frozen in
+   `docs/planning/l4_candidate_pool.json` (series, logged category, events seen) in this commit.
+2. **Validation data.** Kalshi markets, quotes and trades for the pool's series over the A13 validation
+   window (quoting hours 2026-09-07 00:00 to 2026-10-05 00:00 UTC), fetched after this commit with the code
+   that built the A13 validation cache (`smoke_test_2026.py` cache, `retrain_g2.val_data` assembly), on a
+   Lumid sandbox. Series with no events in the window drop out of the measurement.
+3. **Measurement.** G2-W3 (sha1 `de87439617ba9476`) exactly as in the A13 validation: BROAD candidates,
+   post if predicted > 1c, pessimistic fills, the same fee, limit and settlement code, fills kept by quoting
+   hour in the window.
+4. **Grouping: by Kalshi category** (the category the producer logs). Series are never selected
+   individually.
+5. **Inclusion rule.** A category enters the primary universe iff, on that validation run, (a) its net
+   return (net P&L after fees / capital) is **> 0**, and (b) it has **at least 20 events with fills**.
+   Categories with fewer than 20 such events are excluded (too little evidence), whatever their return.
+6. **Primary universe** = the series of the qualifying categories, applied to every arm, to every live hour
+   since the L2 fix, and to both cuts. **Fallback:** if no category qualifies, the primary universe stays
+   the L1 universe. The selection (each category's return, CI, fills, events, net $, and pass/fail) is
+   committed before any live P&L is computed.
+7. **Reported alongside the primary result, never verdicts:** the L1 universe (continuity with L1), the
+   full 290-series pool, and the 23 training series vs the rest (§7).
+8. **Net P&L by category (descriptive).** For every arm and both cuts the report gives one table: overall
+   net P&L ($), net return, event-cluster 95% CI, fills and events, then the same per category. Category
+   rows are descriptive only: they are never a verdict, and a category is never added to or removed from
+   the universe because of its live result.
+9. **Unchanged:** models, threshold, arms, candidates, features, verdicts (§5), metrics (§6), cuts (interim
+   2026-10-28, final 2026-11-11), the L3 engine and order windows, no pooling across the L2 fix. Lumid
+   publishing (channel A plumbing) keeps its L1 scope.
+
+**Disclosed now.** Selecting categories by their validation point estimate makes the selected universe's
+validation return optimistic; the live test is the unbiased check. Series outside the 23 training series are
+markets G2 was not trained on; the inclusion rule, not judgement, decides whether they are traded. In the
+pool, Sports holds 213 of 290 series and about 2,700 of 3,000 events seen, so the rule will mostly decide
+whether non-training Sports series are traded; small categories are likely to fail the 20-event minimum.
+
+**Predictions (before the validation fetch).** Sports qualifies. Most small categories (Politics, Entertainment, Science and Technology, Elections,
+Commodities) fail the 20-event minimum. Crypto and Economics are uncertain. The primary universe has several
+times the L1 universe's events.
