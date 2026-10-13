@@ -67,6 +67,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import pickle
 import sys
@@ -515,6 +516,11 @@ def resend_backlog(args, pat, post, plog, exclude_stamp=None):
     return out
 
 
+def file_hashes(paths) -> dict:
+    """sha256 of each existing file, by name: the hour's audit record (amendment L5), posted off-box later."""
+    return {Path(f).name: hashlib.sha256(Path(f).read_bytes()).hexdigest() for f in paths if Path(f).exists()}
+
+
 def hour_done(stamp, runs_path=None):
     """True if runs.jsonl already records a completed cycle for hour `stamp`: a restart must not re-run it (that
     would overwrite the hour's logged scores with a later snapshot than the one published)."""
@@ -639,7 +645,9 @@ def run_once(args) -> dict:
     save_state("trades2.pkl", tstore)
     t_decided_ns = time.time_ns()   # D_H in L3: the cycle's end, after publishing
 
-    summary = {"H": stamp, "snap_ns": snap_ns, "t_decided_ns": t_decided_ns, "events": len(evs), "legs": len(legs), "cand_one": len(k1), "cand_two": len(k2),
+    hashes = file_hashes([LIVE_DIR / "scores" / f"one_{stamp}.parquet", LIVE_DIR / "scores" / f"two_{stamp}.parquet",
+                          LIVE_DIR / "payloads" / f"signals_{stamp}.json"])
+    summary = {"H": stamp, "snap_ns": snap_ns, "t_decided_ns": t_decided_ns, "sha256": hashes, "events": len(evs), "legs": len(legs), "cand_one": len(k1), "cand_two": len(k2),
                "share_g": round(float(np.mean(p_g > THRESHOLD_C)) if len(p_g) else 0.0, 4),
                "share_g2": round(share2, 4), "share_g2p": round(share2p, 4), "signal_rows": len(sig),
                "hist_legs": len(hist), "trade_legs": len(trades), "api_calls": k.calls,
@@ -837,6 +845,10 @@ def self_test() -> bool:
         (td / "r2.jsonl").write_text(json.dumps({"H": "20261010T08"}) + "\n")
         check("a restart skips an hour already completed", hour_done("20261010T08", td / "r2.jsonl")
               and not hour_done("20261010T09", td / "r2.jsonl"))
+        (td / "a.json").write_bytes(b"abc")
+        check("audit hashes: sha256 of existing files by name, missing files skipped",
+              file_hashes([td / "a.json", td / "missing.parquet"])
+              == {"a.json": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"})
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 

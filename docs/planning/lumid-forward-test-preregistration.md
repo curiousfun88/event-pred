@@ -341,3 +341,24 @@ before (weather carried 76% of G's 2025 test profit and lost on the 2026 validat
 training series' validation, sign uncertain; `g2` - `rnd2` positive. Sports passes the `g2_sel` rule; most
 small categories (Politics, Entertainment, Science and Technology, Elections, Commodities) fail the
 20-event minimum; Crypto and Economics uncertain. `g2_sel` - `g2`: CI including 0.
+
+## Amendment L5 (2026-10-13, BEFORE any live fill, outcome or P&L is seen): signal publishing to the Lumid inbox stops; results and an hourly audit record go to Research Fleet via FlowMesh
+
+**Why.** Nothing reads the published signals: every deployed strategy has `live_enabled: false` (L3), so the
+platform has never run an arm, and since L4 the evaluated universe is the strategy's own markets, most of
+which Lumid does not list. Publishing (paced batches, retries, backlog resends) takes a large part of each
+hourly cycle, which delays the decision time D_H used by the L3 as-executed sensitivity. The inbox's one
+remaining use, a third-party timestamp, covered only the Lumid-scope subset.
+
+**Changes (fixed now).**
+1. From the first hour the producer runs without `--publish` (recorded in `runs/live/runs.jsonl` and in the
+   report), no signals are sent to the Lumid inbox. Scores, signal files and logs are written as before;
+   models, features, candidates and scores are unchanged.
+2. **Audit record.** Each hour's `runs.jsonl` line carries the sha256 of that hour's score files
+   (`one_`, `two_`) and signal file. A FlowMesh job on Research Fleet posts these hashes (at least daily) and
+   the results at each cut (L3 item 6), giving a third-party timestamp for every scored market.
+3. **Decision time.** D_H becomes earlier from the switch-over hour. The as-executed sensitivity (L3) is
+   reported for hours before and after it separately as well as pooled; the primary order window (from
+   `snap_ns`) is unaffected.
+4. Channel A is not reported (it never ran). Unchanged otherwise: models, arms, universe (L4), verdicts,
+   metrics, cuts, the L3 engine, no pooling across the L2 fix.
