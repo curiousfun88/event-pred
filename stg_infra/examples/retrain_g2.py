@@ -161,6 +161,7 @@ def fills_to_rows(design, fl, legs, events, charged, lookup):
     for f in fl:
         r = features(design, legs, events, charged, lookup, f[0], f[1], int(f[9]), int(f[2]), int(f[3]))
         if r is not None:
+            r["_H"] = int(f[9])   # quoting hour (ns): time-ordered holdouts (L6); not a feature
             rows.append(r); ys.append(f[6] / f[4])
     return rows, ys
 

@@ -372,3 +372,32 @@ and scoring. The first L5 hour (20261013T06) took 1,680 s against 1,819-1,861 s 
 D_H moves about 2-3 minutes earlier, not 10-15. The decision to stop publishing stands on the other
 reasons (nothing reads the inbox; the universe is the strategy's own markets). Item 3 is unchanged. The
 first hourly Research Fleet record is job `office:fm:wfl-47990c10-1440-4229-9a8f-5ea6647fb6c3`.
+
+## Amendment L6 (2026-10-13, BEFORE any live fill, outcome or P&L is seen, and BEFORE lin2 or mlp2 is trained): neural-network baseline arm `mlp2`
+
+**Why.** L3 added `lin2` to ask whether boosting is needed. A neural network on the same inputs asks the
+matching question from the other side (does a different flexible model family do better or worse than
+boosting?), which fits a thesis about a neural forecasting model. Other boosting implementations
+(LightGBM, XGBoost) are not added: same model family as G2, and A15 already measured G2's sensitivity to
+its settings.
+
+**Changes (fixed now).**
+1. **Arm `mlp2` (secondary, descriptive; never a verdict).** Trained on exactly G2-W3's training fills and
+   targets, the same rows as `lin2` (built once; `stg_infra/examples/train_baselines.py`, which also trains
+   `lin2` and checks the G2-W3 refit sha1 `de87439617ba9476`). Inputs as `lin2`: G's 13 numeric features,
+   missing `dmid_24h` set to 0 with a missing-indicator, category one-hot, standardised; the target is
+   standardised for fitting and predictions are returned in c/contract. Model: sklearn `MLPRegressor`,
+   hidden layers (64, 32), ReLU, Adam (learning rate 1e-3), L2 1e-4, minibatch 1,024, `random_state` 0.
+   Early stopping on a **time-ordered** holdout: the latest 10% of training rows by quoting hour, up to
+   100 epochs, patience 10, the best epoch's weights kept (fitted on the earlier 90%). No tuning.
+2. **Rule:** post a candidate iff predicted > 1c, its own criterion, as `g2` and `lin2`. Whatever share it
+   posts (including very few) is reported as its result.
+3. **Recording:** the sha1 of `mlp2` (and `lin2`) is recorded here before any live hour is evaluated.
+   Both are scored on the candidate features the producer logs each hour, same candidates, universe (L4)
+   and fill rule as every arm.
+4. **Reported:** `mlp2` overall and by category, and the paired difference `g2` - `mlp2`.
+5. **Unchanged:** everything else (L3-L5).
+
+**Predictions (before training).** `mlp2` posts a share within 20 points of `g2`'s; its return lies between
+`lin2`'s and `g2`'s; `g2` - `mlp2` has a CI including 0. `lin2`'s and `mlp2`'s training posting shares are
+recorded with their hashes.
