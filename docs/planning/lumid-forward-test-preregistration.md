@@ -540,3 +540,8 @@ period; the folds are offline (no inventory interaction); the universe's weather
 W3's September result, which favours W3 in the live comparison regardless of this rule.
 
 **Prediction (before running).** W3 has the highest mean; W1 has the most variable folds.
+
+**L7 addendum, continued (2026-10-13 16:10 UTC, before any live P&L).** Hour 20261013T14 was not produced: the
+late T13 cycle (started 13:57) ended at 14:26, and the producer loop by design waits for the next full hour
+after any cycle. Normal hourly operation resumed at T15 (1,909 s). Gaps attributable to the 2026-10-13 batch
+jobs and outage: T09, T11, T14 (not produced), T13 (order window about 2 min), T08, T10, T12 (late).
