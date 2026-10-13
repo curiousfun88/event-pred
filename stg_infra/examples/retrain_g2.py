@@ -51,6 +51,8 @@ DESIGNS = ("G2", "G2P")
 PLUS = ["improved", "prints_1h", "imb_1h", "dmid_1h", "dmid_3h", "ttc_h"]
 VAL = ("2026-09-07", "2026-10-05")
 OUTDIR = _REPO / "runs/maker"
+# cache_key(BROAD, "pess", 2025-08..11) computed on the laptop with the raw archive present (2026-10-13)
+BROAD_KEY_TEST = "b0b6c1550b3b8345"
 
 
 def model_path(w, design="G2"):
@@ -181,7 +183,11 @@ def training_rows(w, design):
     if loc and design == "G2":
         from policy_G_audit import fills as cached_fills
         Fd = dict(np.load(OUTDIR / f"cache/{mp.BROAD_KEY_DEV}.fills.npz", allow_pickle=True))
-        Ft = cached_fills(s.Config(**mp.BROAD), "pess", ["2025-08", "2025-09", "2025-10", "2025-11"])
+        import os
+        if os.environ.get("A13_LOCAL_DIR"):   # no raw archive here, so cache_key's data fingerprint cannot be computed
+            Ft = dict(np.load(OUTDIR / f"cache/{BROAD_KEY_TEST}.fills.npz", allow_pickle=True))
+        else:
+            Ft = cached_fills(s.Config(**mp.BROAD), "pess", ["2025-08", "2025-09", "2025-10", "2025-11"])
     for mo in loc:
         legs, events, charged = local_legs(mo, SERIES_A13)
         events = single_winner_events(legs, events)
