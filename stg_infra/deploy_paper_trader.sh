@@ -19,19 +19,25 @@ wait_quiet() {   # producer logged this hour and minute < 58 (sandbox clock)
   done
 }
 
-case "${1:-}" in
-check)
+copy_files() {   # new files only; none is imported by the producer
   tar -cf - stg_infra/paper_trader.py stg_infra/lumid_sandbox_keeper.py stg_infra/examples/train_baselines.py \
       stg_infra/fetch_kalshi_api_months.py docs/planning/l4_candidate_pool.json \
       runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_lin2_W3_model.json \
       runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_mlp2_W3_model.json \
-    | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1" \
-    || { echo "ABORT: copy or self-test failed"; exit 2; }
+      runs/maker/policy_G2_W1_model.pkl runs/maker/policy_G2_W1_model.json \
+      runs/maker/policy_G2_W2_model.pkl runs/maker/policy_G2_W2_model.json \
+    | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_G2_W1_model.pkl runs/maker/policy_G2_W2_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1"
+}
+
+case "${1:-}" in
+check)
+  copy_files || { echo "ABORT: copy or self-test failed"; exit 2; }
   # detached on the sandbox: every Kalshi call waits for the producer's quiet minutes, so this can take hours
   $S "cd $R && (nohup $PY stg_infra/paper_trader.py --fetch-tape --check > logs/paper_check.log 2>&1 < /dev/null &) ; sleep 2; pgrep -af '[p]aper_trader.py --fetch-tape' | cut -c1-80"
   echo "check started on the sandbox; progress: logs/paper_check.log there (Claude reads it)"
   ;;
 enable)
+  copy_files || { echo "ABORT: copy or self-test failed; nothing enabled"; exit 2; }
   $S "echo '$PY stg_infra/paper_trader.py --loop' > /home/curiouslearner842/.lumid/paper_cmd && cat /home/curiouslearner842/.lumid/paper_cmd" || exit 3
   $S 'pkill -f "[l]umid_sandbox_keeper.py --run"; echo keeper stopped'
   sleep 3
