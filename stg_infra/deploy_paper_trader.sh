@@ -22,7 +22,7 @@ wait_quiet() {   # producer logged this hour and minute < 58 (sandbox clock)
 case "${1:-}" in
 check)
   tar -cf - stg_infra/paper_trader.py stg_infra/lumid_sandbox_keeper.py stg_infra/examples/train_baselines.py \
-      stg_infra/examples/fetch_kalshi_api_months.py docs/planning/l4_candidate_pool.json \
+      stg_infra/fetch_kalshi_api_months.py docs/planning/l4_candidate_pool.json \
       runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_lin2_W3_model.json \
       runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_mlp2_W3_model.json \
     | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1" \
