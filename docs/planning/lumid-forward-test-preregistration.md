@@ -364,3 +364,11 @@ remaining use, a third-party timestamp, covered only the Lumid-scope subset.
    `snap_ns`) is unaffected.
 4. Channel A is not reported (it never ran). Unchanged otherwise: models, arms, universe (L4), verdicts,
    metrics, cuts, the L3 engine, no pooling across the L2 fix.
+
+**Correction (2026-10-13 06:35 UTC, after the first L5 hour, still before any live P&L).** The "Why" above
+overstated publishing's share of the cycle. Score files were written at about :29-:30 past each hour and the
+cycle ended about a minute later, so the cycle is almost entirely data fetching (about 5,900 Kalshi calls)
+and scoring. The first L5 hour (20261013T06) took 1,680 s against 1,819-1,861 s for the three hours before:
+D_H moves about 2-3 minutes earlier, not 10-15. The decision to stop publishing stands on the other
+reasons (nothing reads the inbox; the universe is the strategy's own markets). Item 3 is unchanged. The
+first hourly Research Fleet record is job `office:fm:wfl-47990c10-1440-4229-9a8f-5ea6647fb6c3`.
