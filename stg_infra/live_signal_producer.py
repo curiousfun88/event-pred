@@ -83,6 +83,8 @@ sys.path.insert(0, str(_THIS / "examples"))
 
 API = "https://api.elections.kalshi.com/trade-api/v2"
 SUBMIT_URL = "https://lum.id/lqt/submit/lqt_inbox"
+FLEET_URL = "https://lum.id/api/v1/me/fleet/jobs"
+FLEET_METRICS = ("events", "legs", "cand_one", "cand_two", "share_g", "share_g2", "share_g2p", "secs")
 LIVE_DIR = _REPO / "runs/live"
 H_NS = 3_600_000_000_000
 SENTINEL_C = -100.0
@@ -521,6 +523,29 @@ def file_hashes(paths) -> dict:
     return {Path(f).name: hashlib.sha256(Path(f).read_bytes()).hexdigest() for f in paths if Path(f).exists()}
 
 
+def fleet_body(summary: dict, site="office") -> dict:
+    """One FlowMesh job per hour (amendment L5): the hour's summary, incl. the sha256 audit record, embedded in a
+    Python step that returns it; Research Fleet stores it with its own created_at. JSON is valid YAML."""
+    met = {k: float(summary[k]) for k in FLEET_METRICS if isinstance(summary.get(k), (int, float))}
+    code = (f"import json\nREC = json.loads({json.dumps(json.dumps(summary))})\n"
+            f"MET = json.loads({json.dumps(json.dumps(met))})\n\n\ndef main():\n    return {{'metrics': MET, 'output': REC}}\n")
+    wf = {"apiVersion": "flowmesh/v1", "kind": "Task", "metadata": {"name": f"fwdtest-hour-{summary['H']}"},
+          "spec": {"taskType": "python", "code": code}}
+    return {"workflow": json.dumps(wf), "site": site}
+
+
+def post_fleet(summary: dict, post) -> str:
+    """Submit the hour's job; never raises (a Research Fleet outage must not cost the hour). Returns the job id
+    or 'error: ...'."""
+    try:
+        r = post(fleet_body(summary))
+        if r.status_code in (200, 201, 202):
+            return r.json()["data"]["id"]
+        return f"error: HTTP {r.status_code} {r.text[:200]}"
+    except Exception as e:
+        return f"error: {e!r}"[:300]
+
+
 def hour_done(stamp, runs_path=None):
     """True if runs.jsonl already records a completed cycle for hour `stamp`: a restart must not re-run it (that
     would overwrite the hour's logged scores with a later snapshot than the one published)."""
@@ -656,6 +681,11 @@ def run_once(args) -> dict:
                "published_rows": accepted_rows if sent is not None else 0,
                "publish_complete": (len(ok_b) == n_batches(len(sig), args.batch)) if sent is not None else None,
                "resent": resent if sent is not None else None}
+    if args.fleet:
+        import requests
+        pat = Path(args.pat_file).expanduser().read_text().strip()
+        summary["fleet_job"] = post_fleet(summary, lambda body: requests.post(
+            FLEET_URL, json=body, headers={"Authorization": f"Bearer {pat}"}, timeout=60))
     print(json.dumps(summary), flush=True)
     with open(LIVE_DIR / "runs.jsonl", "a") as f:
         f.write(json.dumps(summary) + "\n")
@@ -849,6 +879,29 @@ def self_test() -> bool:
         check("audit hashes: sha256 of existing files by name, missing files skipped",
               file_hashes([td / "a.json", td / "missing.parquet"])
               == {"a.json": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"})
+
+    summ = {"H": "20261013T05", "events": 10, "cand_one": 7, "share_g2": 0.5, "secs": 61.5, "published": "dry-run",
+            "sha256": {"one_20261013T05.parquet": "ab" * 32}, "note": "quotes ' \" and \\ survive"}
+    body = fleet_body(summ)
+    wf = json.loads(body["workflow"])
+    ns = {}
+    exec(wf["spec"]["code"], ns)
+    res = ns["main"]()
+    check("fleet job: flowmesh/v1 python Task with code at spec level, site office",
+          wf["apiVersion"] == "flowmesh/v1" and wf["spec"]["taskType"] == "python" and "python" not in wf["spec"]
+          and body["site"] == "office" and wf["metadata"]["name"] == "fwdtest-hour-20261013T05")
+    check("fleet job: returns the summary exactly, numeric fields as metrics",
+          res["output"] == summ and res["metrics"] == {"events": 10.0, "cand_one": 7.0, "share_g2": 0.5, "secs": 61.5})
+
+    class R:
+        def __init__(self, c, j=None): self.status_code, self._j, self.text = c, j, "body"
+        def json(self): return self._j
+    check("fleet post: 202 -> job id", post_fleet(summ, lambda b: R(202, {"data": {"id": "office:fm:wfl-x"}})) == "office:fm:wfl-x")
+    check("fleet post: HTTP error -> 'error: ...', no exception", post_fleet(summ, lambda b: R(500)).startswith("error: HTTP 500"))
+
+    def boom(b):
+        raise TimeoutError("down")
+    check("fleet post: network failure -> 'error: ...', no exception", post_fleet(summ, boom).startswith("error:"))
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -876,6 +929,7 @@ def main():
     ap.add_argument("--publish-exclude-prefix", nargs="*", default=[],
                     help="never publish tickers starting with these (amendment L1: KXHIGH KXLOW)")
     ap.add_argument("--rps", type=float, default=8.0)
+    ap.add_argument("--fleet", action="store_true", help="post each hour's summary as a FlowMesh job to Research Fleet (L5)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)

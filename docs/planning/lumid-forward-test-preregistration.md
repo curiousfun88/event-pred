@@ -355,8 +355,10 @@ remaining use, a third-party timestamp, covered only the Lumid-scope subset.
    report), no signals are sent to the Lumid inbox. Scores, signal files and logs are written as before;
    models, features, candidates and scores are unchanged.
 2. **Audit record.** Each hour's `runs.jsonl` line carries the sha256 of that hour's score files
-   (`one_`, `two_`) and signal file. A FlowMesh job on Research Fleet posts these hashes (at least daily) and
-   the results at each cut (L3 item 6), giving a third-party timestamp for every scored market.
+   (`one_`, `two_`) and signal file. At the end of each cycle the producer (`--fleet`) submits one FlowMesh
+   job to Research Fleet whose output is that hour's summary line, hashes included, so Research Fleet's own
+   `created_at` timestamps every scored market hourly (the job id is logged as `fleet_job`). Results are
+   posted to Research Fleet at each cut (L3 item 6); a failed post is logged and never costs the hour.
 3. **Decision time.** D_H becomes earlier from the switch-over hour. The as-executed sensitivity (L3) is
    reported for hours before and after it separately as well as pooled; the primary order window (from
    `snap_ns`) is unaffected.
