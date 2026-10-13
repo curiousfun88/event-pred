@@ -603,14 +603,22 @@ def main():
     if a.run:
         cmd_run(a.since, a.rps)
     if a.loop:
-        while True:
-            try:
-                cmd_fetch_tape(a.since, a.rps)
-                cmd_run(a.since, a.rps)
-            except Exception as e:
-                print(json.dumps({"error": repr(e)[:300], "at": time.time()}), flush=True)
+        last = None
+        while True:      # one round per hour, in the producer's quiet minutes (L7 item 4), never during its cycle
             now = dt.datetime.now(dt.timezone.utc)
-            time.sleep(max(60, (70 - now.minute) % 60 * 60 - now.second))   # next run at ~HH:10
+            runs = LIVE / "runs.jsonl"
+            lines = runs.read_text().splitlines() if runs.exists() else []
+            stamp = now.strftime("%Y%m%dT%H")
+            if stamp != last and producer_quiet(lines, now):
+                last = stamp
+                t0 = time.time()
+                try:
+                    cmd_fetch_tape(a.since, a.rps)
+                    cmd_run(a.since, a.rps)
+                except Exception as e:
+                    print(json.dumps({"error": repr(e)[:300], "at": time.time()}), flush=True)
+                print(json.dumps({"round": stamp, "secs": round(time.time() - t0, 1)}), flush=True)
+            time.sleep(60)
 
 
 if __name__ == "__main__":

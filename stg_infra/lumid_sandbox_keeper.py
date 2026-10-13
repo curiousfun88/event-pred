@@ -47,6 +47,7 @@ HOME = Path(f"/home/{USER}")
 REPO = HOME / "event-pred"
 CFG = HOME / ".lumid"
 PAT_FILE, KEY_FILE, PRODUCER_CMD_FILE = CFG / "sbx_pat", CFG / "sbx_key", CFG / "producer_cmd"
+PAPER_CMD_FILE = CFG / "paper_cmd"   # paper trader (L3/L7): started and watched iff this file exists
 LOG = REPO / "logs/sbx_keeper.log"
 RUNS = REPO / "runs/live/runs.jsonl"
 START = REPO / "stg_infra/lumid_start.sh"
@@ -128,6 +129,17 @@ def producer_pids():
     return [int(p) for p in r.stdout.split() if int(p) != os.getpid()]
 
 
+def paper_pids():
+    r = subprocess.run(["pgrep", "-f", "[p]aper_trader.py --loop"], capture_output=True, text=True)
+    return [int(p) for p in r.stdout.split() if int(p) != os.getpid()]
+
+
+def start_paper():
+    cmd = PAPER_CMD_FILE.read_text().strip()
+    subprocess.Popen(["bash", "-c", f"cd {REPO} && exec {cmd} >> logs/paper_trader.log 2>&1"],
+                     stdin=subprocess.DEVNULL, start_new_session=True)
+
+
 def start_producer():
     cmd = PRODUCER_CMD_FILE.read_text().strip()
     subprocess.Popen(["bash", "-c", f"cd {REPO} && exec {cmd} >> logs/sbx_producer.log 2>&1"],
@@ -140,7 +152,14 @@ def hand_over(me, rows, reason):
         log("handover blocked: no free successor name", existing=[r["name"] for r in rows])
         return False
     log("handover: creating successor", successor=succ, reason=reason)
-    api("POST", "/sandboxes", {"name": succ, **SPEC})
+    try:
+        api("POST", "/sandboxes", {"name": succ, **SPEC})
+    except Exception as e:
+        if "409" in repr(e):    # 2026-10-13: Lumid allows two sandboxes per account; a third holder blocks this
+            log("handover blocked: 409 Conflict (another sandbox holds the account's second slot?)",
+                existing=[r["name"] for r in rows])
+            return False
+        raise
     for _ in range(60):
         time.sleep(10)
         row = next((r for r in api("GET", "/sandboxes")["sandboxes"] if r["name"] == succ), None)
@@ -150,9 +169,9 @@ def hand_over(me, rows, reason):
         log("handover failed: successor not Running; deleting it, will retry", successor=succ)
         api("DELETE", f"/sandboxes/{succ}")
         return False
-    for p in producer_pids():
+    for p in producer_pids() + paper_pids():
         os.kill(p, 15)
-    log("producer stopped here; starting in successor", successor=succ)
+    log("producer (and paper trader) stopped here; starting in successor", successor=succ)
     r = ssh_gw(f"bash {START}")
     time.sleep(20)
     # "[l]ive..." matches the process but not this command line itself, which would otherwise
@@ -178,6 +197,9 @@ def run():
             if not producer_pids():
                 log("watchdog: producer not running; starting it")
                 start_producer()
+            if PAPER_CMD_FILE.exists() and not paper_pids():
+                log("watchdog: paper trader not running; starting it")
+                start_paper()
             rows = api("GET", "/sandboxes")["sandboxes"]
             mine = next((r for r in rows if r["name"] == me), None)
             if mine and mine.get("expires_at"):
@@ -198,6 +220,7 @@ def status():
         left = (float(r["expires_at"]) - time.time()) / 3600 if r.get("expires_at") else float("nan")
         print(f"{r['name']:<10} {r.get('phase'):<10} expires in {left:5.1f} h")
     print("producer here:", producer_pids())
+    print("paper trader here:", paper_pids(), "(enabled)" if PAPER_CMD_FILE.exists() else "(disabled: no paper_cmd)")
 
 
 # ---------------------------------------------------------------- self-test
