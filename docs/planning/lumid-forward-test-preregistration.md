@@ -473,3 +473,12 @@ Brodeur, Cook, Hartley and Heyes (2024, JPE Micro) find reduces p-hacking where 
 
 **Predictions (before any live P&L).** Sports is selected in every fold; most small categories fail the
 20-event minimum; `g2_sel` - `g2` has a CI including 0 in every fold and pooled.
+
+**L7 addendum: producer outage 13:42-13:57 UTC on 2026-10-13 (recorded before any live P&L).** Lumid allows
+two sandboxes per account on the `office` site. The extra `batch` sandbox used for the jobs above made
+the keeper's handover (creating `prod-a`) fail with HTTP 409 from 13:16; `prod-b` expired at 13:42 and
+the producer stopped. `batch` was deleted and `prod-a` started at 13:57:29 (`stg_infra/lumid_start.sh`).
+Effect: hour 20261013T13 was produced only from 13:57 (its order window is about 2 minutes); T14 starts
+late. Together with T09 and T11 (not produced) and T08, T10, T12 (late), these hours are reported as gaps
+or late hours and are not repaired. Rule added to L7 item 4: no non-production sandbox is held while a
+producer handover can occur; batch work runs inside the production sandbox's quiet minutes.
