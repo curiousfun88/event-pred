@@ -511,3 +511,32 @@ on the same live hours at no cost. (3) L3 item 5 (day-clustered CIs) is implemen
 **Prediction (before any live P&L).** `g2w1` and `g2w2` within 2 points of `g2`, all three differences
 with CIs including 0. With the one-sided test, "G2 profitable live" is more likely than under the
 two-sided rule, and still uncertain at the interim cut.
+
+## Amendment L9 (2026-10-13 ~15:30 UTC, BEFORE any live fill, outcome or P&L is computed, and before the comparison below is run): the headline window is chosen on a six-month walk-forward, not one month
+
+**Why.** A13 chose G2's training window (W1 3 months, W2 6 months, W3 all history) on one validation month,
+where the windows did not differ significantly (W3 - W2 +1.77 points, CI -0.56 to +3.97), and their
+category results disagreed in sign (weather: W1 +1.93%, W3 -1.60%). One month cannot choose confidently.
+A15's walk-forward table and folds already exist, and all three windows are live arms (L8), so the choice
+can be made on six months with nothing new deployed.
+
+**Rule (fixed now).**
+1. **Recipes**: W1 = train on the 3 calendar months before the test month; W2 = the 6 months before; W3 =
+   every month before (A15's `hgb_a12` folds). Model, features, hyperparameters, target and threshold are
+   G2's (A12/A13), unchanged.
+2. **Folds**: test months 2026-04, 05, 06, 07, 08 (A15's table `runs/tune_gbm/features.npz`, G2-W3's exact
+   training rows, single-winner events) and the A13 validation window 2026-09-07..10-05 as a sixth fold,
+   scored with the frozen G2-W1/W2/W3 models (they are exactly these recipes trained through 2026-08) on that
+   window's BROAD pessimistic fills of the 23 A13 series, single-winner events (as A15's folds).
+3. **Score**: A15's offline score per fold (fills predicted above 1c; return = net / capital).
+4. **Selection**: the recipe with the highest **mean** return over the six folds, among recipes keeping at
+   least 200 fills in every fold. The worst fold and every fold are reported. If W3 is selected, nothing
+   changes. If W1 or W2 is selected, that window's model becomes the primary arm `g2` for all verdicts
+   (§5, L8) before any live P&L, and G2-W3 becomes a secondary arm; the universe (L1, L4) is unchanged.
+5. The September fold's offline score is reported beside A13's simulator figure for the same window.
+
+**Disclosed now.** The selection uses the same September month as A13 plus five months inside W3's training
+period; the folds are offline (no inventory interaction); the universe's weather exclusion was decided on
+W3's September result, which favours W3 in the live comparison regardless of this rule.
+
+**Prediction (before running).** W3 has the highest mean; W1 has the most variable folds.
