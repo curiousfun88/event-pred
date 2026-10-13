@@ -421,3 +421,55 @@ the sandbox (Python 3.11.17; it was trained under 3.12.3), hashes to `931fa452d5
 refit and the frozen G2-W3 give identical predictions (max difference 0.0, 400 iterations each, same post
 decision on every row), and the per-month row counts equal the original training log. The rows are G2-W3's
 rows exactly (`stg_infra/examples/verify_g2_refit.py`, `logs/v2_forecast/verify_g2_refit_sandbox.log`).
+
+## Amendment L7 (2026-10-13 ~14:00 UTC, BEFORE any live fill, outcome or P&L is computed): `g2_sel` becomes a walk-forward selection on the live test; September fetch dropped; batch-job rate limits
+
+**Why.** L4 item 4 selected `g2_sel`'s categories on September 2026 validation data for the 290-series pool.
+That needs per-market candles and trades for well over 100,000 markets (Sports and hourly Crypto series
+dominate): days of fetching. Running it (07:36-13:37 UTC, 4 req/s) beside the paper trader's tape fetch
+(3 req/s) throttled the live producer on the shared Kalshi egress: hours **20261013T09 and T11 were not
+produced**, and T08, T10, T12 ended 65-75 min after the hour (`runs/live/runs.jsonl`; L3 records gaps).
+Both jobs were stopped at 13:37 UTC. Partial September results (Climate and Weather 1 event, Commodities 4
+events; both below the 20-event minimum) were seen; they are validation, not live, and change nothing.
+The reproduction gate passed exactly (1,725 fills, 153 events, +6.73%).
+
+**Changes (fixed now).**
+1. **`g2_sel` = weekly walk-forward category selection on the live test.** Folds (quoting hours, UTC):
+
+   | fold | selection window | `g2_sel` trades |
+   |---|---|---|
+   | 1 | 2026-10-11 15:00 to 10-18 00:00 | 10-18 00:00 to 10-25 00:00 |
+   | 2 | 10-18 00:00 to 10-25 00:00 | 10-25 00:00 to 11-01 00:00 |
+   | 3 | 10-25 00:00 to 11-01 00:00 | 11-01 00:00 to 11-11 00:00 (end of quoting) |
+
+   In each selection window, `g2`'s fills (primary order window, pessimistic, L4 primary universe) are
+   grouped by category (as logged), counting **only events settled by the end of that window**, so the
+   selection uses only information available when the trading week starts (no overlap of outcomes with
+   the trading week: purging in the sense of López de Prado 2018). A category is selected for the next
+   week iff its net return is > 0 and it has >= 20 events with fills (the L4 rule, unchanged). `g2_sel`
+   in a trading week = `g2`'s fills in that week in the selected categories; an empty selection means no
+   `g2_sel` orders that week, reported as such.
+2. **Reported (secondary, never a verdict):** `g2_sel` per fold and pooled over the three trading weeks;
+   the paired difference `g2_sel` - `g2` on the same trading weeks (event-cluster CI, day-cluster
+   sensitivity); each fold's selection table (category, return, events, pass/fail). At the interim cut,
+   fold 1 and the part of fold 2 before 10-28 are reported.
+3. **The September validation fetch for the pool is dropped.** `stg_infra/examples/validate_g2_sel.py` and
+   its partial cache are kept as a record and are not used for any selection.
+4. **Batch jobs and the live producer.** Any job using Kalshi from Lumid runs only after the producer has
+   logged the current hour and before minute 58, at <= 2 requests/s; the paper trader's tape collection
+   follows this rule.
+5. **Unchanged:** L4's primary universe and verdicts, all arms and models (L3, L6), order windows, cuts.
+
+**Rationale and literature.** Selecting groups by their recent performance and holding them next period
+follows the industry- and factor-momentum design (Moskowitz and Grinblatt 1999; Arnott, Kalesnik and
+Linnainmaa 2023, RFS 36(8)). Re-selecting at each step from past data only, and testing over several
+successive out-of-sample periods rather than one, follows recursive real-time selection (Pesaran and
+Timmermann 1995) and rolling-origin evaluation for non-stationary series (Hewamalage, Ackermann and
+Bergmeir 2023, DMKD 37(2)). Combinatorial purged cross-validation outperforms walk-forward for *backtests*
+(Arian, Norouzi Mobarekeh and Seco 2024, Knowledge-Based Systems), but it resamples periods in any order;
+in a live test the next week does not exist when the selection is made, so walk-forward is the only causal
+design. Fixing the full rule, thresholds and windows in advance is a complete pre-analysis plan, which
+Brodeur, Cook, Hartley and Heyes (2024, JPE Micro) find reduces p-hacking where registration alone does not.
+
+**Predictions (before any live P&L).** Sports is selected in every fold; most small categories fail the
+20-event minimum; `g2_sel` - `g2` has a CI including 0 in every fold and pooled.
