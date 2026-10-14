@@ -326,14 +326,23 @@ def _acc_out(acc):
             for m, v in acc.items()}
 
 
-def main_curves_full():
-    """Exploratory note 4: G2/G vs linear and neural at matched shares, 2026 folds and 2025 test months."""
+def _ov_add(ov, ref, other, name, preds):
+    """Fraction of the reference model's top-share picks that `other` also picks (counts pooled)."""
+    for sh in SHARES4:
+        a = top_share(preds[ref], sh) > 1
+        b = top_share(preds[other], sh) > 1
+        o = ov.setdefault(name, {}).setdefault(str(sh), [0, 0])
+        o[0] += int((a & b).sum()); o[1] += int(a.sum())
+
+
+def main_curves_full(overlap_only=False):
+    """Exploratory note 4 (and note 5 with overlap_only): matched shares, 2026 folds and 2025 test months."""
     import maker_policy as mp
     import retrain_g2 as rg
     import simulate_maker as s
     import train_baselines as tb
     import tune_gbm as tg
-    out = {}
+    out, ov26, ov25 = {}, {}, {}
     # ---- 2026: L9 folds, models refit per fold (September: frozen models)
     D = tg.load()
     feats, cats = list(D["feats"]), list(D["cats"])
@@ -344,15 +353,20 @@ def main_curves_full():
         net, cap = D["net_c"][te], D["capital_c"][te]
         R_tr, R_te = rows_from_X(D["X"][tr], feats, cats, D["month"][tr]), rows_from_X(D["X"][te], feats, cats)
         p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
-        _acc_add(acc, "G2", p3, net, cap)
-        _acc_add(acc, "Linear", tb.predict(tb.fit_lin2(R_tr, D["y"][tr]), R_te), net, cap)
-        _acc_add(acc, "Neural", tb.predict(tb.fit_mlp2(R_tr, D["y"][tr], log=lambda *a: None), R_te), net, cap)
+        pr = {"G2": p3, "Linear": tb.predict(tb.fit_lin2(R_tr, D["y"][tr]), R_te),
+              "Neural": tb.predict(tb.fit_mlp2(R_tr, D["y"][tr], log=lambda *a: None), R_te)}
+        for m_, p_ in pr.items():
+            _acc_add(acc, m_, p_, net, cap)
+        _ov_add(ov26, "G2", "Linear", "G2&Linear", pr); _ov_add(ov26, "G2", "Neural", "G2&Neural", pr)
         print(json.dumps({"2026 fold": tm}), flush=True)
     rows, net, cap, qty = september_rows()
     w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
-    _acc_add(acc, "G2", w3["model"].predict(rg.matrix("G2", rows, w3["cats"])), net, cap)
-    _acc_add(acc, "Linear", tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows), net, cap)
-    _acc_add(acc, "Neural", tb.predict(pickle.loads(tb.model_path("mlp2").read_bytes()), rows), net, cap)
+    pr = {"G2": w3["model"].predict(rg.matrix("G2", rows, w3["cats"])),
+          "Linear": tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows),
+          "Neural": tb.predict(pickle.loads(tb.model_path("mlp2").read_bytes()), rows)}
+    for m_, p_ in pr.items():
+        _acc_add(acc, m_, p_, net, cap)
+    _ov_add(ov26, "G2", "Linear", "G2&Linear", pr); _ov_add(ov26, "G2", "Neural", "G2&Neural", pr)
     out["2026"] = _acc_out(acc)
     del D, rows
     # ---- 2025: G's test months, frozen models, features month by month (A12)
@@ -374,13 +388,21 @@ def main_curves_full():
             if r is not None:
                 rows.append(r); net.append(F["net_c"][i]); cap.append(F["capital_c"][i])
         net, cap = np.asarray(net, float), np.asarray(cap, float)
-        _acc_add(acc, "G", G["model"].predict(mp.to_matrix(rows, G["cats"])), net, cap)
-        _acc_add(acc, "Linear", tb.predict(L, rows), net, cap)
-        _acc_add(acc, "Neural", tb.predict(N, rows), net, cap)
+        pr = {"G": G["model"].predict(mp.to_matrix(rows, G["cats"])), "Linear": tb.predict(L, rows), "Neural": tb.predict(N, rows)}
+        for m_, p_ in pr.items():
+            _acc_add(acc, m_, p_, net, cap)
+        _ov_add(ov25, "G", "Linear", "G&Linear", pr); _ov_add(ov25, "G", "Neural", "G&Neural", pr)
         print(json.dumps({"2025 month": mo, "fills": len(rows)}), flush=True)
         del legs, events, charged, rows
     out["2025"] = _acc_out(acc)
+    ovo = {yr: {k: {sh: c[0] / c[1] if c[1] else float("nan") for sh, c in v.items()} for k, v in ov.items()}
+           for yr, ov in (("2026", ov26), ("2025", ov25))}
     d = json.loads(OUT.read_text()) if OUT.exists() else {}
+    d["pick_overlap"] = ovo
+    print(json.dumps(ovo, indent=1))
+    if overlap_only:
+        OUT.write_text(json.dumps(d, indent=1, default=float))
+        return
     d["volume_curves_full"] = out
     OUT.write_text(json.dumps(d, indent=1, default=float))
     for yr, v in out.items():
@@ -424,10 +446,13 @@ def main():
     ap.add_argument("--curve", action="store_true", help="volume-matched G2-W3 vs lin2 (exploratory note 2)")
     ap.add_argument("--mlp-sens", action="store_true", help="neural-baseline sensitivity analysis (exploratory note 3)")
     ap.add_argument("--curves-full", action="store_true", help="volume-matched curves, both baselines, both years (note 4)")
+    ap.add_argument("--overlap", action="store_true", help="pick overlap at matched shares (note 5)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    if a.curves_full:
+    if a.overlap:
+        main_curves_full(overlap_only=True)
+    elif a.curves_full:
         main_curves_full()
     elif a.mlp_sens:
         main_mlp_sensitivity()
