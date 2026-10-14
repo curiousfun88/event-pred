@@ -11,7 +11,7 @@
 \newcommand{\negv}[1]{\textcolor{red!65!black}{#1}}
 
 \title{Forward Test: Request for Approval Before Live Paper Trading}
-\author{FYP: Learned Market Making on Kalshi Event Contracts}
+\author{FYP: Learned Market Making on Kalshi Event Contracts \\ Justyn}
 \date{14 October 2026}
 
 \begin{document}
@@ -113,7 +113,7 @@ G2 made money in all six months (mean +2.65\% per month, +\$3,291), while random
 rules and quoting everything lost money in all six. The linear model averaged +3.76\% (+\$1,455); the neural network
 +1.00\%, positive in only three months. In the full simulator on September 2026, G2 made +1.41\% [$-$1.47, +4.31].
 
-\section{Why G2 stays the headline model (linear model)}
+\section{Why G2 stays the headline model (and why not linear model)}
 The linear model shows a higher return on capital because it trades less: in the 2025 test it posted 13.5\% of
 candidate orders against 19.7\% for G, and filled about half as many contracts. G earns more total profit (2025: +\$3,748 vs +\$2,427; 2026: more profit
 in every month), and their returns do not differ significantly. When both models post the \emph{same} number of
@@ -123,17 +123,83 @@ the models converge at very high volumes, which I interpret as the easier 2025 m
 picks (overlap rises similarly in both years). G2 is therefore kept as the headline model.
 
 \section{Hyperparameters: fixed, not tuned}\label{sec:tuning}
-Model settings were fixed in advance and checked rather than tuned:
-\begin{itemize}[leftmargin=*]
-  \item \textbf{Boosted model:} a walk-forward search over 14 alternative settings placed the default within 0.2
-    percentage points of the best (+2.71\% vs +2.91\% per month), below the month-to-month variation. Choosing the
-    best of many settings on noisy financial data would inflate its apparent advantage, so the default was kept.
-  \item \textbf{Neural network:} across 8 settings, the best averaged +1.45\% against G2's +2.65\%, and every
-    setting had losing months; tuning could not change the comparison.
-  \item \textbf{Training window:} chosen by a six-month walk-forward (all history +2.65\% vs 3-month +1.53\% and
-    6-month +1.88\%).
-\end{itemize}
-Settings were varied one at a time; a joint search over combinations is listed as future work.
+\paragraph{Decision.} Model settings were fixed in advance and written into the pre-registration before any test.
+Instead of tuning them, I measured how much tuning could gain, using the same procedure tuning would use: each
+setting is trained only on earlier months and scored on the next month (walk-forward), over several months.
+
+\paragraph{Boosted model (G2).} Fourteen settings: G2's default and 13 variants, each changing one parameter.
+Return on capital per test month (offline scoring, pessimistic fills):
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Setting & Apr & May & Jun & Jul & Aug & Mean & Worst \\
+\midrule
+Leaves 15 (best) & +2.61 & +3.08 & +2.71 & +3.60 & +2.56 & +2.91 & +2.56 \\
+L2 regularisation 10 & +2.52 & +2.36 & +2.61 & +3.87 & +2.32 & +2.73 & +2.32 \\
+\textbf{G2 default} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.71} & \textbf{+1.95} \\
+Feature sampling 0.8 & +2.84 & +2.46 & +2.56 & +3.46 & +1.91 & +2.65 & +1.91 \\
+Min.\ leaf 1000 & +2.41 & +2.56 & +2.02 & +3.71 & +1.37 & +2.41 & +1.37 \\
+Min.\ leaf 100 & +1.85 & +3.63 & +1.85 & +3.51 & +0.93 & +2.35 & +0.93 \\
+800 trees & +2.18 & +1.11 & +3.26 & +3.50 & +1.72 & +2.35 & +1.11 \\
+Early stop on last month & +3.73 & +2.65 & +2.66 & +1.44 & +0.93 & +2.28 & +0.93 \\
+Leaves 63 & +2.16 & +2.92 & +2.27 & +2.09 & +1.66 & +2.22 & +1.66 \\
+Recency weight (3 months) & +1.61 & +3.41 & +2.68 & +1.27 & +2.11 & +2.22 & +1.27 \\
+Bagging (5 models) & +1.81 & +2.26 & +2.96 & +2.35 & +1.50 & +2.18 & +1.50 \\
+Learning rate 0.1, 120 trees & +2.70 & +2.05 & +2.53 & +2.66 & +0.90 & +2.17 & +0.90 \\
+Recency weight (6 months) & +0.78 & +2.95 & +1.63 & +1.36 & +0.99 & +1.54 & +0.78 \\
+Absolute-error loss & $-$0.51 & $-$0.07 & +0.48 & $-$0.47 & $-$0.29 & $-$0.17 & $-$0.51 \\
+\midrule
+Quote everything (reference) & $-$0.73 & $-$0.79 & $-$0.26 & $-$1.07 & $-$1.67 & $-$0.90 & $-$1.67 \\
+\bottomrule
+\end{tabular}
+\end{center}
+All values in \%. The default ranks third of fourteen. Every variant using the same (squared-error) loss is
+profitable in every month; only the change of loss function removes the edge.
+
+\paragraph{Neural network (baseline).} Eight settings: the default and 7 variants, one change each, on the same
+months plus September 2026; G2 shown for reference:
+\begin{center}
+\small\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Setting & Apr & May & Jun & Jul & Aug & Sep & Mean & Worst & Months $>$0 \\
+\midrule
+Larger (128, 64) & +2.04 & +3.69 & +0.38 & +3.50 & $-$0.77 & $-$0.16 & +1.45 & $-$0.77 & 4/6 \\
+L2 1e-2 & +1.98 & +5.20 & $-$0.20 & +1.30 & $-$0.57 & $-$0.48 & +1.21 & $-$0.57 & 3/6 \\
+Deeper (64, 32, 16) & +3.78 & +4.53 & $-$2.03 & +1.31 & +0.42 & $-$1.27 & +1.12 & $-$2.03 & 4/6 \\
+L2 1e-3 & +1.97 & +4.36 & +0.33 & +1.44 & $-$0.82 & $-$0.62 & +1.11 & $-$0.82 & 4/6 \\
+Default (64, 32) & +2.83 & +3.81 & $-$0.56 & +1.47 & $-$0.93 & $-$0.38 & +1.04 & $-$0.93 & 3/6 \\
+tanh activation & +2.61 & +4.97 & $-$1.90 & +0.36 & $-$1.45 & $-$0.13 & +0.74 & $-$1.90 & 3/6 \\
+Learning rate 3e-4 & +1.32 & +3.77 & $-$0.42 & +1.87 & $-$0.75 & $-$1.56 & +0.71 & $-$1.56 & 3/6 \\
+Smaller (32) & +1.26 & +2.58 & $-$0.31 & +1.81 & $-$1.00 & $-$1.49 & +0.47 & $-$1.49 & 3/6 \\
+\midrule
+\textbf{G2 (reference)} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.36} & \textbf{+2.65} & \textbf{+1.95} & \textbf{6/6} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Why the settings were not tuned.}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{The possible gain is small.} The best of the fourteen boosted settings beat the default by
+    0.2 percentage points per month (+2.91\% vs +2.71\%), much less than G2's own month-to-month variation
+    (+1.95\% to +3.46\%). A difference this small cannot be told apart from noise over five months.
+  \item \textbf{The best setting's lead is partly luck.} Choosing the top scorer among many settings inflates its
+    apparent advantage (Cawley \& Talbot, 2010); on new data the expected gain is smaller still.
+  \item \textbf{Tuning carries overfitting risk in finance.} Each extra search on short, noisy, changing financial
+    data is another chance to fit noise (Bailey et al., 2017; Arnott, Harvey \& Markowitz, 2019). With a negligible
+    expected gain, fixed settings are the safer choice; where tunability is low, defaults are appropriate
+    (Probst, Boulesteix \& Bischl, 2019).
+  \item \textbf{Tuning the neural network could not change the comparison.} Its best setting is about 1.2 points
+    behind G2 and still loses money in two of six months; tuning chooses among such settings. On the broader 2025
+    data the default network does better (+2.11\%) but G remains significantly ahead (+1.43, CI [+0.47, +2.38]).
+  \item \textbf{Fixed settings keep the tests credible.} Settings were recorded before any test; changing them
+    after seeing results would weaken the pre-registered tests for almost no expected gain.
+\end{enumerate}
+Reporting results across all reasonable settings, rather than a single tuned best, follows the logic of
+specification-curve analysis (Simonsohn, Simmons \& Nelson, 2020). \textbf{Limitation:} settings were varied one at
+a time, so combinations were not searched; a joint search is left as future work. The training window was chosen
+by a six-month walk-forward (all history +2.65\% per month vs 3-month +1.53\% and 6-month +1.88\%).
 
 \section{Questions for your approval}\label{sec:questions}
 \begin{enumerate}[leftmargin=*]
@@ -141,7 +207,7 @@ Settings were varied one at a time; a joint search over combinations is listed a
     happened, append-only ledger, hourly Research Fleet reports) meet the live paper-trading requirement?
   \item[$\square$] Are the baselines in Section~\ref{sec:baselines} sufficient?
   \item[$\square$] Is it acceptable to keep the fixed model settings, given the sensitivity checks in
-    Section~\ref{sec:tuning}?
+    Section~\ref{sec:tuning} which justifies that there is no need to tune the model?
   \item[$\square$] Is G2 as the headline model acceptable, given that the linear model has a higher return but
     lower total profit?
   \item[$\square$] Is anything else you would like reported each hour or at the cuts (28 October, 11 November)?
