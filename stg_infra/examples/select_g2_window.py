@@ -34,6 +34,7 @@ sys.path.insert(0, str(_THIS))
 
 RECIPES = {"W1": 3, "W2": 6, "W3": None}          # months of history before the test month (None = all)
 OUT = _REPO / "runs/tune_gbm/l9_window_selection.json"
+PARTIAL = _REPO / "runs/tune_gbm/l9_partial.json"     # finished fits, so an interrupted run resumes
 
 
 def window_mask(month, test_month, k):
@@ -81,14 +82,20 @@ def main_run():
     D = tg.load()
     cat_col = list(D["feats"]).index("cat_i")
     folds = {w: [] for w in RECIPES}
+    done = json.loads(PARTIAL.read_text()) if PARTIAL.exists() else {}
     for tm in tg.TEST_MONTHS:
         te = D["month"] == tm
         for w, k in RECIPES.items():
+            if f"{w}|{tm}" in done:
+                folds[w].append(done[f"{w}|{tm}"]); print(json.dumps({"recipe": w, "resumed": True, **done[f"{w}|{tm}"]}), flush=True)
+                continue
             tr = window_mask(D["month"], tm, k)
             pred, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col,
                                      D["X"][te], D["month"][tr])
             sc = {"fold": tm, "n_train": int(tr.sum()), **tg.score(pred, D["net_c"][te], D["capital_c"][te], D["qty"][te])}
             folds[w].append(sc)
+            done[f"{w}|{tm}"] = sc
+            PARTIAL.write_text(json.dumps(done, indent=1, default=float))
             print(json.dumps({"recipe": w, **sc}), flush=True)
     sep, n_sep = september_fold()
     for w in RECIPES:
