@@ -631,3 +631,11 @@ descriptive evaluation of the same months. **G, its result and its verdict are u
 
 **Reported.** Each arm's return, event-cluster 95% CI, fills, events, net P&L; paired differences G - each
 (event clusters); the 2026 comparison beside it. Descriptive only.
+
+**A16 gate, first run (2026-10-14, recorded before any baseline figure was looked at).** The first test run
+computed features with all four test months loaded together; G gave +3.48% (34,044 fills, 1,325 events) instead
+of A12's +3.55% (34,086), and the gate stopped the run. Cause: A12 scored candidates month by month
+(`maker_policy.cmd_score` loads one month), so 24-hour features at each month's start differ. The script now
+assembles features month by month and additionally requires G's scores to equal A12's saved scores
+(`runs/maker/policy_G_scores_2025-08_2025-11.parquet`) exactly before simulating. The baseline lines the first
+run printed before stopping were not used. Everything else in A16 is unchanged.

@@ -99,18 +99,28 @@ def cmd_test():
     res = json.loads(OUT.read_text())
     assert all(MODELS[a].exists() for a in MODELS), "run `train` first"
     assert sha16(mp.model_path("G")) == G_SHA, "G model hash differs from A12"
-    legs, events, charged = s.load(TEST, "mece")
+    import polars as pl
     lookup = mp.category_lookup()
-    cand = []
-    s.simulate(s.Config(**mp.BROAD), "pess", legs, events, charged, TEST, record=cand)
     rows, keys = [], []
-    for ev, tk, H, sd, pr, b, a in cand:
-        r = mp.quote_features(legs, events, charged, lookup, s.month_of(int(H)), ev, tk, int(H), int(sd), int(pr))
-        if r is not None:
-            rows.append(r); keys.append((tk, int(H), int(sd)))
-    print(f"candidates {len(cand):,}; scored {len(rows):,}", flush=True)
+    for mo in TEST:          # features month by month, exactly as A12's maker_policy.cmd_score
+        lg, ev_, ch = s.load([mo], "mece")
+        cand = []
+        s.simulate(s.Config(**mp.BROAD), "pess", lg, ev_, ch, [mo], record=cand)
+        for ev, tk, H, sd, pr, b, a in cand:
+            r = mp.quote_features(lg, ev_, ch, lookup, mo, ev, tk, int(H), int(sd), int(pr))
+            if r is not None:
+                rows.append(r); keys.append((tk, int(H), int(sd)))
+        print(f"  {mo}: {len(cand):,} candidates", flush=True)
+        del lg, ev_, ch
     G = pickle.loads(mp.model_path("G").read_bytes())
     pg = G["model"].predict(mp.to_matrix(rows, G["cats"]))
+    ref = pl.read_parquet(_REPO / "runs/maker/policy_G_scores_2025-08_2025-11.parquet")
+    refd = dict(zip(zip(ref["ticker"].to_list(), ref["hour_ns"].to_list(), ref["side"].to_list()), ref["pred"].to_list()))
+    same = len(refd) == len(keys) and all(abs(refd.get(k, np.inf) - p) < 1e-9 for k, p in zip(keys, pg))
+    print(f"scored {len(rows):,}; G scores identical to A12's saved scores: {same}", flush=True)
+    if not same:
+        raise SystemExit("A16 gate: G's scores differ from A12's saved scores; nothing reported")
+    legs, events, charged = s.load(TEST, "mece")      # simulation over all four months, as A12's test run
     share = float(np.mean(pg > 1.0))
     post = lambda m: np.where(m, 2.0, -np.inf)
     scores = {"G": pg,
