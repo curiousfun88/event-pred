@@ -607,3 +607,27 @@ setting, fold, threshold or rule is changed once any fold is scored.
 
 **Prediction (before measuring).** No row beats `hgb_a12` by much: differences within about +/-1 point of
 worst-fold return, because the limit is the noisy target, not the settings.
+
+## Amendment A16 (2026-10-14, BEFORE any run below): the live test's baselines on G's 2025 test months (descriptive)
+
+**Why.** The Lumid forward test compares G2 with rule, linear and neural baselines (L3, L6). G's pre-registered
+2025 test (A12: +3.55%, CI +2.51 to +4.60) compared G only with quoting everything, random selection and A10.
+Running the same baselines on G's test months shows whether the pattern seen in 2026 also holds in 2025.
+
+**Months already used.** 2025-08..11 were used for A10, A6, S4/S5, G and G+S (disclosed). This is a further
+descriptive evaluation of the same months. **G, its result and its verdict are unchanged; nothing is selected.**
+
+**Baselines (fixed now).**
+- `wide3`: post iff spread >= 3c. `liq`: post iff trades in the last 24 h >= that hour's median over the
+  hour's candidates (the live rule).
+- `lin2-2025` and `mlp2-2025`: the `lin2` and `mlp2` designs of `stg_infra/examples/train_baselines.py`
+  (defaults, unchanged), trained on **exactly G's training rows** (A12: BROAD pessimistic fills, 2024-11..2025-05,
+  `maker_policy.quote_features`), frozen with hashes recorded before the test months are scored.
+- Random selection at G's posting share (5 seeds), as in A12's audit.
+- Same candidates (BROAD), same simulator, all four months in one run, pessimistic fills; post if score > 1c.
+
+**Reproduction gate.** G re-scored and re-simulated in the same run must reproduce A12 exactly (pessimistic
++3.55%, 34,086 fills, 1,325 events); otherwise nothing below is reported as a result.
+
+**Reported.** Each arm's return, event-cluster 95% CI, fills, events, net P&L; paired differences G - each
+(event clusters); the 2026 comparison beside it. Descriptive only.
