@@ -61,6 +61,7 @@ FOLDS = (("20261011T15", "20261018T00", "20261018T00", "20261025T00"),
          ("20261018T00", "20261025T00", "20261025T00", "20261101T00"),
          ("20261025T00", "20261101T00", "20261101T00", "20261111T00"))
 MIN_EVENTS = 20
+ACTIVE_DAYS = 4          # L10: a ledger round recomputes events with a candidate in the last ACTIVE_DAYS days
 ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "lin2", "mlp2", "g2w1", "g2w2")
 PAIRS = (("g2", "rnd2"), ("g2p", "rnd2p"), ("g2", "g"), ("g2", "cand"), ("g2", "wide3"), ("g2", "liq"),
          ("g2", "lin2"), ("g2", "mlp2"), ("g2", "g2w1"), ("g2", "g2w2"), ("g2_sel", "g2"))   # first two: verdicts (§5)
@@ -323,6 +324,30 @@ def event_settled_at(events, markets):
     return out
 
 
+def settled_at_all(markets, fills=None):
+    """{event: time all its known legs settled}: events from the markets cache (or from `fills`), so events no
+    longer recomputed still count as settled."""
+    legs_of = {}
+    for tk, m in markets.items():
+        ev = tk.rsplit("-", 1)[0]
+        legs_of.setdefault(ev, []).append(tk)
+    if fills is not None:
+        want = {f[0] for f in fills}
+        legs_of = {e: t for e, t in legs_of.items() if e in want}
+    return event_settled_at(legs_of, markets)
+
+
+def g2_archive_update(g2_fills, markets):
+    """L10: g2's fills (all hours) kept in PAPER/g2_archive.json, so the L7 walk-forward selection sees past weeks
+    when a ledger round recomputes only active events. Returns the archive as fill tuples valued at settlement."""
+    import paper_ledger as pl_
+    p = PAPER / "g2_archive.json"
+    arch = {tuple(k) for k in json.loads(p.read_text())} if p.exists() else set()
+    arch |= {pl_.fill_key(f) for f in g2_fills}
+    p.write_text(json.dumps(sorted(arch)))
+    return [pl_.as_fill(k, markets.get(k[1], {}).get("result")) for k in arch]
+
+
 def walk_forward_selection(g2_fills, settled_at, cat_f, in_primary):
     """L7: per fold, g2's fills in the selection window (primary universe), events settled by the window's
     end only; a category is selected iff net return > 0 and >= MIN_EVENTS events with fills."""
@@ -460,6 +485,16 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     if not hours:
         print("no hours with tape yet"); return None
     one, two = load_scores(hours)
+    active = None
+    if ledger and (Path(ledger_dir) if ledger_dir else PAPER / "ledger").joinpath("state.json").exists():
+        import polars as pl
+        lo = ns_of(hours[-1]) - ACTIVE_DAYS * 24 * H_NS
+        active = set(one.filter(pl.col("H_ns") >= lo)["event"].to_list())
+        if two is not None:
+            active |= set(two.filter(pl.col("H_ns") >= lo)["event"].to_list())
+        one = one.filter(pl.col("event").is_in(list(active)))
+        two = two.filter(pl.col("event").is_in(list(active))) if two is not None else None
+        print(json.dumps({"active_events": len(active)}), flush=True)
     runs = (LIVE / "runs.jsonl").read_text().splitlines() if (LIVE / "runs.jsonl").exists() else []
     cuts = cut_times_all(one, runs)
     tape, _ = load_tape(hours)
@@ -499,11 +534,13 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     if check_only:     # no fills, no P&L: usable before the L4 selection is committed
         return {"check": chk}
 
-    base = {a: pickle.loads(tb.model_path(a).read_bytes()) for a in ("lin2", "mlp2") if tb.model_path(a).exists()}
     import retrain_g2 as rg
-    for a, w in (("g2w1", "W1"), ("g2w2", "W2")):
-        if rg.model_path(w, "G2").exists():
-            base[a] = pickle.loads(rg.model_path(w, "G2").read_bytes())
+    paths = {"lin2": tb.model_path("lin2"), "mlp2": tb.model_path("mlp2"),
+             "g2w1": rg.model_path("W1", "G2"), "g2w2": rg.model_path("W2", "G2")}
+    missing = [a for a, pth in paths.items() if not pth.exists()]
+    if missing:
+        raise SystemExit(f"missing model files for arms {missing}: every pre-registered arm must run (copy them first)")
+    base = {a: pickle.loads(pth.read_bytes()) for a, pth in paths.items()}
     scores = arm_scores(one, two, base)
     pool = json.loads(POOL.read_text())
     cat_of = {x["series"]: x["cat"] for x in pool["series"]}
@@ -515,6 +552,8 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     U = universes(pool, l1)
     cat_f = lambda f: cat_of.get(legs[f[1]]["series"], "?")
     in_primary = lambda f: U["primary_L4"](f[1], legs[f[1]]["series"], cat_f(f))
+    cat_f_any = lambda f: cat_of.get(str(f[0]).split("-")[0], "?")             # archive fills may be outside `legs`
+    in_primary_any = lambda f: U["primary_L4"](f[1], str(f[0]).split("-")[0], cat_f_any(f))
     settled_at = event_settled_at(events, markets)
     result = {"hours": [hours[0], hours[-1], len(hours)], "check": chk, "tape_hours": len(hours), "windows": {}}
     folds = None
@@ -523,7 +562,8 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
         Lw = apply_window(legs, cuts, w)
         fills = run_arms(Lw, events, charged, months, scores, ONE_ARMS + TWO_ARMS)
         if folds is None:
-            folds = walk_forward_selection(fills["g2"], settled_at, cat_f, in_primary)
+            sel_src = g2_archive_update(fills["g2"], markets) if ledger else fills["g2"]
+            folds = walk_forward_selection(sel_src, settled_at_all(markets, sel_src) if ledger else settled_at, cat_f_any, in_primary_any)
             result["g2_sel_folds"] = folds
         fills["g2_sel"] = g2_sel_fills(fills["g2"], folds, cat_f, in_primary)
         ledger_fills[w] = {a: [f for f in fl if in_primary(f)] for a, fl in fills.items()}   # L10: verdict universe
@@ -583,8 +623,10 @@ def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat, ledge
                 "g2_minus_rnd2": ps["event"]["diff"], "g2_minus_rnd2_lo_one_sided": ps["event"]["lo_one_sided"],
                 "day_cluster": {"g2_lo_one_sided": vs["day"]["lo_one_sided"],
                                 "g2_minus_rnd2_lo_one_sided": ps["day"]["lo_one_sided"]}}
+    results = {tk: m.get("result") for tk, m in markets.items()}
+    settled = settled | {ev for ev, t in settled_at_all(markets, None).items() if t is not None}
     written = pl_.round_update(Path(ledger_dir) if ledger_dir else PAPER / "ledger", ledger_fills, complete_H, settled, mids,
-                               stamp_of, verdict)
+                               stamp_of, verdict, results=results, events=set(events))
     jobs = []
     if written and pat:
         jobs.append(pl_.post_fleet(written[-1], pat))

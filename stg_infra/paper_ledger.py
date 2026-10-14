@@ -59,15 +59,29 @@ def recorded_fills(d: Path) -> dict:
     return out
 
 
-def verify(recorded: dict, fills_by: dict, upto_H: int) -> list:
-    """Recorded fills must equal recomputed fills for hours <= upto_H. Returns mismatches (never repairs)."""
+def verify(recorded: dict, fills_by: dict, upto_H: int, events=None) -> list:
+    """Recorded fills must equal recomputed fills for hours <= upto_H, for the events recomputed this round
+    (`events`; None = all). Returns mismatches (never repairs)."""
     bad = []
     for (w, arm), rec in recorded.items():
         now = {fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if int(f[9]) <= upto_H}
-        rec_h = {r for r in rec if r[7] <= upto_H}
+        rec_h = {r for r in rec if r[7] <= upto_H and (events is None or r[0] in events)}
         if now != rec_h:
             bad.append({"window": w, "arm": arm, "missing_now": len(rec_h - now), "extra_now": len(now - rec_h)})
     return bad
+
+
+def as_fill(key, result):
+    """Fill tuple (simulator layout) from a ledger key and its leg's settlement result ('yes'/'no'/None):
+    net = simulate_maker.fill_pnl's gross minus fee; unsettled legs carry net 0 (only marked, never realised)."""
+    ev, tk, side, price, qty, fee, cap, H = key
+    if result in ("yes", "no"):
+        pay = 100 if result == "yes" else 0
+        gross = (pay - price) * qty if side > 0 else (price - pay) * qty
+        net = gross - fee
+    else:
+        net = 0.0
+    return (ev, tk, side, price, qty, fee, float(net), cap, float("nan"), H)
 
 
 def pnl_state(live_fills, settled_events: set, mids: dict):
@@ -107,21 +121,31 @@ def write_entry(d: Path, H: int, stamp: str, new_fills: dict, settlements: list,
     return entry
 
 
-def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, mids: dict, stamp_of, verdict_fn):
-    """One ledger round. fills_by: {window: {arm: [fill tuples]}} recomputed from the live start or earlier;
-    complete_H: latest hour whose window has closed and whose tape exists. Writes one entry per new hour."""
+def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, mids: dict, stamp_of, verdict_fn,
+                 results=None, events=None):
+    """One ledger round. fills_by: {window: {arm: [fill tuples]}} recomputed this round for `events` (None = every
+    event); complete_H: latest hour whose window has closed and whose tape exists; results: {ticker: 'yes'/'no'/None}.
+    Cumulative figures come from the ledger's own recorded fills plus this round's new hours, valued with `results`,
+    so events no longer recomputed still realise their P&L when they settle. Writes one entry per new hour."""
     st = load_state(d)
     start_H = st.get("start_H", complete_H)
     last_H = st.get("last_H", start_H - H_NS)
     rec = recorded_fills(d)
-    bad = verify(rec, fills_by, last_H) if rec else []
+    bad = verify(rec, fills_by, last_H, events) if rec else []
     prev_settled = set(st.get("settled_events", []))
+    res = results or {}
+    value = lambda key: as_fill(key, res.get(key[1]))
+    keys = {(w, a) for w, arms in fills_by.items() for a in arms} | set(rec)
     written = []
     hours = list(range(last_H + H_NS, complete_H + H_NS, H_NS))
     for i, H in enumerate(hours):
         last = i == len(hours) - 1
         new = {w: {a: [f for f in fl if int(f[9]) == H] for a, fl in arms.items()} for w, arms in fills_by.items()}
-        live = {w: {a: [f for f in fl if start_H <= int(f[9]) <= H] for a, fl in arms.items()} for w, arms in fills_by.items()}
+        live = {}
+        for w, a in keys:
+            old = [value(k) for k in rec.get((w, a), ()) if start_H <= k[7] <= last_H]
+            fresh = [value(fill_key(f)) for f in fills_by.get(w, {}).get(a, []) if last_H < int(f[9]) <= H and int(f[9]) >= start_H]
+            live.setdefault(w, {})[a] = old + fresh
         settle_now = settled_events if last else prev_settled
         settlements = []
         if last:
@@ -135,6 +159,10 @@ def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, 
         e = write_entry(d, H, stamp_of(H), new, settlements, cumulative, verdict, bad if i == 0 else [], start_H,
                         settle_now)
         written.append(e)
+        for w, arms in new.items():                         # this hour is now recorded
+            for a, fl in arms.items():
+                rec.setdefault((w, a), set()).update(fill_key(f) for f in fl)
+        last_H = H
     return written
 
 
@@ -193,7 +221,8 @@ def self_test() -> bool:
     with tempfile.TemporaryDirectory() as td:
         d = Path(td)
         fills = {"primary": {"g2": [f1, f2]}}
-        w1 = round_update(d, fills, H0, set(), {"E2-A": 60.0}, stamp, vfn)
+        res = {"E1-A": "yes", "E1-B": "no", "E2-A": None}
+        w1 = round_update(d, fills, H0, set(), {"E2-A": 60.0}, stamp, vfn, results=res)
         e1 = w1[0]
         check("first round starts the live record at the completed hour", e1["live_start"] == "h1000" and e1["prev_hash"] == "")
         c = e1["cumulative"]["primary"]["g2"]
@@ -201,7 +230,7 @@ def self_test() -> bool:
         check(f"unrealised marks open fills at the mid net of fees (+$0.95, got {c['unrealised_usd']})", abs(c["unrealised_usd"] - 0.95) < 1e-9)
         check("nothing settled -> realised 0, total = unrealised", c["realised_usd"] == 0 and abs(c["total_usd"] - 0.95) < 1e-9)
         fills2 = {"primary": {"g2": [f1, f2, f3]}}
-        w2 = round_update(d, fills2, H0 + H_NS, {"E1"}, {"E2-A": 65.0}, stamp, vfn)
+        w2 = round_update(d, fills2, H0 + H_NS, {"E1"}, {"E2-A": 65.0}, stamp, vfn, results=res)
         e2 = w2[0]
         check("second entry chains to the first", e2["prev_hash"] == e1["hash"])
         c2 = e2["cumulative"]["primary"]["g2"]
@@ -218,16 +247,26 @@ def self_test() -> bool:
             refused = True
         check("an existing entry is never rewritten", refused)
         f1b = f1[:3] + (41,) + f1[4:]                                     # history changed: different price
-        w3 = round_update(d, {"primary": {"g2": [f1b, f2, f3]}}, H0 + 2 * H_NS, {"E1"}, {"E2-A": 65.0}, stamp, vfn)
+        w3 = round_update(d, {"primary": {"g2": [f1b, f2, f3]}}, H0 + 2 * H_NS, {"E1"}, {"E2-A": 65.0}, stamp, vfn, results=res)
         check("a changed historical fill is flagged in the next entry, not repaired",
               w3[0]["verification"] and w3[0]["verification"][0]["arm"] == "g2"
               and json.loads((d / "entries" / "h1000.json").read_text())["hash"] == e1["hash"])
-        w4 = round_update(d, {"primary": {"g2": [f1, f2, f3]}}, H0 + 5 * H_NS, {"E1"}, {}, stamp, vfn)
+        w4 = round_update(d, {"primary": {"g2": [f1, f2, f3]}}, H0 + 5 * H_NS, {"E1"}, {}, stamp, vfn, results=res)
         check("missed rounds are caught up one entry per hour, in order",
               [e["H"] for e in w4] == ["h1003", "h1004", "h1005"] and w4[0]["prev_hash"] == w3[-1]["hash"])
         check("replay hours before the live start never enter the live totals",
-              round_update(Path(td) / "x", {"primary": {"g2": [f1, f3]}}, H0 + H_NS, set(), {}, stamp, vfn)[0]
+              round_update(Path(td) / "x", {"primary": {"g2": [f1, f3]}}, H0 + H_NS, set(), {}, stamp, vfn, results=res)[0]
               ["cumulative"]["primary"]["g2"]["fills"] == 1)
+        # E2 is no longer recomputed (dropped from the active set) and settles later: still realised from the ledger
+        res2 = {**res, "E2-A": "no"}
+        w5 = round_update(d, {"primary": {"g2": []}}, H0 + 6 * H_NS, {"E1", "E2"}, {}, stamp, vfn, results=res2, events=set())
+        c5 = w5[0]["cumulative"]["primary"]["g2"]
+        check(f"a recorded fill of an event no longer recomputed realises when it settles (+$4.50 + $6.95, got {c5['realised_usd']})",
+              abs(c5["realised_usd"] - (4.5 + 6.95)) < 1e-9 and c5["unrealised_usd"] == 0)
+        check("verification covers only the events recomputed this round (none flagged for dropped events)",
+              w5[0]["verification"] == [])
+        check("as_fill values a settled key with the simulator's formula (YES sold at 70, settles NO: +$7.00 - fee)",
+              as_fill(("E", "T", -1, 70, 10, 5.0, 300.0, 0), "no")[6] == 695.0 and as_fill(("E", "T", 1, 40, 10, 0.0, 400.0, 0), None)[6] == 0.0)
         met, out = fleet_summary(w4[-1])
         check("fleet summary carries cumulative metrics and the entry hash",
               "g2_total_usd" in met and out["entry_hash"] == w4[-1]["hash"])
