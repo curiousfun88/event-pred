@@ -37,8 +37,12 @@ fixed and timestamped publicly before any live result.
   \item \textbf{Live decisions.} A producer on a Lumid sandbox scores every candidate order each hour from Kalshi's
     live data and records every strategy's decision before outcomes are known. Each hour's decisions are posted to
     Lumid Research Fleet with a SHA-256 hash, giving an independent timestamp.
-  \item \textbf{Live fills.} Right after each hour closes, a paper trader determines that hour's fills
-    \emph{only from Kalshi trades that have already happened}, using the same fill rules as the backtest:
+  \item \textbf{Live fills, in hourly batches.} The strategy itself is hourly: it posts its orders once per hour,
+    and they rest until the end of that hour. Fills are therefore processed in the same hourly batches. Shortly
+    after each trading hour ends (typically within 1--2 hours), a paper trader determines that hour's fills
+    \emph{only from the Kalshi trades that occurred during it}, records them and timestamps them; they are never
+    revised. Because an hour's fills depend only on that hour's trades, processing them trade by trade would give
+    the same result. The fill rules are the same as the backtest's:
     \begin{itemize}
       \item an order joining the best price fills only if real trades go \emph{through} its price (others are ahead
         in the queue); an order that improves the price by 1\,c fills on trades at its price;
@@ -203,8 +207,9 @@ by a six-month walk-forward (all history +2.65\% per month vs 3-month +1.53\% an
 
 \section{Questions for your approval}\label{sec:questions}
 \begin{enumerate}[leftmargin=*]
-  \item[$\square$] Does the live paper-trading setup (hourly recording of fills from trades that have already
-    happened, append-only ledger, hourly Research Fleet reports) meet the live paper-trading requirement?
+  \item[$\square$] Does the live paper-trading setup (fills recorded in hourly batches, matching the strategy's
+    hourly quotes, from trades that have already happened; append-only ledger; hourly Research Fleet reports) meet
+    the live paper-trading requirement? Are hourly batches acceptable, rather than processing trade by trade?
   \item[$\square$] Are the baselines in Section~\ref{sec:baselines} sufficient?
   \item[$\square$] Is it acceptable to keep the fixed model settings, given the sensitivity checks in
     Section~\ref{sec:tuning} which justifies that there is no need to tune the model?
