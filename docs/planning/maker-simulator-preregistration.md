@@ -639,3 +639,10 @@ of A12's +3.55% (34,086), and the gate stopped the run. Cause: A12 scored candid
 assembles features month by month and additionally requires G's scores to equal A12's saved scores
 (`runs/maker/policy_G_scores_2025-08_2025-11.parquet`) exactly before simulating. The baseline lines the first
 run printed before stopping were not used. Everything else in A16 is unchanged.
+
+**A16 result (2026-10-14).** Gate passed: G's scores equal A12's saved scores exactly and G reproduces A12
+(+3.55%, 34,086 fills, 1,325 events). Pessimistic, 2025-08..11: lin2-2025 +4.03% [+2.94, +5.14] on 18,305 fills
+(+$2,427); mlp2-2025 +2.11% [+1.30, +2.92] (+$3,104); wide3 +0.07%; liq -0.05%; random at G's share mean -0.23%
+(5 seeds). G minus: random +3.2 to +4.4 (all CIs exclude 0), wide3 +3.47 [+2.50, +4.45], liq +3.60 [+2.64, +4.55],
+mlp2-2025 +1.43 [+0.47, +2.38], lin2-2025 -0.48 [-1.73, +0.81]. Models: lin2-2025 `fa45b1b80bdd3d0c`,
+mlp2-2025 `676be7ad1458479e`. Descriptive; G and its verdict unchanged.
