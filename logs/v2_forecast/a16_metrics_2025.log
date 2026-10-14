@@ -1,4 +1,4 @@
-Running as unit: run-r50fa246d6e494aac9cb2908aa3864000.scope; invocation ID: 394c529040ae4f509967c7c9eadc0f97
+Running as unit: run-r47e472bcf98448a78d2140615464d3c2.scope; invocation ID: 92c22ab16de645578be71495b46b3f9b
 {"G": {"ret_pct": 3.5465927659135614, "net_usd": 3748.44, "max_drawdown_usd": 103.06, "sharpe": 11.675184516698117}}
 {"lin2-2025": {"ret_pct": 4.030186466233826, "net_usd": 2427.26, "max_drawdown_usd": 104.78999999999996, "sharpe": 10.416869136233327}}
 {"mlp2-2025": {"ret_pct": 2.1143833318288423, "net_usd": 3103.55, "max_drawdown_usd": 160.71000000000015, "sharpe": 8.227099356238144}}

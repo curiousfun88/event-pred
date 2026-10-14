@@ -107,6 +107,11 @@
     "profitable_days_share": 0.7280701754385965,
     "longest_losing_streak_days": 2,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 1255.8619584049227,
+    "pnl_to_map_usd": 2.984754793242495,
+    "normalised_daily_pnl_spreads": 365.77106808226944
    }
   },
   "lin2-2025": {
@@ -203,6 +208,11 @@
     "profitable_days_share": 0.7105263157894737,
     "longest_losing_streak_days": 4,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 991.5059118093476,
+    "pnl_to_map_usd": 2.4480539864564395,
+    "normalised_daily_pnl_spreads": 162.90846136953525
    }
   },
   "mlp2-2025": {
@@ -299,6 +309,11 @@
     "profitable_days_share": 0.6491228070175439,
     "longest_losing_streak_days": 3,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 1802.853651547358,
+    "pnl_to_map_usd": 1.7214652988257129,
+    "normalised_daily_pnl_spreads": 338.3568017255327
    }
   },
   "wide3": {
@@ -356,6 +371,11 @@
     "profitable_days_share": 0.49122807017543857,
     "longest_losing_streak_days": 6,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 1957.9304258686916,
+    "pnl_to_map_usd": 0.10523356564551291,
+    "normalised_daily_pnl_spreads": -22.808914614657052
    }
   },
   "liq": {
@@ -413,6 +433,11 @@
     "profitable_days_share": 0.45614035087719296,
     "longest_losing_streak_days": 6,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 1568.1898069873162,
+    "pnl_to_map_usd": -0.09227199370590626,
+    "normalised_daily_pnl_spreads": -68.06557008668521
    }
   },
   "random_s0": {
@@ -470,6 +495,11 @@
     "profitable_days_share": 0.4824561403508772,
     "longest_losing_streak_days": 7,
     "tradedate_days": 114
+   },
+   "conventional": {
+    "map_contracts": 894.4870626746598,
+    "pnl_to_map_usd": 0.1530597877968376,
+    "normalised_daily_pnl_spreads": 8.60458814629655
    }
   }
  }
