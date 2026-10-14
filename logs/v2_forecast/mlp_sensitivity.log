@@ -1,0 +1,91 @@
+Running as unit: run-r7bb96e18c2f74c2a98d46b1e72c71691.scope; invocation ID: e53e41bf1d684aa7a969922a9acced7f
+{"setting": "mlp2", "fold": "2026-04", "best_epoch": 5, "kept": 10259, "share": 0.22867906022914716, "ret": 2.83184733279155, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.6460992002722477}
+{"setting": "mlp2", "fold": "2026-05", "best_epoch": 7, "kept": 11273, "share": 0.2550394787448248, "ret": 3.809681297181599, "ret_all": -0.793853071793604, "net_c_per_contract": 2.139598463978629}
+{"setting": "mlp2", "fold": "2026-06", "best_epoch": 9, "kept": 13365, "share": 0.34139675079186677, "ret": -0.5575590887725709, "ret_all": -0.2573445805846584, "net_c_per_contract": -0.33138062064597845}
+{"setting": "mlp2", "fold": "2026-07", "best_epoch": 5, "kept": 9997, "share": 0.25330664369330563, "ret": 1.4685660179000954, "ret_all": -1.0680263710475613, "net_c_per_contract": 0.8600133614265892}
+{"setting": "mlp2", "fold": "2026-08", "best_epoch": 21, "kept": 10316, "share": 0.31854253512428593, "ret": -0.9330922242314648, "ret_all": -1.666181061822914, "net_c_per_contract": -0.5614864390517866}
+{"setting": "mlp2", "fold": "2026-09-07..10-05", "best_epoch": 1, "kept": 8102, "share": 0.275091674589162, "ret": -0.37573372318751785, "ret_all": -1.449462652470798, "net_c_per_contract": -0.22410167321934718}
+{"setting": "hidden_32", "fold": "2026-04", "best_epoch": 26, "kept": 13792, "share": 0.30743167937229726, "ret": 1.2617850537708062, "ret_all": -0.7299026110664525, "net_c_per_contract": 0.7360664908495165}
+{"setting": "hidden_32", "fold": "2026-05", "best_epoch": 34, "kept": 13138, "share": 0.2972330942738852, "ret": 2.5791982946024787, "ret_all": -0.793853071793604, "net_c_per_contract": 1.4475069350593925}
+{"setting": "hidden_32", "fold": "2026-06", "best_epoch": 22, "kept": 10860, "share": 0.27740880760192094, "ret": -0.3125784757402017, "ret_all": -0.2573445805846584, "net_c_per_contract": -0.1943645268266971}
+{"setting": "hidden_32", "fold": "2026-07", "best_epoch": 47, "kept": 12980, "share": 0.32889069072112703, "ret": 1.8059729620440215, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.1394570545504656}
+{"setting": "hidden_32", "fold": "2026-08", "best_epoch": 39, "kept": 13166, "share": 0.4065462405434615, "ret": -1.0032507683865692, "ret_all": -1.666181061822914, "net_c_per_contract": -0.6049387173053665}
+{"setting": "hidden_32", "fold": "2026-09-07..10-05", "best_epoch": 9, "kept": 11468, "share": 0.3893793290778215, "ret": -1.4915053120747417, "ret_all": -1.449462652470798, "net_c_per_contract": -0.893053660254435}
+{"setting": "hidden_128_64", "fold": "2026-04", "best_epoch": 2, "kept": 12276, "share": 0.2736391600909456, "ret": 2.043093902966703, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.2341632466940264}
+{"setting": "hidden_128_64", "fold": "2026-05", "best_epoch": 7, "kept": 10948, "share": 0.24768670392072578, "ret": 3.6923661372499286, "ret_all": -0.793853071793604, "net_c_per_contract": 2.046519590011341}
+{"setting": "hidden_128_64", "fold": "2026-06", "best_epoch": 7, "kept": 11663, "share": 0.2979207111474405, "ret": 0.38257754173565867, "ret_all": -0.2573445805846584, "net_c_per_contract": 0.24137720901889093}
+{"setting": "hidden_128_64", "fold": "2026-07", "best_epoch": 4, "kept": 8820, "share": 0.22348350478893225, "ret": 3.500126416650826, "ret_all": -1.0680263710475613, "net_c_per_contract": 2.2178272817634332}
+{"setting": "hidden_128_64", "fold": "2026-08", "best_epoch": 13, "kept": 10697, "share": 0.3303072410066389, "ret": -0.7673766905224794, "ret_all": -1.666181061822914, "net_c_per_contract": -0.48482752465527246}
+{"setting": "hidden_128_64", "fold": "2026-09-07..10-05", "best_epoch": 2, "kept": 6956, "share": 0.23618090452261306, "ret": -0.16255506902511335, "ret_all": -1.449462652470798, "net_c_per_contract": -0.09773391812865496}
+{"setting": "hidden_64_32_16", "fold": "2026-04", "best_epoch": 6, "kept": 11001, "share": 0.24521867058980876, "ret": 3.7765985894536773, "ret_all": -0.7299026110664525, "net_c_per_contract": 2.204370359994397}
+{"setting": "hidden_64_32_16", "fold": "2026-05", "best_epoch": 6, "kept": 9392, "share": 0.2124838804551933, "ret": 4.528887226150971, "ret_all": -0.793853071793604, "net_c_per_contract": 2.586698396172628}
+{"setting": "hidden_64_32_16", "fold": "2026-06", "best_epoch": 4, "kept": 9593, "share": 0.24504444671503015, "ret": -2.0306363800110176, "ret_all": -0.2573445805846584, "net_c_per_contract": -1.219310018157417}
+{"setting": "hidden_64_32_16", "fold": "2026-07", "best_epoch": 2, "kept": 8440, "share": 0.21385496376627983, "ret": 1.3080869705834792, "ret_all": -1.0680263710475613, "net_c_per_contract": 0.8181818181818182}
+{"setting": "hidden_64_32_16", "fold": "2026-08", "best_epoch": 21, "kept": 9303, "share": 0.2872626215840667, "ret": 0.41647975465773357, "ret_all": -1.666181061822914, "net_c_per_contract": 0.24674734103024026}
+{"setting": "hidden_64_32_16", "fold": "2026-09-07..10-05", "best_epoch": 3, "kept": 9173, "share": 0.31145592829009916, "ret": -1.2694078312397339, "ret_all": -1.449462652470798, "net_c_per_contract": -0.7620179825640184}
+{"setting": "l2_1e-3", "fold": "2026-04", "best_epoch": 4, "kept": 10390, "share": 0.23159912620926396, "ret": 1.9714626014597425, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.1510169208968908}
+{"setting": "l2_1e-3", "fold": "2026-05", "best_epoch": 5, "kept": 10562, "share": 0.23895386982194972, "ret": 4.35748227180799, "ret_all": -0.793853071793604, "net_c_per_contract": 2.4551304810935557}
+{"setting": "l2_1e-3", "fold": "2026-06", "best_epoch": 11, "kept": 13651, "share": 0.3487023602738326, "ret": 0.3288538514532881, "ret_all": -0.2573445805846584, "net_c_per_contract": 0.19726242371403663}
+{"setting": "l2_1e-3", "fold": "2026-07", "best_epoch": 4, "kept": 9728, "share": 0.24649065017990168, "ret": 1.4426239491875388, "ret_all": -1.0680263710475613, "net_c_per_contract": 0.8632831341443807}
+{"setting": "l2_1e-3", "fold": "2026-08", "best_epoch": 19, "kept": 10172, "share": 0.31409603211363285, "ret": -0.8197585660636011, "ret_all": -1.666181061822914, "net_c_per_contract": -0.489890912562958}
+{"setting": "l2_1e-3", "fold": "2026-09-07..10-05", "best_epoch": 1, "kept": 8213, "share": 0.2788605188102676, "ret": -0.622777908287452, "ret_all": -1.449462652470798, "net_c_per_contract": -0.3791766826923077}
+{"setting": "l2_1e-2", "fold": "2026-04", "best_epoch": 4, "kept": 9939, "share": 0.22154607462886183, "ret": 1.9843331240908288, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.1485042967475252}
+{"setting": "l2_1e-2", "fold": "2026-05", "best_epoch": 7, "kept": 10647, "share": 0.24087690323748331, "ret": 5.202729451563024, "ret_all": -0.793853071793604, "net_c_per_contract": 2.9105474557841244}
+{"setting": "l2_1e-2", "fold": "2026-06", "best_epoch": 10, "kept": 12372, "share": 0.31603147031776846, "ret": -0.19626104639788225, "ret_all": -0.2573445805846584, "net_c_per_contract": -0.11517374443616635}
+{"setting": "l2_1e-2", "fold": "2026-07", "best_epoch": 4, "kept": 9164, "share": 0.2321998682410176, "ret": 1.2985556556097537, "ret_all": -1.0680263710475613, "net_c_per_contract": 0.7798356258204441}
+{"setting": "l2_1e-2", "fold": "2026-08", "best_epoch": 32, "kept": 10552, "share": 0.32582985950285626, "ret": -0.570054695907682, "ret_all": -1.666181061822914, "net_c_per_contract": -0.32526102755163055}
+{"setting": "l2_1e-2", "fold": "2026-09-07..10-05", "best_epoch": 1, "kept": 8174, "share": 0.2775363303001494, "ret": -0.47552992869300503, "ret_all": -1.449462652470798, "net_c_per_contract": -0.28693370332388246}
+{"setting": "lr_3e-4", "fold": "2026-04", "best_epoch": 14, "kept": 14158, "share": 0.3155900316526236, "ret": 1.3222283134131219, "ret_all": -0.7299026110664525, "net_c_per_contract": 0.8025314905796104}
+{"setting": "lr_3e-4", "fold": "2026-05", "best_epoch": 17, "kept": 12390, "share": 0.28031040021718967, "ret": 3.7718001065683207, "ret_all": -0.793853071793604, "net_c_per_contract": 2.1974995869361678}
+{"setting": "lr_3e-4", "fold": "2026-06", "best_epoch": 10, "kept": 9971, "share": 0.25470011239399204, "ret": -0.417872463965063, "ret_all": -0.2573445805846584, "net_c_per_contract": -0.2586812609038549}
+{"setting": "lr_3e-4", "fold": "2026-07", "best_epoch": 22, "kept": 9978, "share": 0.252825216642173, "ret": 1.8744005164970865, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.1683594952293013}
+{"setting": "lr_3e-4", "fold": "2026-08", "best_epoch": 30, "kept": 10140, "share": 0.3131079203334877, "ret": -0.7461235656534516, "ret_all": -1.666181061822914, "net_c_per_contract": -0.45641924708000664}
+{"setting": "lr_3e-4", "fold": "2026-09-07..10-05", "best_epoch": 5, "kept": 9294, "share": 0.3155643080266196, "ret": -1.5633819703277287, "ret_all": -1.449462652470798, "net_c_per_contract": -0.9563436830835118}
+{"setting": "tanh", "fold": "2026-04", "best_epoch": 6, "kept": 9141, "share": 0.20375819178815033, "ret": 2.6103820005045666, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.4632164340029508}
+{"setting": "tanh", "fold": "2026-05", "best_epoch": 17, "kept": 14265, "share": 0.32273025497160696, "ret": 4.969220428157627, "ret_all": -0.793853071793604, "net_c_per_contract": 2.416420317119054}
+{"setting": "tanh", "fold": "2026-06", "best_epoch": 5, "kept": 5839, "share": 0.1491519362419536, "ret": -1.9032947044232114, "ret_all": -0.2573445805846584, "net_c_per_contract": -1.1694362984685565}
+{"setting": "tanh", "fold": "2026-07", "best_epoch": 1, "kept": 14836, "share": 0.3759185121370293, "ret": 0.3559363726790847, "ret_all": -1.0680263710475613, "net_c_per_contract": 0.2217407476287893}
+{"setting": "tanh", "fold": "2026-08", "best_epoch": 26, "kept": 11152, "share": 0.3443569553805774, "ret": -1.4473123590384533, "ret_all": -1.666181061822914, "net_c_per_contract": -0.7318626132185454}
+{"setting": "tanh", "fold": "2026-09-07..10-05", "best_epoch": 1, "kept": 13860, "share": 0.4705962243650686, "ret": -0.12917468466383145, "ret_all": -1.449462652470798, "net_c_per_contract": -0.0688632680123766}
+{
+ "mlp2": {
+  "mean_ret": 1.0406182686136152,
+  "worst_ret": -0.9330922242314648,
+  "months_positive": 3
+ },
+ "hidden_32": {
+  "mean_ret": 0.4732702923692989,
+  "worst_ret": -1.4915053120747417,
+  "months_positive": 3
+ },
+ "hidden_128_64": {
+  "mean_ret": 1.448038706509254,
+  "worst_ret": -0.7673766905224794,
+  "months_positive": 4
+ },
+ "hidden_64_32_16": {
+  "mean_ret": 1.1216680549325182,
+  "worst_ret": -2.0306363800110176,
+  "months_positive": 4
+ },
+ "l2_1e-3": {
+  "mean_ret": 1.109647699926251,
+  "worst_ret": -0.8197585660636011,
+  "months_positive": 4
+ },
+ "l2_1e-2": {
+  "mean_ret": 1.2072954267108393,
+  "worst_ret": -0.570054695907682,
+  "months_positive": 3
+ },
+ "lr_3e-4": {
+  "mean_ret": 0.7068418227553809,
+  "worst_ret": -1.5633819703277287,
+  "months_positive": 3
+ },
+ "tanh": {
+  "mean_ret": 0.7426261755359637,
+  "worst_ret": -1.9032947044232114,
+  "months_positive": 3
+ }
+}
