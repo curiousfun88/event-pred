@@ -30,9 +30,11 @@ only if its predicted net profit after fees exceeds 1\,c per contract. The headl
 gradient-boosted tree model on 14 market features (price, spread, recent trades, basket structure, fees,
 category), retrained on all data up to August 2026. Its predecessor \textbf{G} (trained on Nov 2024--May 2025)
 passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). G2 was trained on 23 market series;
-the live test covers every non-weather series the strategy quotes (290 series; weather markets were excluded
-before the test, based on validation results). All rules, models and statistics were fixed and timestamped
-publicly before any live result.
+the live test covers every series the strategy quotes (290 non-weather series plus the daily temperature
+series). Weather markets were first excluded on one validation month, then re-included after a pre-registered check
+over six walk-forward months (weather +1.60\% per month on average, positive in 5 of 6; other markets +4.94\%);
+weather and non-weather results are also reported separately. All rules, models and statistics were fixed and
+timestamped publicly before any live result.
 
 \section{Live paper-trading setup}\label{sec:infra}
 \noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
