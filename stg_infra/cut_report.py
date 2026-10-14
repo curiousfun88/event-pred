@@ -83,6 +83,21 @@ def settle_times(markets: dict) -> dict:
     return out
 
 
+def is_weather_key(k) -> bool:
+    """Weather series (`KXHIGH*`/`KXLOW*`), from the ledger key's event ticker."""
+    return str(k[0]).split("-")[0].startswith(("KXHIGH", "KXLOW"))
+
+
+def universe_splits(keys, results, settled_at, settle_by, mid_next):
+    """L11: verdict figures for the weather and non-weather parts of the primary universe (descriptive only)."""
+    out = {}
+    for name, keep in (("non_weather", lambda k: not is_weather_key(k)), ("weather", is_weather_key)):
+        m = fill_metrics([k for k in keys if keep(k)], results, settled_at, settle_by, mid_next)
+        m.pop("_done", None)
+        out[name] = m
+    return out
+
+
 def fill_metrics(keys, results: dict, settled_at: dict, settle_by: int, mid_next: dict):
     """Verdict and market-making figures from ledger fill keys (event, ticker, side, price, qty, fee, capital, H)."""
     import paper_ledger as pl_
@@ -427,6 +442,7 @@ def build(cut: str, settle_by: str, bench=True):
         td_ends, td_cum = tradedate_series(done)          # L11: same daily definition as the 2025 results
         m["risk_tradedate"] = risk_metrics(td_cum, cap, bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None)
         m["max_drawdown_tradedate_usd"] = max_drawdown(td_cum)
+        m["splits"] = universe_splits(keys, results, settled_at, settle_ns, mid_next)   # L11: descriptive
         rep["arms"].setdefault(w, {})[a] = m
     return rep
 
@@ -466,6 +482,12 @@ def self_test() -> bool:
     check("fees summed over all fills ($0.02)", abs(m["fees_usd"] - 0.02) < 1e-9)
     check("markout: +1 x (45 - 40) = +5c per contract over the fill with a next-hour mid", m["markout_c_per_contract"] == 5.0)
     check("concentration: top events' share of net", abs(m["top10_event_share"] - 1.0) < 1e-9)
+    kw = keys + [("KXHIGHNY-26OCT20", "KXHIGHNY-26OCT20-B70", 1, 30, 10, 1.0, 300.0, H0)]
+    resw, stw = {**res, "KXHIGHNY-26OCT20-B70": "no"}, {**st, "KXHIGHNY-26OCT20": H0 + 4 * H_NS}
+    sp = universe_splits(kw, resw, stw, H0 + 10 * H_NS, {})
+    check("L11 splits: weather = the KXHIGH fill only (-$3.01), non-weather = the rest (+$2.98)",
+          abs(sp["weather"]["net_usd"] + 3.01) < 1e-9 and abs(sp["non_weather"]["net_usd"] - 2.98) < 1e-9
+          and is_weather_key(kw[-1]) and not is_weather_key(kw[0]))
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
     # behaviour metrics on planted fills: (event, ticker, side, price, qty, fee, net, capital, markout, H)
