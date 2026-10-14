@@ -221,6 +221,53 @@ def main_sep_sim():
     print(json.dumps({k: v for k, v in out.items() if "minus" in k or k == "random_mean_ret"}, default=float))
 
 
+SHARES = (0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40)
+
+
+def top_share(pred, share):
+    """Predictions turned into 'post the top `share` by score' (ties broken by order)."""
+    k = int(round(share * len(pred)))
+    out = np.full(len(pred), -np.inf)
+    if k > 0:
+        out[np.argsort(-pred, kind="stable")[:k]] = 2.0
+    return out
+
+
+def main_curve():
+    """Volume-matched G2-W3 vs lin2 on the six L9 folds (exploratory note 2)."""
+    import retrain_g2 as rg
+    import train_baselines as tb
+    import tune_gbm as tg
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    cat_col = feats.index("cat_i")
+    acc = {m: {sh: [0.0, 0.0] for sh in SHARES + ("own_1c",)} for m in ("G2-W3", "lin2")}
+
+    def add(model, pred, net, cap):
+        for sh in SHARES:
+            keep = top_share(pred, sh) > 1
+            acc[model][sh][0] += net[keep].sum(); acc[model][sh][1] += cap[keep].sum()
+        keep = pred > 1.0
+        acc[model]["own_1c"][0] += net[keep].sum(); acc[model]["own_1c"][1] += cap[keep].sum()
+    for tm in tg.TEST_MONTHS:
+        te, tr = D["month"] == tm, D["month"] < tm
+        net, cap = D["net_c"][te], D["capital_c"][te]
+        p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
+        pl = tb.predict(tb.fit_lin2(rows_from_X(D["X"][tr], feats, cats), D["y"][tr]), rows_from_X(D["X"][te], feats, cats))
+        add("G2-W3", p3, net, cap); add("lin2", pl, net, cap)
+        print(json.dumps({"fold": tm, "done": True}), flush=True)
+    rows, net, cap, qty = september_rows()
+    w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
+    add("G2-W3", w3["model"].predict(rg.matrix("G2", rows, w3["cats"])), net, cap)
+    add("lin2", tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows), net, cap)
+    curve = {m: {str(sh): {"ret": 100 * a[0] / a[1] if a[1] else float("nan"), "net_usd": a[0] / 100, "capital_usd": a[1] / 100}
+                 for sh, a in v.items()} for m, v in acc.items()}
+    d = json.loads(OUT.read_text()) if OUT.exists() else {}
+    d["volume_matched_curve"] = curve
+    OUT.write_text(json.dumps(d, indent=1, default=float))
+    print(json.dumps(curve, indent=1, default=float))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -242,6 +289,7 @@ def self_test() -> bool:
     s = score_all(sc["wide3"], net, cap, qty)
     dd = dollars(np.array([2.0, 0.0, 2.0, 2.0]), net, cap, qty)
     check("dollars: kept net and capital in USD", dd == {"net_usd": 0.3, "capital_usd": 3.0, "contracts": 3, "kept": 3})
+    check("top_share: posts exactly the top k by score", list(top_share(np.array([0.1, 5.0, -2.0, 3.0]), 0.5) > 1) == [False, True, False, True])
     check(f"score: kept fills' net / capital (wide3 keeps -5 and +20 -> +7.5%, got {s['ret']:+.2f})", abs(s["ret"] - 7.5) < 1e-9)
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
@@ -252,10 +300,13 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--dollars", action="store_true", help="total net P&L and capital per fold (W3, lin2, random)")
     ap.add_argument("--sep-sim", action="store_true", help="September validation in the full simulator, every baseline")
+    ap.add_argument("--curve", action="store_true", help="volume-matched G2-W3 vs lin2 (exploratory note 2)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    if a.sep_sim:
+    if a.curve:
+        main_curve()
+    elif a.sep_sim:
         main_sep_sim()
     elif a.dollars:
         main_dollars()
