@@ -153,6 +153,84 @@ def cmd_test():
     print(json.dumps({k: v for k, v in out.items() if k in ("paired_G_minus", "random_mean_ret")}, default=float, indent=1))
 
 
+def cmd_metrics():
+    """A16 addendum: risk and behaviour metrics on 2025-08..11 for G and every baseline (same run as `test`,
+    fills and scores kept). Gated on reproducing A12 exactly."""
+    import datetime as dt
+    import polars as pl
+    import maker_policy as mp
+    import simulate_maker as s
+    import train_baselines as tb
+    sys.path.insert(0, str(_REPO / "stg_infra"))
+    import cut_report as cr
+    lookup = mp.category_lookup()
+    rows, keys = [], []
+    for mo in TEST:                                   # features month by month, as A12
+        lg, ev_, ch = s.load([mo], "mece")
+        cand = []
+        s.simulate(s.Config(**mp.BROAD), "pess", lg, ev_, ch, [mo], record=cand)
+        for ev, tk, H, sd, pr, b, a in cand:
+            r = mp.quote_features(lg, ev_, ch, lookup, mo, ev, tk, int(H), int(sd), int(pr))
+            if r is not None:
+                rows.append(r); keys.append((tk, int(H), int(sd)))
+        del lg, ev_, ch
+    G = pickle.loads(mp.model_path("G").read_bytes())
+    pg = G["model"].predict(mp.to_matrix(rows, G["cats"]))
+    ref = pl.read_parquet(_REPO / "runs/maker/policy_G_scores_2025-08_2025-11.parquet")
+    refd = dict(zip(zip(ref["ticker"].to_list(), ref["hour_ns"].to_list(), ref["side"].to_list()), ref["pred"].to_list()))
+    assert len(refd) == len(keys) and all(abs(refd[k] - v) < 1e-9 for k, v in zip(keys, pg)), "G scores differ from A12"
+    share = float(np.mean(pg > 1.0))
+    post = lambda m: np.where(m, 2.0, -np.inf)
+    scores = {"G": pg, "lin2-2025": tb.predict(pickle.loads(MODELS["lin2"].read_bytes()), rows),
+              "mlp2-2025": tb.predict(pickle.loads(MODELS["mlp2"].read_bytes()), rows),
+              "wide3": post(np.array([r["spread"] for r in rows]) >= 3),
+              "liq": post(liq_flags([r["trades_24h"] for r in rows], [k[1] for k in keys])),
+              "random_s0": post(np.random.default_rng(0).random(len(keys)) < share)}
+    del rows
+    legs, events, charged = s.load(TEST, "mece")
+    settle = {ev: max((legs[t]["close"] or 0) for t in tks) or None for ev, tks in events.items()}
+    def mid_at(tk, H):
+        L = legs.get(tk)
+        if L is None:
+            return None
+        j = np.searchsorted(L["e"], H)
+        if j < len(L["e"]) and L["e"][j] == H and not np.isnan(L["bid"][j] + L["ask"][j]):
+            return 50.0 * (L["bid"][j] + L["ask"][j])
+        return None
+    cfg = s.Config(**{**mp.BROAD, "policy": "x", "policy_t": 1.0})
+    lo, hi = dt.date(2025, 8, 1), dt.date(2025, 11, 30)
+    bm = cr.fetch_spy_and_tbill(lo, hi)
+    spy = bm.pop("spy_close", {})
+    sd_ = sorted(spy)
+    spy_ret = {sd_[i]: spy[sd_[i]] / spy[sd_[i - 1]] - 1 for i in range(1, len(sd_))}
+    out = {"amendment": "A16 addendum", "months": TEST, "benchmarks": bm, "arms": {}}
+    for name, sc in scores.items():
+        pol = dict(zip(keys, sc))
+        F = s.simulate(cfg, "pess", legs, events, charged, TEST, policy_scores=pol)
+        r = s.summarise(F)
+        if name == "G":
+            rep = {"ret": round(r["ret"], 2), "fills": r["fills"], "events": r["events"]}
+            assert rep == A12, f"A16 gate: {rep} != {A12}"
+        day_ends, cum = cr.tradedate_series(F)
+        fkeys = [(f[0], f[1], f[2], f[3], f[4], f[5], f[7], f[9]) for f in F]
+        cap = cr.peak_open_capital(fkeys, settle, day_ends)
+        dd = np.diff(np.concatenate([[0.0], cum]))
+        dates = [dt.datetime.fromtimestamp((de - cr.DAY_NS) / 1e9, dt.timezone.utc).date().isoformat() for de in day_ends]
+        both = [(spy_ret[d_], v / cap) for d_, v in zip(dates, dd) if d_ in spy_ret and cap]
+        risk = cr.risk_metrics(cum, cap, bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None,
+                               ([x for x, _ in both], [y for _, y in both]) if both else None)
+        pred = [pol[(f[1], int(f[9]), int(f[2]))] for f in F] if name in ("G", "lin2-2025", "mlp2-2025") else None
+        out["arms"][name] = {"ret_pct": r["ret"], "ci": [r["lo"], r["hi"]], "fills": r["fills"], "events": r["events"],
+                             "net_usd": r["net_c"] / 100, "peak_open_capital_usd": cap,
+                             "max_drawdown_usd": cr.max_drawdown(cum),
+                             "max_drawdown_pct_of_peak_capital": 100 * cr.max_drawdown(cum) / cap if cap else float("nan"),
+                             "risk": risk, "behaviour": cr.behaviour_metrics(F, pred, mid_at, settle)}
+        print(json.dumps({name: {k: out["arms"][name][k] for k in ("ret_pct", "net_usd", "max_drawdown_usd")} | {"sharpe": risk.get("sharpe")}}, default=float), flush=True)
+    p_ = _REPO / "results/maker/a16_metrics_2025.json"
+    p_.write_text(json.dumps(out, indent=1, default=float))
+    print(f"-> {p_}")
+
+
 def self_test() -> bool:
     ok = True
 
@@ -174,12 +252,12 @@ def self_test() -> bool:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", nargs="?", choices=["train", "test"])
+    ap.add_argument("cmd", nargs="?", choices=["train", "test", "metrics"])
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    {"train": cmd_train, "test": cmd_test}[a.cmd]()
+    {"train": cmd_train, "test": cmd_test, "metrics": cmd_metrics}[a.cmd]()
 
 
 if __name__ == "__main__":

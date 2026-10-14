@@ -151,6 +151,85 @@ def risk_metrics(day_totals, capital, rf_annual=None, spy_daily=None):
     return out
 
 
+PRICE_BANDS = ((1, 15), (15, 50), (50, 85), (85, 99))
+PRED_BUCKETS = ((-1e9, 1.0), (1.0, 2.0), (2.0, 4.0), (4.0, 8.0), (8.0, 1e9))
+
+
+def _rank(x):
+    x = np.asarray(x, float)
+    r = np.empty(len(x)); r[np.argsort(x, kind="stable")] = np.arange(len(x))
+    return r
+
+
+def behaviour_metrics(F, pred=None, mid_at=None, settle_ns=None):
+    """Descriptive market-making and model metrics from valued fill tuples
+    (event, ticker, side, price, qty, fee, net, capital, markout, H). Settled fills only for P&L items (pass them in);
+    pred: predicted net c/contract per fill (model arms); mid_at(ticker, H) -> mid (cents) or None;
+    settle_ns: {event: ns}. All c/contract figures are contract-weighted."""
+    out = {}
+    if not F:
+        return out
+    qty = np.array([f[4] for f in F], float)
+    net_pc = np.array([f[6] / f[4] for f in F], float)
+    wins = [f[6] for f in F if f[6] > 0]; losses = [-f[6] for f in F if f[6] < 0]
+    out["profit_factor"] = sum(wins) / sum(losses) if losses else float("inf")
+    out["avg_win_usd"] = float(np.mean(wins)) / 100 if wins else 0.0
+    out["avg_loss_usd"] = float(np.mean(losses)) / 100 if losses else 0.0
+    out["hit_rate"] = len(wins) / len(F)
+    bands = {}
+    for lo, hi in PRICE_BANDS:
+        sub = [f for f in F if lo <= f[3] < hi or (hi == 99 and f[3] == 99)]
+        cap = sum(f[7] for f in sub)
+        bands[f"{lo}-{hi}c"] = {"fills": len(sub), "net_usd": sum(f[6] for f in sub) / 100,
+                                "return_pct": 100 * sum(f[6] for f in sub) / cap if cap else float("nan")}
+    out["by_price_band"] = bands
+    if pred is not None and len(pred) == len(F):
+        pr = np.asarray(pred, float)
+        cal = []
+        for lo, hi in PRED_BUCKETS:
+            m = (pr > lo) & (pr <= hi)
+            if m.any():
+                cal.append({"pred_range_c": [lo, hi], "fills": int(m.sum()), "mean_pred_c": float(np.average(pr[m], weights=qty[m])),
+                            "mean_realised_c": float(np.average(net_pc[m], weights=qty[m]))})
+        out["calibration"] = cal
+        out["rank_corr_pred_realised"] = float(np.corrcoef(_rank(pr), _rank(net_pc))[0, 1]) if len(F) > 2 and pr.std() > 0 else float("nan")
+    # settlement markout = gross c/contract at settlement (net + fee): the price move from fill to payoff
+    out["markout_settlement_c"] = float(np.average([(f[6] + f[5]) / f[4] for f in F], weights=qty))
+    if mid_at is not None:
+        def mk(h):
+            v = [(f[2] * (m - f[3]), f[4]) for f in F for m in [mid_at(f[1], int(f[9]) + h)] if m is not None]
+            return float(np.average([a for a, _ in v], weights=[b for _, b in v])) if v else float("nan")
+        out["spread_capture_c"] = mk(0)          # mid at the quoting hour minus fill price, signed by side
+        out["markout_1h_c"] = mk(H_NS)
+        out["markout_24h_c"] = mk(24 * H_NS)
+    if settle_ns is not None:
+        hp = [(settle_ns[f[0]] - int(f[9])) / H_NS for f in F if settle_ns.get(f[0])]
+        out["holding_hours_median"] = float(np.median(hp)) if hp else float("nan")
+    days = {}
+    for f in F:
+        d = int(f[9]) // DAY_NS
+        days[d] = days.get(d, 0.0) + f[6]
+    vals = [days[k] for k in sorted(days)]
+    out["profitable_days_share"] = float(np.mean([v > 0 for v in vals])) if vals else float("nan")
+    streak = best = 0
+    for v in vals:
+        streak = streak + 1 if v < 0 else 0
+        best = max(best, streak)
+    out["longest_losing_streak_days"] = best
+    out["tradedate_days"] = len(vals)
+    return out
+
+
+def tradedate_series(F):
+    """(day_end_ns list, cumulative net USD) by trade date: each fill's final net on the day it was quoted."""
+    days = {}
+    for f in F:
+        d = int(f[9]) // DAY_NS
+        days[d] = days.get(d, 0.0) + f[6] / 100
+    ks = sorted(days)
+    return [k * DAY_NS + DAY_NS for k in ks], list(np.cumsum([days[k] for k in ks]))
+
+
 # ---------------------------------------------------------------- benchmarks
 
 def fetch_spy_and_tbill(lo: dt.date, hi: dt.date):
@@ -209,6 +288,20 @@ def mids_next_hour(hours):
     return out
 
 
+def arm_score_maps(hours):
+    """{arm: {order key: score}} for every arm in the given hours (the paper trader's own arm_scores)."""
+    import paper_trader as pt
+    import train_baselines as tb
+    import retrain_g2 as rg
+    one, two = pt.load_scores(hours)
+    base = {"lin2": pickle.loads(tb.model_path("lin2").read_bytes()), "mlp2": pickle.loads(tb.model_path("mlp2").read_bytes()),
+            "g2w1": pickle.loads(rg.model_path("W1", "G2").read_bytes()), "g2w2": pickle.loads(rg.model_path("W2", "G2").read_bytes())}
+    return pt.arm_scores(one, two, base)
+
+
+MODEL_ARMS = ("g", "g2", "g2p", "lin2", "mlp2", "g2w1", "g2w2", "g2_sel")
+
+
 def posted_orders(hours):
     """{arm: number of posted orders (ticker, H, side[, price])} in the given hours, from the logged scores."""
     import paper_trader as pt
@@ -233,7 +326,17 @@ def build(cut: str, settle_by: str, bench=True):
     hours = [h for h in pt.scored_hours(dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H"))
              if ns_of(h) < cut_ns]
     mid_next = mids_next_hour(hours + [dt.datetime.fromtimestamp(cut_ns / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H")])
-    posted = posted_orders(hours)
+    smaps = arm_score_maps(hours)
+    posted = {a: int(sum(1 for v in m.values() if v > pt.THRESHOLD_C)) for a, m in smaps.items()}
+    later = [dt.datetime.fromtimestamp((ns_of(h) + k * H_NS) / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H")
+             for h in hours[-1:] for k in range(1, 26)]
+    one_all, two_all = pt.load_scores(sorted(set(hours) | {h for h in later if (pt.LIVE / "scores" / f"one_{h}.parquet").exists()}))
+    mid_tab = {}
+    for d in (one_all, two_all):
+        if d is not None:
+            for tk, H, b_, a_ in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
+                mid_tab[(tk, int(H))] = (b_ + a_) / 2
+    mid_at = lambda tk, H: mid_tab.get((tk, H))
     lo, hi = dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).date(), dt.datetime.fromtimestamp(cut_ns / 1e9, dt.timezone.utc).date()
     bm = fetch_spy_and_tbill(lo, hi) if bench else {}
     spy = bm.get("spy_close", {})
@@ -244,7 +347,14 @@ def build(cut: str, settle_by: str, bench=True):
     for (w, a), keys in sorted(fills.items()):
         keys = [k for k in keys if start <= int(k[7]) < cut_ns]
         m = fill_metrics(keys, results, settled_at, settle_ns, mid_next)
-        m.pop("_done")
+        done = m.pop("_done")
+        smap = smaps.get("g2" if a == "g2_sel" else a, {})
+        pred = None
+        if a in MODEL_ARMS and smap:
+            two_level = a in ("g2p",)
+            pred = [smap.get((f[1], int(f[9]), int(f[2]), int(f[3])) if two_level else (f[1], int(f[9]), int(f[2])), np.nan) for f in done]
+            pred = None if np.isnan(pred).any() else pred
+        m["behaviour"] = behaviour_metrics(done, pred, mid_at, settled_at)
         filled_orders = len({(k[1], k[7], k[2], k[3]) for k in keys})
         if w == "primary" and posted.get(a):
             m["fill_rate"] = filled_orders / posted[a]
@@ -302,6 +412,24 @@ def self_test() -> bool:
     check("concentration: top events' share of net", abs(m["top10_event_share"] - 1.0) < 1e-9)
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
+    # behaviour metrics on planted fills: (event, ticker, side, price, qty, fee, net, capital, markout, H)
+    Fb = [("E1", "A", 1, 40, 10, 0.0, 600.0, 400.0, 0.0, H0), ("E2", "B", -1, 90, 10, 10.0, -1010.0, 100.0, 0.0, H0 + DAY_NS),
+          ("E3", "C", 1, 10, 10, 0.0, -100.0, 100.0, 0.0, H0 + 2 * DAY_NS)]
+    mids = {("A", H0): 42.0, ("A", H0 + H_NS): 50.0, ("B", H0 + DAY_NS): 88.0}
+    bm = behaviour_metrics(Fb, pred=[3.0, 1.5, 9.0], mid_at=lambda tk, H: mids.get((tk, H)), settle_ns={"E1": H0 + 5 * H_NS})
+    check(f"profit factor = 600 / (1010 + 100) ({bm['profit_factor']:.3f})", abs(bm["profit_factor"] - 600 / 1110) < 1e-9)
+    check("hit rate and average win/loss", bm["hit_rate"] == 1 / 3 and bm["avg_win_usd"] == 6.0 and abs(bm["avg_loss_usd"] - 5.55) < 1e-9)
+    check("price bands: 85-99c holds the favourite sold at 90", bm["by_price_band"]["85-99c"]["fills"] == 1
+          and bm["by_price_band"]["1-15c"]["fills"] == 1)
+    check("spread capture: buy at 40 under a 42 mid (+2), sell at 90 over an 88 mid (+2)", bm["spread_capture_c"] == 2.0)
+    check("1-hour markout uses the mid one hour later (+10 on A only)", bm["markout_1h_c"] == 10.0)
+    check("settlement markout = gross c/contract ((600 - 1000 - 100) / 30)", abs(bm["markout_settlement_c"] - (600 - 1000 - 100) / 30) < 1e-9)
+    check("holding period from fill to settlement (5 h)", bm["holding_hours_median"] == 5.0)
+    check("profitable days 1 of 3, longest losing streak 2 days", abs(bm["profitable_days_share"] - 1 / 3) < 1e-9
+          and bm["longest_losing_streak_days"] == 2)
+    check("calibration buckets and rank correlation present", len(bm["calibration"]) == 3 and abs(bm["rank_corr_pred_realised"] - 0.5) < 1e-9)
+    de2, cum = tradedate_series(Fb)
+    check("trade-date series: cumulative net by quote day ($6, -$4.10, -$5.10)", np.allclose(cum, [6.0, -4.1, -5.1]))
     mk = {"T1-A": {"result": "yes", "settled_ns": 5}, "T1-B": {"result": "no", "settled_ns": 9}, "T2-A": {"result": "", "settled_ns": None}}
     check("settle times by event from the cache", settle_times(mk) == {"T1": 9, "T2": None})
     with tempfile.TemporaryDirectory() as td:
