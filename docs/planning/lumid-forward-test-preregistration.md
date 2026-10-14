@@ -560,3 +560,9 @@ seeds), `wide3` (spread >= 3c), `liq` (trades_24h >= the fold month's median; th
 median, which the stored table cannot reproduce), and the `lin2` and `mlp2` designs refit per fold on the
 same windows as W3 (September: the frozen `lin2`/`mlp2`). Reported as exploratory, pre-live context for the
 live comparisons; it changes no arm, rule or verdict.
+
+**Exploratory note 2 (2026-10-14, before any live P&L; no decision depends on it).** Volume-matched comparison of
+G2-W3 and `lin2` on the six L9 folds: each model's top-ranked candidates at fixed shares (2, 5, 10, 15, 20, 25,
+30, 40% of each fold's candidates), return and net P&L pooled over the folds, beside each model's own 1c rule.
+Answers whether `lin2`'s higher return comes from ranking or from posting fewer orders. Changes no arm, rule
+or verdict; the pre-registered `g2` - `lin2` comparison stays in net return, with net P&L reported beside it.
