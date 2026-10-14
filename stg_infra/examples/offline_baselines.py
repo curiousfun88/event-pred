@@ -411,6 +411,41 @@ def main_curves_full(overlap_only=False):
             print(f"  {sh:>7}  " + "  ".join(f"{m} {v[m][sh]['ret']:+6.2f}% {v[m][sh]['net_usd']:+8.0f}" for m in v))
 
 
+WEATHER_CAT = "Climate and Weather"
+
+
+def main_weather_split():
+    """L11: G2-W3's recipe on the six L9 folds, weather vs non-weather, A15's offline score; the rule decides."""
+    import retrain_g2 as rg
+    import tune_gbm as tg
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    cat_col = feats.index("cat_i")
+    wi = cats.index(WEATHER_CAT)
+    res = {"weather": [], "non_weather": []}
+    for tm in tg.TEST_MONTHS:
+        te, tr = D["month"] == tm, D["month"] < tm
+        p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
+        w = D["X"][te][:, cat_col] == wi
+        for name, m in (("weather", w), ("non_weather", ~w)):
+            sc = tg.score(p3[m], D["net_c"][te][m], D["capital_c"][te][m], D["qty"][te][m])
+            res[name].append({"fold": tm, **sc})
+        print(json.dumps({tm: {k: round(v[-1]["ret"], 3) for k, v in res.items()}}), flush=True)
+    rows, net, cap, qty = september_rows()
+    w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
+    pr = w3["model"].predict(rg.matrix("G2", rows, w3["cats"]))
+    w = np.array([r["cat"] == WEATHER_CAT for r in rows])
+    for name, m in (("weather", w), ("non_weather", ~w)):
+        res[name].append({"fold": "2026-09-07..10-05", **tg.score(pr[m], net[m], cap[m], qty[m])})
+    mean = {k: float(np.mean([f["ret"] for f in v])) for k, v in res.items()}
+    decision = "re-include weather" if mean["weather"] > 0 else "exclusion stands"
+    out = {"amendment": "L11", "folds": res, "mean_ret": mean,
+           "months_positive": {k: int(sum(f["ret"] > 0 for f in v)) for k, v in res.items()}, "decision": decision}
+    p_ = _REPO / "results/live/l11_weather_split.json"
+    p_.write_text(json.dumps(out, indent=1, default=float))
+    print(json.dumps({"mean_ret": mean, "months_positive": out["months_positive"], "DECISION": decision}))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -447,10 +482,13 @@ def main():
     ap.add_argument("--mlp-sens", action="store_true", help="neural-baseline sensitivity analysis (exploratory note 3)")
     ap.add_argument("--curves-full", action="store_true", help="volume-matched curves, both baselines, both years (note 4)")
     ap.add_argument("--overlap", action="store_true", help="pick overlap at matched shares (note 5)")
+    ap.add_argument("--weather-split", action="store_true", help="L11 weather decision on the six walk-forward folds")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    if a.overlap:
+    if a.weather_split:
+        main_weather_split()
+    elif a.overlap:
         main_curves_full(overlap_only=True)
     elif a.curves_full:
         main_curves_full()
