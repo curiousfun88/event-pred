@@ -220,6 +220,47 @@ def behaviour_metrics(F, pred=None, mid_at=None, settle_ns=None):
     return out
 
 
+def mean_abs_position(F, settle_ns, t0, t1):
+    """MAP (contracts): time-average over [t0, t1) of the summed absolute inventory across legs. A fill adds
+    side*qty to its leg from its quoting hour until its event settles (or t1 if unsettled). Market-making
+    convention (Spooner et al. 2018), summed over the many legs traded."""
+    if t1 <= t0:
+        return float("nan")
+    changes = {}
+    for f in F:
+        a = max(int(f[9]), t0)
+        b = min(settle_ns.get(f[0]) or t1, t1)
+        if b <= a:
+            continue
+        changes.setdefault(f[1], []).extend([(a, int(f[2]) * int(f[4])), (b, -int(f[2]) * int(f[4]))])
+    area = 0.0
+    for ch in changes.values():
+        ch.sort()
+        pos, last = 0, ch[0][0]
+        for t, d in ch:
+            area += abs(pos) * (t - last)
+            pos += d; last = t
+    return area / (t1 - t0)
+
+
+def conventional_metrics(F, settle_ns, spread_at, t0, t1):
+    """Conventional market-making metrics: MAP, PnL-to-MAP (USD per contract of average inventory) and
+    normalised daily PnL (each day's net P&L / mean quoted spread of that day's fills, averaged over days)."""
+    out = {"map_contracts": mean_abs_position(F, settle_ns, t0, t1)}
+    net = sum(f[6] for f in F) / 100
+    out["pnl_to_map_usd"] = net / out["map_contracts"] if out["map_contracts"] and out["map_contracts"] == out["map_contracts"] else float("nan")
+    days = {}
+    for f in F:
+        sp = spread_at(f[1], int(f[9])) if spread_at else None
+        d = days.setdefault(int(f[9]) // DAY_NS, [0.0, []])
+        d[0] += f[6]
+        if sp:
+            d[1].append(sp)
+    npnl = [v / np.mean(sp) for v, sp in days.values() if sp]
+    out["normalised_daily_pnl_spreads"] = float(np.mean(npnl)) if npnl else float("nan")
+    return out
+
+
 def tradedate_series(F):
     """(day_end_ns list, cumulative net USD) by trade date: each fill's final net on the day it was quoted."""
     days = {}
@@ -337,6 +378,12 @@ def build(cut: str, settle_by: str, bench=True):
             for tk, H, b_, a_ in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
                 mid_tab[(tk, int(H))] = (b_ + a_) / 2
     mid_at = lambda tk, H: mid_tab.get((tk, H))
+    spr_tab = {}
+    for d in (one_all, two_all):
+        if d is not None:
+            for tk, H, b_, a_ in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
+                spr_tab[(tk, int(H))] = a_ - b_
+    spread_at = lambda tk, H: spr_tab.get((tk, H))
     lo, hi = dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).date(), dt.datetime.fromtimestamp(cut_ns / 1e9, dt.timezone.utc).date()
     bm = fetch_spy_and_tbill(lo, hi) if bench else {}
     spy = bm.get("spy_close", {})
@@ -355,6 +402,12 @@ def build(cut: str, settle_by: str, bench=True):
             pred = [smap.get((f[1], int(f[9]), int(f[2]), int(f[3])) if two_level else (f[1], int(f[9]), int(f[2])), np.nan) for f in done]
             pred = None if np.isnan(pred).any() else pred
         m["behaviour"] = behaviour_metrics(done, pred, mid_at, settled_at)
+        import paper_ledger as pl_
+        allf = [pl_.as_fill(k, results.get(k[1])) for k in keys]
+        m["conventional"] = conventional_metrics(allf, {e: t for e, t in settled_at.items() if t is not None},
+                                                 spread_at, start, cut_ns)
+        m["conventional"]["pnl_to_map_usd"] = m["net_usd"] / m["conventional"]["map_contracts"] if m["conventional"]["map_contracts"] else float("nan")
+        m["conventional"]["normalised_daily_pnl_spreads"] = conventional_metrics(done, {}, spread_at, start, cut_ns)["normalised_daily_pnl_spreads"]
         filled_orders = len({(k[1], k[7], k[2], k[3]) for k in keys})
         if w == "primary" and posted.get(a):
             m["fill_rate"] = filled_orders / posted[a]
@@ -430,6 +483,15 @@ def self_test() -> bool:
     check("calibration buckets and rank correlation present", len(bm["calibration"]) == 3 and abs(bm["rank_corr_pred_realised"] - 0.5) < 1e-9)
     de2, cum = tradedate_series(Fb)
     check("trade-date series: cumulative net by quote day ($6, -$4.10, -$5.10)", np.allclose(cum, [6.0, -4.1, -5.1]))
+    # conventional metrics: leg A long 10 for 2 h, leg B short 10 for 4 h, over an 8 h window
+    Fc = [("E1", "A", 1, 40, 10, 0.0, 300.0, 400.0, 0.0, H0), ("E2", "B", -1, 60, 10, 0.0, -100.0, 400.0, 0.0, H0)]
+    st_c = {"E1": H0 + 2 * H_NS, "E2": H0 + 4 * H_NS}
+    check("MAP: (10 x 2 h + 10 x 4 h) / 8 h = 7.5 contracts", abs(mean_abs_position(Fc, st_c, H0, H0 + 8 * H_NS) - 7.5) < 1e-9)
+    check("offsetting fills on one leg net to zero inventory",
+          mean_abs_position([("E", "A", 1, 40, 10, 0, 0, 0, 0, H0), ("E", "A", -1, 45, 10, 0, 0, 0, 0, H0)], {"E": H0 + H_NS}, H0, H0 + H_NS) == 0)
+    cm = conventional_metrics(Fc, st_c, lambda tk, H: 4.0, H0, H0 + 8 * H_NS)
+    check("PnL-to-MAP = $2.00 / 7.5 contracts", abs(cm["pnl_to_map_usd"] - 2.0 / 7.5) < 1e-9)
+    check("normalised daily PnL = 200c / 4c spread = 50 spreads", cm["normalised_daily_pnl_spreads"] == 50.0)
     mk = {"T1-A": {"result": "yes", "settled_ns": 5}, "T1-B": {"result": "no", "settled_ns": 9}, "T2-A": {"result": "", "settled_ns": None}}
     check("settle times by event from the cache", settle_times(mk) == {"T1": 9, "T2": None})
     with tempfile.TemporaryDirectory() as td:

@@ -197,6 +197,14 @@ def cmd_metrics():
         if j < len(L["e"]) and L["e"][j] == H and not np.isnan(L["bid"][j] + L["ask"][j]):
             return 50.0 * (L["bid"][j] + L["ask"][j])
         return None
+    def spread_at(tk, H):
+        L = legs.get(tk)
+        if L is None:
+            return None
+        j = np.searchsorted(L["e"], H)
+        if j < len(L["e"]) and L["e"][j] == H and not np.isnan(L["bid"][j] + L["ask"][j]):
+            return 100.0 * (L["ask"][j] - L["bid"][j])
+        return None
     cfg = s.Config(**{**mp.BROAD, "policy": "x", "policy_t": 1.0})
     lo, hi = dt.date(2025, 8, 1), dt.date(2025, 11, 30)
     bm = cr.fetch_spy_and_tbill(lo, hi)
@@ -224,7 +232,9 @@ def cmd_metrics():
                              "net_usd": r["net_c"] / 100, "peak_open_capital_usd": cap,
                              "max_drawdown_usd": cr.max_drawdown(cum),
                              "max_drawdown_pct_of_peak_capital": 100 * cr.max_drawdown(cum) / cap if cap else float("nan"),
-                             "risk": risk, "behaviour": cr.behaviour_metrics(F, pred, mid_at, settle)}
+                             "risk": risk, "behaviour": cr.behaviour_metrics(F, pred, mid_at, settle),
+                             "conventional": cr.conventional_metrics(F, settle, spread_at, min(int(f[9]) for f in F),
+                                                                     max(settle.get(f[0]) or int(f[9]) for f in F))}
         print(json.dumps({name: {k: out["arms"][name][k] for k in ("ret_pct", "net_usd", "max_drawdown_usd")} | {"sharpe": risk.get("sharpe")}}, default=float), flush=True)
     p_ = _REPO / "results/maker/a16_metrics_2025.json"
     p_.write_text(json.dumps(out, indent=1, default=float))
