@@ -239,11 +239,14 @@ def universes(pool, l1_tickers):
     weather = lambda se: se.startswith(("KXHIGH", "KXLOW"))
     from fetch_kalshi_api_months import SERIES_A13
     a13 = set(SERIES_A13)
-    return {"primary_L4": lambda tk, se, cat: se in ps,
+    base = lambda se: se in ps or weather(se)             # L11: weather re-included in the primary universe
+    return {"primary_L4": lambda tk, se, cat: base(se),
+            "non_weather": lambda tk, se, cat: se in ps,           # the L4 pool as frozen (descriptive)
+            "weather": lambda tk, se, cat: weather(se),            # descriptive (L11)
             "new_series": lambda tk, se, cat: (se not in ps) and not weather(se),
             "L1": lambda tk, se, cat: tk in l1_tickers and not weather(se),
-            "train23": lambda tk, se, cat: se in ps and se in a13,
-            "other": lambda tk, se, cat: se in ps and se not in a13}
+            "train23": lambda tk, se, cat: base(se) and se in a13,
+            "other": lambda tk, se, cat: base(se) and se not in a13}
 
 
 def settled_mask(fills, legs, events):
@@ -706,6 +709,9 @@ def self_test() -> bool:
     check("universes: pool, L1 by ticker, weather never new",
           U["primary_L4"]("KXT-E1-B", "KXT", "Sports") and not U["L1"]("KXT-E1-B", "KXT", "Sports")
           and not U["new_series"]("KXHIGHNY-X", "KXHIGHNY", "Climate and Weather"))
+    check("L11: weather is in the primary universe and in the weather split, not in non_weather",
+          U["primary_L4"]("KXHIGHNY-X", "KXHIGHNY", "Climate and Weather") and U["weather"]("KXHIGHNY-X", "KXHIGHNY", "Climate and Weather")
+          and not U["non_weather"]("KXHIGHNY-X", "KXHIGHNY", "Climate and Weather"))
 
     # L7 walk-forward: fold 1 selects on [10-11 15:00, 10-18), trades [10-18, 10-25)
     sel_h, tr_h, hi1 = ns_of("20261015T12"), ns_of("20261020T12"), ns_of("20261018T00")

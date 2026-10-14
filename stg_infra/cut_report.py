@@ -424,6 +424,9 @@ def build(cut: str, settle_by: str, bench=True):
             both = [(spy_ret[d_], v / cap) for d_, v in zip(dates, dd) if d_ in spy_ret and cap]
             pair = ([x for x, _ in both], [y for _, y in both]) if both else None
         m["risk"] = risk_metrics(totals, cap, bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None, pair)
+        td_ends, td_cum = tradedate_series(done)          # L11: same daily definition as the 2025 results
+        m["risk_tradedate"] = risk_metrics(td_cum, cap, bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None)
+        m["max_drawdown_tradedate_usd"] = max_drawdown(td_cum)
         rep["arms"].setdefault(w, {})[a] = m
     return rep
 

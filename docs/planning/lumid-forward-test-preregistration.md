@@ -643,3 +643,9 @@ scored the same way and reported beside it.
 on its quoting day) beside the equity-curve series, so Sharpe and drawdown are computed as in the 2025 results.
 
 **Prediction (before running).** Weather mean negative; the exclusion stands.
+
+**L11 result (2026-10-15, before any live P&L).** G2-W3's recipe on weather, six folds: +2.66, +2.12, +2.94, +2.80,
++0.43 and about -1.36% (Sep), **mean +1.60%** (5 of 6 positive); non-weather mean +4.94% (6 of 6). By the rule,
+**weather is re-included in the primary universe** for every arm and both cuts; the L4 pool without weather is
+reported as the descriptive `non_weather` universe, and weather alone as `weather`. The prediction (exclusion stands)
+was wrong. File: `results/live/l11_weather_split.json`.
