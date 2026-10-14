@@ -33,6 +33,23 @@ passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). All 
 fixed and timestamped publicly before any live result.
 
 \section{Live paper-trading setup}\label{sec:infra}
+\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+\textbf{No knowledge of the future at any step.}
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item \textbf{Models} were trained and frozen before live trading (their hashes are public); nothing is retrained
+    or adjusted during the test.
+  \item \textbf{Decisions} for each hour use only the live market snapshot taken at the start of that hour; the
+    model never sees any of that hour's trades. Each decision is timestamped when made, and results are also
+    reported counting only trades after that timestamp.
+  \item \textbf{Fills} for each hour are determined only from Kalshi trades that occurred \emph{during} that hour,
+    after it has ended; no later trade, price or outcome is used.
+  \item \textbf{Profit} becomes realised only when a market actually settles; until then, open positions are valued
+    at the current market price.
+  \item \textbf{Every record is timestamped} on Lumid Research Fleet before any later data exists, and is never
+    revised, so no result can be adjusted with hindsight.
+\end{itemize}}}
+\medskip
+
 \begin{enumerate}[leftmargin=*]
   \item \textbf{Live decisions.} A producer on a Lumid sandbox scores every candidate order each hour from Kalshi's
     live data and records every strategy's decision before outcomes are known. Each hour's decisions are posted to
