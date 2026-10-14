@@ -29,8 +29,10 @@ sell limit order (10 contracts) on each leg, and a learned model decides which o
 only if its predicted net profit after fees exceeds 1\,c per contract. The headline model, \textbf{G2}, is a
 gradient-boosted tree model on 14 market features (price, spread, recent trades, basket structure, fees,
 category), retrained on all data up to August 2026. Its predecessor \textbf{G} (trained on Nov 2024--May 2025)
-passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). All rules, models and statistics were
-fixed and timestamped publicly before any live result.
+passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). G2 was trained on 23 market series;
+the live test covers every non-weather series the strategy quotes (290 series; weather markets were excluded
+before the test, based on validation results). All rules, models and statistics were fixed and timestamped
+publicly before any live result.
 
 \section{Live paper-trading setup}\label{sec:infra}
 \noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
@@ -38,28 +40,30 @@ fixed and timestamped publicly before any live result.
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item \textbf{Models} were trained and frozen before live trading (their hashes are public); nothing is retrained
     or adjusted during the test.
-  \item \textbf{Decisions} for each hour use only the live market snapshot taken at the start of that hour; the
-    model never sees any of that hour's trades. Each decision is timestamped when made, and results are also
-    reported counting only trades after that timestamp.
+  \item \textbf{Decisions} for each hour use only data available at the live market snapshot taken at the start
+    of that hour (about two minutes in); only trades \emph{after} the snapshot can fill the hour's orders. Each
+    decision is timestamped when made, and results are also reported counting only trades after that timestamp.
   \item \textbf{Fills} for each hour are determined only from Kalshi trades that occurred \emph{during} that hour,
     after it has ended; no later trade, price or outcome is used.
   \item \textbf{Profit} becomes realised only when a market actually settles; until then, open positions are valued
-    at the current market price.
-  \item \textbf{Every record is timestamped} on Lumid Research Fleet before any later data exists, and is never
-    revised, so no result can be adjusted with hindsight.
+    at the latest recorded market mid-price.
+  \item \textbf{Every record is timestamped} on Lumid Research Fleet shortly after its hour, contains only that
+    hour's data, and is never revised afterwards, so no result can be adjusted with hindsight.
 \end{itemize}}}
 \medskip
 
 \begin{enumerate}[leftmargin=*]
   \item \textbf{Live decisions.} A producer on a Lumid sandbox scores every candidate order each hour from Kalshi's
-    live data and records every strategy's decision before outcomes are known. Each hour's decisions are posted to
-    Lumid Research Fleet with a SHA-256 hash, giving an independent timestamp.
+    live data and records every candidate's features and the main models' scores before outcomes are known; the
+    baseline rules and models are applied to these same logged features. Each hour's record is posted to Lumid
+    Research Fleet with a SHA-256 hash, giving an independent timestamp.
   \item \textbf{Live fills, in hourly batches.} The strategy itself is hourly: it posts its orders once per hour,
     and they rest until the end of that hour. Fills are therefore processed in the same hourly batches. Shortly
     after each trading hour ends (typically within 1--2 hours), a paper trader determines that hour's fills
     \emph{only from the Kalshi trades that occurred during it}, records them and timestamps them; they are never
     revised. Because an hour's fills depend only on that hour's trades, processing them trade by trade would give
-    the same result. The fill rules are the same as the backtest's:
+    the same fills, apart from rare cases where a position limit is reached within the hour. The fill rules are the
+    same as the backtest's:
     \begin{itemize}
       \item an order joining the best price fills only if real trades go \emph{through} its price (others are ahead
         in the queue); an order that improves the price by 1\,c fills on trades at its price;
@@ -67,11 +71,13 @@ fixed and timestamped publicly before any live result.
       \item positions are held to settlement and valued at the actual results.
     \end{itemize}
   \item \textbf{Append-only ledger.} Each hour's fills are written to a ledger entry that is never revised. Entries
-    are hash-chained (each contains the previous entry's hash). Every round re-checks the recorded fills against a
-    recomputation; any mismatch is logged, never overwritten. Settlement profit is added as markets resolve.
+    are hash-chained (each contains the previous entry's hash). Every round re-checks the recorded fills of markets
+    active in the last four days against a recomputation; any mismatch is logged, never overwritten. Settlement
+    profit is added as markets resolve.
   \item \textbf{Hourly reporting.} Each hour, for every strategy, Research Fleet receives the
-    \emph{cumulative} realised P\&L (settled markets), unrealised P\&L (open positions at the current mid),
-    total P\&L, capital committed and return, plus the ledger entry's hash. Hourly P\&L is the change in total P\&L.
+    \emph{cumulative} realised P\&L (settled markets), unrealised P\&L (open positions at the latest recorded mid),
+    total P\&L, capital committed and return (pessimistic fills; the other fill assumptions are kept in the ledger),
+    plus the ledger entry's hash. Hourly P\&L is the change in total P\&L.
   \item \textbf{Fill assumptions.} Pessimistic fills (above) decide the verdicts; optimistic fills (trades at our
     price also count) and strict fills (competitors match our price improvements) are reported as bounds.
   \item \textbf{What counts.} Only hours recorded live, from the first ledger entry onwards, count towards the
@@ -136,7 +142,7 @@ rules and quoting everything lost money in all six. The linear model averaged +3
 
 \section{Why G2 stays the headline model (and why not linear model)}
 The linear model shows a higher return on capital because it trades less: in the 2025 test it posted 13.5\% of
-candidate orders against 19.7\% for G, and filled about half as many contracts. G earns more total profit (2025: +\$3,748 vs +\$2,427; 2026: more profit
+candidate orders against 19.7\% for G, and had about half as many fills (18,305 vs 34,086). G earns more total profit (2025: +\$3,748 vs +\$2,427; 2026: more profit
 in every month), and their returns do not differ significantly. When both models post the \emph{same} number of
 orders, G2 earns more than both the linear model and the neural network at every volume tested in 2026. In 2025, G
 leads at the volume it actually trades (about 20\% of candidates: +5.30\% vs +4.59\% linear and +4.36\% neural);
