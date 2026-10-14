@@ -32,9 +32,11 @@ category), retrained on all data up to August 2026. Its predecessor \textbf{G} (
 passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). G2 was trained on 23 market series;
 the live test covers every series the strategy quotes (290 non-weather series plus the daily temperature
 series). Weather markets were first excluded on one validation month, then re-included after a pre-registered check
-over six walk-forward months (weather +1.60\% per month on average, positive in 5 of 6; other markets +4.94\%);
-weather and non-weather results are also reported separately. All rules, models and statistics were fixed and
-timestamped publicly before any live result.
+over six walk-forward months (weather +1.60\% per month on average, positive in 5 of 6; other markets +4.94\%).
+The model's edge on weather declined in August--September (net per contract on its picks +1.96\,c in July,
++0.28\,c in August, $-0.99$\,c in September, while the market itself was no harder), so weather and non-weather
+results are also reported separately. All rules, models and statistics were fixed and timestamped publicly before
+any live result.
 
 \section{Live paper-trading setup}\label{sec:infra}
 \noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
@@ -256,7 +258,7 @@ by a six-month walk-forward (all history +2.65\% per month vs 3-month +1.53\% an
     hourly quotes, from trades that have already happened; append-only ledger; hourly Research Fleet reports) meet
     the live paper-trading requirement?
   \item[$\square$] Are the baselines in Section~\ref{sec:baselines} sufficient?
-  \item[$\square$] Is it acceptable to keep the fixed model settings, given the sensitivity checks in
+  \item[$\square$] Is it acceptable to keep the fixed model settings for G, G2 and neural network, given the sensitivity checks in
     Section~\ref{sec:tuning} which justifies that there is no need to tune the model?
   \item[$\square$] Is G2 as the headline model acceptable, given that the linear model has a higher return but
     lower total profit?
