@@ -36,7 +36,8 @@ publicly before any live result.
 
 \section{Live paper-trading setup}\label{sec:infra}
 \noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
-\textbf{No knowledge of the future at any step.}
+\textbf{No knowledge of the future at any step.} This is live paper trading, not a replay: the forward-test
+result is the ledger as recorded hour by hour during the test, never a recomputation after the fact.
 \begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
   \item \textbf{Models} were trained and frozen before live trading (their hashes are public); nothing is retrained
     or adjusted during the test.
@@ -81,8 +82,9 @@ publicly before any live result.
   \item \textbf{Fill assumptions.} Pessimistic fills (above) decide the verdicts; optimistic fills (trades at our
     price also count) and strict fills (competitors match our price improvements) are reported as bounds.
   \item \textbf{What counts.} Only hours recorded live, from the first ledger entry onwards, count towards the
-    forward-test result. Earlier hours (11--14 October) are reported separately as a replay. The interim cut for the
-    report is 28 October; quoting ends 11 November.
+    forward-test result. The hours before the start (11--14 October), when decisions were live but fills were not
+    yet recorded live, are shown separately for reference only and do not count. The interim cut for the report is
+    28 October; quoting ends 11 November.
   \item \textbf{Verdicts (pre-registered, one-sided 5\%).} (a) G2 is profitable live: the lower 95\% bound of its net
     return is above zero; (b) G2 adds value: G2 minus random selection at the same volume is above zero. Confidence
     intervals are bootstrapped by event (and by day, as a sensitivity check).
