@@ -137,12 +137,30 @@ G minus each baseline (paired by event): random +3.2 to +4.4 (all five 95\% CIs 
 [+2.50, +4.45]; liquid +3.60 [+2.64, +4.55]; neural +1.43 [+0.47, +2.38]; linear $-$0.48 [$-$1.73, +0.81]
 (no significant difference). Under strict fills, G's edge falls to +0.39\% [$-$0.96, +1.78].
 
-\paragraph{2026 walk-forward (Apr--Sep 2026, each month trained only on earlier months; offline scoring).}
-G2 made money in all six months (mean +2.65\% per month, +\$3,291), while random selection ($-$1.15\%), both
-rules and quoting everything lost money in all six. The linear model averaged +3.76\% (+\$1,455); the neural network
-+1.00\%, positive in only three months. In the full simulator on September 2026, G2 made +1.41\% [$-$1.47, +4.31].
+\paragraph{2026 walk-forward (Apr--Sep 2026, each month trained only on earlier months; offline scoring,
+pessimistic fills).} Return on capital per month (\%); net P\&L summed over the six months:
+\begin{center}
+\small\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Strategy & Apr & May & Jun & Jul & Aug & Sep & Mean & Pos.\ months & Net P\&L \\
+\midrule
+\textbf{G2 (headline)} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.36} & \pos{\textbf{+2.65}} & \textbf{6/6} & \pos{\textbf{+\$3,291}} \\
+Linear model & +3.13 & +5.59 & +3.73 & +2.84 & +3.76 & +3.49 & \pos{+3.76} & 6/6 & \pos{+\$1,455} \\
+Neural network & +2.83 & +3.81 & $-$0.56 & +1.47 & $-$0.93 & $-$0.63 & \pos{+1.00} & 3/6 & \\
+Random (same volume) & $-$0.66 & $-$0.72 & $-$0.48 & $-$1.30 & $-$1.72 & $-$2.04 & \negv{$-$1.15} & 0/6 & \negv{$-$\$924} \\
+Wide spreads & $-$0.23 & $-$0.56 & $-$0.25 & $-$0.52 & $-$2.01 & $-$1.72 & \negv{$-$0.88} & 0/6 & \\
+Liquid markets & $-$0.60 & $-$0.94 & $-$0.47 & $-$1.53 & $-$1.51 & $-$0.76 & \negv{$-$0.97} & 0/6 & \\
+Quote everything & $-$0.73 & $-$0.79 & $-$0.26 & $-$1.07 & $-$1.67 & $-$1.45 & \negv{$-$0.99} & 0/6 & \negv{$-$\$4,495} \\
+\bottomrule
+\end{tabular}
+\end{center}
+G2 made money in every month; random selection, both rules and quoting everything lost money in every month. The
+linear model's higher return comes with about a third of G2's capital and less than half its profit
+(Section~\ref{sec:linear}). Offline scoring leaves out the simulator's inventory limits, so live returns are
+expected to be lower: on September 2026 in the full simulator, G2 made +1.41\% [$-$1.47, +4.31] (offline +2.36\%).
 
-\section{Why G2 stays the headline model (and why not linear model)}
+\section{Why G2 stays the headline model (and why not linear model)}\label{sec:linear}
 The linear model shows a higher return on capital because it trades less: in the 2025 test it posted 13.5\% of
 candidate orders against 19.7\% for G, and had about half as many fills (18,305 vs 34,086). G earns more total profit (2025: +\$3,748 vs +\$2,427; 2026: more profit
 in every month), and their returns do not differ significantly. When both models post the \emph{same} number of
