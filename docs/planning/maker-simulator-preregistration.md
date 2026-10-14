@@ -646,3 +646,12 @@ run printed before stopping were not used. Everything else in A16 is unchanged.
 (5 seeds). G minus: random +3.2 to +4.4 (all CIs exclude 0), wide3 +3.47 [+2.50, +4.45], liq +3.60 [+2.64, +4.55],
 mlp2-2025 +1.43 [+0.47, +2.38], lin2-2025 -0.48 [-1.73, +0.81]. Models: lin2-2025 `fa45b1b80bdd3d0c`,
 mlp2-2025 `676be7ad1458479e`. Descriptive; G and its verdict unchanged.
+
+**A16 addendum (2026-10-15, before the run; descriptive, nothing selected).** The A16 test run is repeated with each
+arm's fills and scores saved, to report risk and behaviour metrics on G's 2025 test months for G and every baseline:
+daily P&L by trade date (each fill's final net P&L after fees on the day it was quoted), Sharpe over the 3-month
+T-bill (365-day annualisation), maximum drawdown, volatility, S&P 500 and T-bill returns over the same dates;
+calibration of predicted vs realised net c/contract by prediction bucket and the rank correlation between them
+(model arms); spread capture at the fill, markouts at 1 h, 24 h and settlement; results by fill-price band (1-15,
+15-50, 50-85, 85-99c); holding period (fill to market close); profit factor, average win and loss, hit rate,
+share of profitable days and the longest losing streak. The A12 reproduction gate applies unchanged.
