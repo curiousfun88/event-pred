@@ -611,3 +611,8 @@ amendment makes the fills and P&L live too.
    (settled events, as §2). Cuts unchanged (interim 2026-10-28, final 2026-11-11); the interim cut covers live
    hours from S.
 6. Unchanged: arms, models, rules, universe, order windows, statistics (L3-L9).
+
+**L10 note (2026-10-14, before the live start).** The paper trader now runs the fill models section 4 already commits
+to: pessimistic (verdicts), optimistic and strict (bounds) on the primary order window, each its own ledger stream
+(`primary`, `primary_opt`, `primary_strict`), plus the L3 decision-time sensitivity (pessimistic). Found missing in
+review before any live P&L; no change of rule.

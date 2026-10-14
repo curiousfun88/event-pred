@@ -69,6 +69,9 @@ TWO_ARMS = ("g2p", "rnd2p")
 SELECTED_C, SENTINEL_C, THRESHOLD_C = 2.0, -100.0, 1.0
 MAX_MISMATCH = 0.005
 WINDOWS = ("primary", "sensitivity")
+# pre-registration section 4: pessimistic (verdicts), optimistic and strict fills (bounds) on the primary window; L3 sensitivity: pessimistic
+STREAMS = (("primary", "primary", "pess"), ("primary_opt", "primary", "opt"), ("primary_strict", "primary", "strict"),
+           ("sensitivity", "sensitivity", "pess"))
 
 
 def stamp_of(H: int) -> str:
@@ -214,8 +217,8 @@ def regenerated(legs, events, charged, months, levels=""):
     return {(tk, int(H), int(sd), int(pr)) for ev, tk, H, sd, pr, b, a in rec}
 
 
-def run_arms(legs, events, charged, months, scores, arms):
-    """{arm: fills} with simulate_maker.simulate, pessimistic fills, BROAD config, the arm's scores."""
+def run_arms(legs, events, charged, months, scores, arms, model="pess"):
+    """{arm: fills} with simulate_maker.simulate (fill model `model`: pess | opt | strict), BROAD config, the arm's scores."""
     import maker_policy as mp
     import simulate_maker as s
     out = {}
@@ -224,7 +227,7 @@ def run_arms(legs, events, charged, months, scores, arms):
             continue
         lv = {"levels": "both"} if arm in TWO_ARMS else {}
         cfg = s.Config(**{**mp.BROAD, **lv, "policy": "live", "policy_t": THRESHOLD_C})
-        out[arm] = s.simulate(cfg, "pess", legs, events, charged, months, policy_scores=scores[arm])
+        out[arm] = s.simulate(cfg, model, legs, events, charged, months, policy_scores=scores[arm])
     return out
 
 
@@ -558,9 +561,9 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     result = {"hours": [hours[0], hours[-1], len(hours)], "check": chk, "tape_hours": len(hours), "windows": {}}
     folds = None
     ledger_fills = {}
-    for w in WINDOWS:                    # primary first: the L7 selection uses g2's primary-window fills
-        Lw = apply_window(legs, cuts, w)
-        fills = run_arms(Lw, events, charged, months, scores, ONE_ARMS + TWO_ARMS)
+    for w, base_w, model in STREAMS:     # primary pessimistic first: the L7 selection uses its g2 fills
+        Lw = apply_window(legs, cuts, base_w)
+        fills = run_arms(Lw, events, charged, months, scores, ONE_ARMS + TWO_ARMS, model)
         if folds is None:
             sel_src = g2_archive_update(fills["g2"], markets) if ledger else fills["g2"]
             folds = walk_forward_selection(sel_src, settled_at_all(markets, sel_src) if ledger else settled_at, cat_f_any, in_primary_any)
@@ -685,6 +688,12 @@ def self_test() -> bool:
           [(f[1], f[2], f[3], f[4]) for f in F["primary"]] == [("KXT-E1-A", 1, 41, 5)])
     check("pnl from the simulator: YES bought at 41 settles 100 -> +59c x 5, fee 0", F["primary"][0][6] == 295.0)
     check("sensitivity window: decision at +30 min leaves no trade -> no fill", F["sensitivity"] == [])
+    # a YES seller exactly AT our improved 41 fills under pess (improved order) and opt; a seller at 41 for a
+    # non-improved order (join at 40 when spread < 3) would not fill under pess. Check the model is passed through:
+    Fs = run_arms(apply_window(legs, cuts, "primary"), events, charged, months, sc, ("g2",), "strict")["g2"]
+    check(f"strict fill model is passed through (improved 41 needs a trade below the original 40: {len(Fs)} fills)", Fs == [])
+    Fo = run_arms(apply_window(legs, cuts, "primary"), events, charged, months, sc, ("g2",), "opt")["g2"]
+    check("optimistic fills at least what pessimistic fills", sum(f[4] for f in Fo) >= sum(f[4] for f in F["primary"]))
     g2_raw = run_arms(legs, events, charged, months, sc, ("g2",))["g2"]
     check("without a window cut both trades fill (the look-ahead L3 removes)", sum(f[4] for f in g2_raw) == 10)
     legs2 = apply_window(legs, {**cuts, H0: (H0 + 2 * H_NS, H0 + 2 * H_NS)}, "primary")
