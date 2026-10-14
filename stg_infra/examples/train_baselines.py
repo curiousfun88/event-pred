@@ -97,14 +97,15 @@ def time_split(rows, frac=HOLDOUT):
     return np.sort(order[:k]), np.sort(order[k:])
 
 
-def fit_mlp2(rows, ys, max_epochs=MAX_EPOCHS, patience=PATIENCE, log=print):
+def fit_mlp2(rows, ys, max_epochs=MAX_EPOCHS, patience=PATIENCE, log=print, hp=None):
+    """hp: settings overriding MLP (exploratory note 3 sensitivity only; None = mlp2 exactly)."""
     from sklearn.neural_network import MLPRegressor
     Z, meta = _scaled(rows)
     y = np.asarray(ys, float)
     y_mu, y_sd = y.mean(), y.std() or 1.0
     t = (y - y_mu) / y_sd
     tr, ho = time_split(rows)
-    m = MLPRegressor(**MLP)
+    m = MLPRegressor(**{**MLP, **(hp or {})})
     best, best_mse, best_ep, wait = None, np.inf, 0, 0
     for ep in range(1, max_epochs + 1):
         m.partial_fit(Z[tr], t[tr])
@@ -116,7 +117,7 @@ def fit_mlp2(rows, ys, max_epochs=MAX_EPOCHS, patience=PATIENCE, log=print):
         log(f"  mlp2 epoch {ep:3d}  holdout mse {mse:.5f}  best {best_mse:.5f} @ {best_ep}")
         if wait >= patience:
             break
-    return {**meta, "model": best, "arm": "mlp2", "mlp": MLP, "best_epoch": best_ep, "holdout_mse_std": best_mse,
+    return {**meta, "model": best, "arm": "mlp2", "mlp": {**MLP, **(hp or {})}, "best_epoch": best_ep, "holdout_mse_std": best_mse,
             "y_mu": float(y_mu), "y_sd": float(y_sd), "n_fit": int(len(tr)), "n_holdout": int(len(ho))}
 
 

@@ -268,6 +268,46 @@ def main_curve():
     print(json.dumps(curve, indent=1, default=float))
 
 
+MLP_GRID = [("mlp2", {}), ("hidden_32", {"hidden_layer_sizes": (32,)}), ("hidden_128_64", {"hidden_layer_sizes": (128, 64)}),
+            ("hidden_64_32_16", {"hidden_layer_sizes": (64, 32, 16)}), ("l2_1e-3", {"alpha": 1e-3}), ("l2_1e-2", {"alpha": 1e-2}),
+            ("lr_3e-4", {"learning_rate_init": 3e-4}), ("tanh", {"activation": "tanh"})]
+SENS = _REPO / "results/live/mlp_sensitivity.json"
+
+
+def main_mlp_sensitivity():
+    """Exploratory note 3: each MLP_GRID setting on the six L9 folds (resumable; nothing selected)."""
+    import train_baselines as tb
+    import tune_gbm as tg
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    done = json.loads(SENS.read_text()) if SENS.exists() else {}
+    sep = None
+    for name, hp in MLP_GRID:
+        for tm in tg.TEST_MONTHS + ["2026-09-07..10-05"]:
+            key = f"{name}|{tm}"
+            if key in done:
+                continue
+            if tm.startswith("2026-09"):
+                if sep is None:
+                    sep = september_rows()
+                tr = np.ones(len(D["month"]), bool)
+                R_te, (net, cap, qty) = sep[0], sep[1:]
+            else:
+                tr, te = D["month"] < tm, D["month"] == tm
+                R_te, net, cap, qty = rows_from_X(D["X"][te], feats, cats), D["net_c"][te], D["capital_c"][te], D["qty"][te]
+            blob = tb.fit_mlp2(rows_from_X(D["X"][tr], feats, cats, D["month"][tr]), D["y"][tr], log=lambda *a: None, hp=hp)
+            sc = tg.score(tb.predict(blob, R_te), net, cap, qty)
+            done[key] = {"setting": name, "fold": tm, "best_epoch": blob["best_epoch"], **sc}
+            SENS.write_text(json.dumps(done, indent=1, default=float))
+            print(json.dumps(done[key], default=float), flush=True)
+    summ = {}
+    for name, _ in MLP_GRID:
+        rs = [done[f"{name}|{tm}"]["ret"] for tm in tg.TEST_MONTHS + ["2026-09-07..10-05"]]
+        summ[name] = {"mean_ret": float(np.mean(rs)), "worst_ret": float(min(rs)), "months_positive": int(sum(r > 0 for r in rs))}
+    SENS.write_text(json.dumps({"note": "exploratory note 3; nothing selected", "folds": done, "summary": summ}, indent=1, default=float))
+    print(json.dumps(summ, indent=1))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -301,10 +341,13 @@ def main():
     ap.add_argument("--dollars", action="store_true", help="total net P&L and capital per fold (W3, lin2, random)")
     ap.add_argument("--sep-sim", action="store_true", help="September validation in the full simulator, every baseline")
     ap.add_argument("--curve", action="store_true", help="volume-matched G2-W3 vs lin2 (exploratory note 2)")
+    ap.add_argument("--mlp-sens", action="store_true", help="neural-baseline sensitivity analysis (exploratory note 3)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    if a.curve:
+    if a.mlp_sens:
+        main_mlp_sensitivity()
+    elif a.curve:
         main_curve()
     elif a.sep_sim:
         main_sep_sim()
