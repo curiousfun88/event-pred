@@ -1,0 +1,476 @@
+{
+ "amendment": "A16 addendum",
+ "months": [
+  "2025-08",
+  "2025-09",
+  "2025-10",
+  "2025-11"
+ ],
+ "benchmarks": {
+  "index_source": "FRED SP500 (price index, no dividends)",
+  "spy_return_pct": 9.796072786032717,
+  "tbill_rate_pct": 3.913170731707317,
+  "tbill_return_pct": 1.297242900100234
+ },
+ "arms": {
+  "G": {
+   "ret_pct": 3.5465927659135614,
+   "ci": [
+    2.5061794113470373,
+    4.604137261865501
+   ],
+   "fills": 34086,
+   "events": 1325,
+   "net_usd": 3748.44,
+   "peak_open_capital_usd": 2439.25,
+   "max_drawdown_usd": 103.06,
+   "max_drawdown_pct_of_peak_capital": 4.225069181100748,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": 492.0194408333019,
+    "ann_vol_pct": 41.807156829384034,
+    "sharpe": 11.675184516698117,
+    "short_sample_warning": false,
+    "corr_spy": 0.11793154566262927
+   },
+   "behaviour": {
+    "profit_factor": 1.1152737645812807,
+    "avg_win_usd": 1.958956409009885,
+    "avg_loss_usd": 2.0880832209593527,
+    "hit_rate": 0.5431262101742651,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 6602,
+      "net_usd": 391.11,
+      "return_pct": 1.713886817124933
+     },
+     "15-50c": {
+      "fills": 19470,
+      "net_usd": 2046.59,
+      "return_pct": 3.2502565231359966
+     },
+     "50-85c": {
+      "fills": 6823,
+      "net_usd": 1203.08,
+      "return_pct": 7.278028831902628
+     },
+     "85-99c": {
+      "fills": 1191,
+      "net_usd": 107.66,
+      "return_pct": 3.1909564866875524
+     }
+    },
+    "calibration": [
+     {
+      "pred_range_c": [
+       1.0,
+       2.0
+      ],
+      "fills": 12007,
+      "mean_pred_c": 1.4569161681901937,
+      "mean_realised_c": 0.23038650230011257
+     },
+     {
+      "pred_range_c": [
+       2.0,
+       4.0
+      ],
+      "fills": 12043,
+      "mean_pred_c": 2.843119405992107,
+      "mean_realised_c": 1.9604252976794043
+     },
+     {
+      "pred_range_c": [
+       4.0,
+       8.0
+      ],
+      "fills": 7203,
+      "mean_pred_c": 5.518983446381079,
+      "mean_realised_c": 2.72402739326825
+     },
+     {
+      "pred_range_c": [
+       8.0,
+       1000000000.0
+      ],
+      "fills": 2833,
+      "mean_pred_c": 11.225464873688411,
+      "mean_realised_c": 6.77893383928025
+     }
+    ],
+    "rank_corr_pred_realised": 0.048249099080818245,
+    "markout_settlement_c": 1.899054930883005,
+    "spread_capture_c": 3.7984876879055336,
+    "markout_1h_c": 1.696499818643453,
+    "markout_24h_c": 0.6442955419842961,
+    "holding_hours_median": 19.983333333333334,
+    "profitable_days_share": 0.7280701754385965,
+    "longest_losing_streak_days": 2,
+    "tradedate_days": 114
+   }
+  },
+  "lin2-2025": {
+   "ret_pct": 4.030186466233826,
+   "ci": [
+    2.940406275430793,
+    5.136469452782587
+   ],
+   "fills": 18305,
+   "events": 1067,
+   "net_usd": 2427.26,
+   "peak_open_capital_usd": 2272.95,
+   "max_drawdown_usd": 104.78999999999996,
+   "max_drawdown_pct_of_peak_capital": 4.610308189797399,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": 341.91206805592697,
+    "ann_vol_pct": 32.4472634631213,
+    "sharpe": 10.416869136233327,
+    "short_sample_warning": false,
+    "corr_spy": -0.11772393771069975
+   },
+   "behaviour": {
+    "profit_factor": 1.131888063099532,
+    "avg_win_usd": 1.9561648981124988,
+    "avg_loss_usd": 2.4038584117032396,
+    "hit_rate": 0.5817536192297187,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 2436,
+      "net_usd": 480.21,
+      "return_pct": 4.161665463489123
+     },
+     "15-50c": {
+      "fills": 9756,
+      "net_usd": 1740.92,
+      "return_pct": 4.797717713679112
+     },
+     "50-85c": {
+      "fills": 5052,
+      "net_usd": 217.4,
+      "return_pct": 1.9308071200066788
+     },
+     "85-99c": {
+      "fills": 1061,
+      "net_usd": -11.27,
+      "return_pct": -0.9867441819741888
+     }
+    },
+    "calibration": [
+     {
+      "pred_range_c": [
+       1.0,
+       2.0
+      ],
+      "fills": 8660,
+      "mean_pred_c": 1.401654483950417,
+      "mean_realised_c": 2.1342067844810075
+     },
+     {
+      "pred_range_c": [
+       2.0,
+       4.0
+      ],
+      "fills": 5432,
+      "mean_pred_c": 2.81103173827379,
+      "mean_realised_c": 0.2721575649059982
+     },
+     {
+      "pred_range_c": [
+       4.0,
+       8.0
+      ],
+      "fills": 3320,
+      "mean_pred_c": 5.470334727824914,
+      "mean_realised_c": 3.964101816768678
+     },
+     {
+      "pred_range_c": [
+       8.0,
+       1000000000.0
+      ],
+      "fills": 893,
+      "mean_pred_c": 13.154249469972584,
+      "mean_realised_c": 8.231050705697857
+     }
+    ],
+    "rank_corr_pred_realised": 0.01527435014333058,
+    "markout_settlement_c": 2.271473301960203,
+    "spread_capture_c": 5.729476229295587,
+    "markout_1h_c": 2.600886537962723,
+    "markout_24h_c": 1.9523209303888944,
+    "holding_hours_median": 14.983333333333333,
+    "profitable_days_share": 0.7105263157894737,
+    "longest_losing_streak_days": 4,
+    "tradedate_days": 114
+   }
+  },
+  "mlp2-2025": {
+   "ret_pct": 2.1143833318288423,
+   "ci": [
+    1.296186018106954,
+    2.923155990777131
+   ],
+   "fills": 43975,
+   "events": 1468,
+   "net_usd": 3103.55,
+   "peak_open_capital_usd": 3809.0,
+   "max_drawdown_usd": 160.71000000000015,
+   "max_drawdown_pct_of_peak_capital": 4.219217642425837,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": 260.87699723185625,
+    "ann_vol_pct": 31.233830463626017,
+    "sharpe": 8.227099356238144,
+    "short_sample_warning": false,
+    "corr_spy": 0.07702881410114629
+   },
+   "behaviour": {
+    "profit_factor": 1.0717757902436915,
+    "avg_win_usd": 1.892403119768059,
+    "avg_loss_usd": 2.219003900236067,
+    "hit_rate": 0.556884593519045,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 9816,
+      "net_usd": 742.37,
+      "return_pct": 2.0763184133869776
+     },
+     "15-50c": {
+      "fills": 24843,
+      "net_usd": 1681.41,
+      "return_pct": 1.8951217417433528
+     },
+     "50-85c": {
+      "fills": 7897,
+      "net_usd": 591.59,
+      "return_pct": 2.992813281921099
+     },
+     "85-99c": {
+      "fills": 1419,
+      "net_usd": 88.18,
+      "return_pct": 3.473677575910373
+     }
+    },
+    "calibration": [
+     {
+      "pred_range_c": [
+       1.0,
+       2.0
+      ],
+      "fills": 13517,
+      "mean_pred_c": 1.4801054946965155,
+      "mean_realised_c": 0.06226761065552896
+     },
+     {
+      "pred_range_c": [
+       2.0,
+       4.0
+      ],
+      "fills": 15726,
+      "mean_pred_c": 2.8414187741278574,
+      "mean_realised_c": 1.2366689111405547
+     },
+     {
+      "pred_range_c": [
+       4.0,
+       8.0
+      ],
+      "fills": 8525,
+      "mean_pred_c": 5.499378528517455,
+      "mean_realised_c": 1.6470518682011666
+     },
+     {
+      "pred_range_c": [
+       8.0,
+       1000000000.0
+      ],
+      "fills": 6207,
+      "mean_pred_c": 20.11409089829312,
+      "mean_realised_c": 2.421580056494642
+     }
+    ],
+    "rank_corr_pred_realised": 0.010041401054752427,
+    "markout_settlement_c": 1.1867386073093698,
+    "spread_capture_c": 2.9158219281094904,
+    "markout_1h_c": 1.0673277936531809,
+    "markout_24h_c": 0.7410727399124654,
+    "holding_hours_median": 18.983333333333334,
+    "profitable_days_share": 0.6491228070175439,
+    "longest_losing_streak_days": 3,
+    "tradedate_days": 114
+   }
+  },
+  "wide3": {
+   "ret_pct": 0.0724277726832349,
+   "ci": [
+    -0.4495466705667317,
+    0.5463062924976102
+   ],
+   "fills": 97517,
+   "events": 1578,
+   "net_usd": 206.04,
+   "peak_open_capital_usd": 6198.8,
+   "max_drawdown_usd": 480.6800000000001,
+   "max_drawdown_pct_of_peak_capital": 7.754404078208688,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": 10.642212584439106,
+    "ann_vol_pct": 22.900638698549262,
+    "sharpe": 0.29383642706690394,
+    "short_sample_warning": false,
+    "corr_spy": -0.0044521607824231715
+   },
+   "behaviour": {
+    "profit_factor": 1.0022144680730323,
+    "avg_win_usd": 1.9795923999575415,
+    "avg_loss_usd": 1.8456450845036896,
+    "hit_rate": 0.4830439820749203,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 26412,
+      "net_usd": -317.43,
+      "return_pct": -0.41750416083676023
+     },
+     "15-50c": {
+      "fills": 54044,
+      "net_usd": -197.18,
+      "return_pct": -0.11966491154488444
+     },
+     "50-85c": {
+      "fills": 14405,
+      "net_usd": 549.77,
+      "return_pct": 1.450005063953513
+     },
+     "85-99c": {
+      "fills": 2656,
+      "net_usd": 170.88,
+      "return_pct": 2.969605338616339
+     }
+    },
+    "markout_settlement_c": 0.05871975065423858,
+    "spread_capture_c": 2.5055772433940495,
+    "markout_1h_c": 0.5282234979322082,
+    "markout_24h_c": -0.06609488099280102,
+    "holding_hours_median": 19.983333333333334,
+    "profitable_days_share": 0.49122807017543857,
+    "longest_losing_streak_days": 6,
+    "tradedate_days": 114
+   }
+  },
+  "liq": {
+   "ret_pct": -0.04964941406142775,
+   "ci": [
+    -0.5082712093507201,
+    0.38631537193348037
+   ],
+   "fills": 99930,
+   "events": 1522,
+   "net_usd": -144.7,
+   "peak_open_capital_usd": 5750.35,
+   "max_drawdown_usd": 521.7399999999998,
+   "max_drawdown_pct_of_peak_capital": 9.073186849496114,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": -8.056794102082781,
+    "ann_vol_pct": 25.98208177349284,
+    "sharpe": -0.4607007605526808,
+    "short_sample_warning": false,
+    "corr_spy": -0.021878395104898196
+   },
+   "behaviour": {
+    "profit_factor": 0.9985140859924211,
+    "avg_win_usd": 2.010471208518557,
+    "avg_loss_usd": 1.8885123630369438,
+    "hit_rate": 0.48398879215450813,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 25072,
+      "net_usd": -189.59,
+      "return_pct": -0.2583296634778893
+     },
+     "15-50c": {
+      "fills": 55726,
+      "net_usd": -573.09,
+      "return_pct": -0.3410191216822206
+     },
+     "50-85c": {
+      "fills": 16181,
+      "net_usd": 438.94,
+      "return_pct": 1.0153000494534903
+     },
+     "85-99c": {
+      "fills": 2951,
+      "net_usd": 179.04,
+      "return_pct": 2.6453509847667735
+     }
+    },
+    "markout_settlement_c": -0.0014387055702559444,
+    "spread_capture_c": 2.2276084559413305,
+    "markout_1h_c": 0.34031465774173886,
+    "markout_24h_c": -0.42226247855120935,
+    "holding_hours_median": 17.983333333333334,
+    "profitable_days_share": 0.45614035087719296,
+    "longest_losing_streak_days": 6,
+    "tradedate_days": 114
+   }
+  },
+  "random_s0": {
+   "ret_pct": 0.18437795771009877,
+   "ci": [
+    -1.0555590573184068,
+    1.4268471100113083
+   ],
+   "fills": 24473,
+   "events": 1510,
+   "net_usd": 136.91,
+   "peak_open_capital_usd": 1663.78,
+   "max_drawdown_usd": 419.98000000000013,
+   "max_drawdown_pct_of_peak_capital": 25.24252004471746,
+   "risk": {
+    "days": 114,
+    "ann_return_pct": 26.34676417449751,
+    "ann_vol_pct": 52.89537304045255,
+    "sharpe": 0.42411258590867207,
+    "short_sample_warning": false,
+    "corr_spy": 0.011433738117507908
+   },
+   "behaviour": {
+    "profit_factor": 1.0057273806949076,
+    "avg_win_usd": 1.9953008548427256,
+    "avg_loss_usd": 1.9240558596265294,
+    "hit_rate": 0.49233849548482,
+    "by_price_band": {
+     "1-15c": {
+      "fills": 6640,
+      "net_usd": 49.92,
+      "return_pct": 0.24471080056020733
+     },
+     "15-50c": {
+      "fills": 13377,
+      "net_usd": -41.87,
+      "return_pct": -0.09861391744552506
+     },
+     "50-85c": {
+      "fills": 3804,
+      "net_usd": 81.12,
+      "return_pct": 0.8021636267447207
+     },
+     "85-99c": {
+      "fills": 652,
+      "net_usd": 47.74,
+      "return_pct": 3.717113202993
+     }
+    },
+    "markout_settlement_c": 0.1203503154722667,
+    "spread_capture_c": 2.314143785398141,
+    "markout_1h_c": 0.3139655334777286,
+    "markout_24h_c": -0.5766982907009327,
+    "holding_hours_median": 18.983333333333334,
+    "profitable_days_share": 0.4824561403508772,
+    "longest_losing_streak_days": 7,
+    "tradedate_days": 114
+   }
+  }
+ }
+}
