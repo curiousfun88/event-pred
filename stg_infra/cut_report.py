@@ -1,0 +1,335 @@
+"""
+cut_report.py
+
+FORWARD-TEST CUT REPORT (pre-registration section 6 metrics, plus descriptive market-making metrics).
+
+Reads the live ledger (runs/live/paper/ledger/entries), the settlement cache (runs/live/paper/markets.pkl)
+and the logged hourly scores, and for a cut (fills quoted before `--cut`, events settled by `--settle-by`)
+reports for every arm and fill stream:
+
+  verdict figures   net P&L after fees (settled events), return on capital, event-cluster 95% CI and
+                    one-sided lower bound, net c/contract, fills, events, fees paid
+  risk (section 6)  daily series from the ledger's total P&L (realised + marked) at each UTC day's end,
+                    divided by peak capital in open positions; annualised return and volatility (365 days),
+                    Sharpe over the 3-month T-bill (FRED DTB3), maximum drawdown of the hourly total-P&L curve,
+                    correlation with SPY daily returns; SPY and T-bill returns over the same dates
+  market making     fill rate (filled orders / posted orders), hit rate (share of settled fills with
+                    positive net), profit concentration (share of net from the 10 best events), peak capital,
+                    1-hour markout per contract (mid one hour later vs fill price)
+
+All P&L is net of Kalshi maker fees. Live hours only (>= the ledger's live start). Descriptive except the
+verdict figures, which follow sections 5 and L8.
+
+USAGE (from repo root; LIVE_DIR may point at a copy of the sandbox's runs/live):
+    python stg_infra/cut_report.py --self-test
+    python stg_infra/cut_report.py --cut 2026-10-28T00 --settle-by 2026-10-30T00 [--out results/live/cut_interim.json]
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import io
+import json
+import os
+import pickle
+import sys
+from pathlib import Path
+
+import numpy as np
+
+_THIS = Path(__file__).resolve().parent
+_REPO = _THIS.parent
+sys.path.insert(0, str(_THIS))
+
+H_NS = 3_600_000_000_000
+DAY_NS = 24 * H_NS
+LIVE = Path(os.environ.get("LIVE_DIR", _REPO / "runs/live"))
+LEDGER = LIVE / "paper" / "ledger"
+STREAMS = ("primary", "primary_opt", "primary_strict", "sensitivity")
+
+
+def ns_of(stamp: str) -> int:
+    return int(dt.datetime.strptime(stamp, "%Y%m%dT%H").replace(tzinfo=dt.timezone.utc).timestamp()) * 10**9
+
+
+# ---------------------------------------------------------------- ledger reading
+
+def read_ledger(d: Path):
+    """(live_start_ns, {(stream, arm): [fill keys]}, [(H_ns, {stream: {arm: total_usd}})]) from the entries."""
+    fills, curve = {}, []
+    st = json.loads((d / "state.json").read_text()) if (d / "state.json").exists() else {}
+    start = st.get("start_H")
+    for p in sorted((d / "entries").glob("*.json")):
+        e = json.loads(p.read_text())
+        start = start or ns_of(e["live_start"])
+        for w, arms in e.get("new_fills", {}).items():
+            for a, rows in arms.items():
+                fills.setdefault((w, a), []).extend(tuple(r) for r in rows)
+        curve.append((int(e["H_ns"]), {w: {a: c["total_usd"] for a, c in arms.items()} for w, arms in e["cumulative"].items()}))
+    return start, fills, curve
+
+
+# ---------------------------------------------------------------- metrics (pure, self-tested)
+
+def settle_times(markets: dict) -> dict:
+    """{event: time all its legs settled (ns) or None}, from the settlement cache."""
+    by_ev = {}
+    for tk, m in markets.items():
+        by_ev.setdefault(tk.rsplit("-", 1)[0], []).append(m)
+    out = {}
+    for ev, ms in by_ev.items():
+        ok = all(m.get("result") in ("yes", "no") and m.get("settled_ns") for m in ms)
+        out[ev] = max(m["settled_ns"] for m in ms) if ok else None
+    return out
+
+
+def fill_metrics(keys, results: dict, settled_at: dict, settle_by: int, mid_next: dict):
+    """Verdict and market-making figures from ledger fill keys (event, ticker, side, price, qty, fee, capital, H)."""
+    import paper_ledger as pl_
+    import paper_trader as pt
+    F = [pl_.as_fill(k, results.get(k[1])) for k in keys]
+    done = [f for f in F if settled_at.get(f[0]) is not None and settled_at[f[0]] <= settle_by]
+    net = sum(f[6] for f in done); cap = sum(f[7] for f in done); qty = sum(f[4] for f in done)
+    by_ev = {}
+    for f in done:
+        by_ev[f[0]] = by_ev.get(f[0], 0.0) + f[6]
+    top10 = sum(sorted(by_ev.values(), reverse=True)[:10])
+    mk = [(int(f[2]) * (mid_next[(f[1], int(f[9]))] - int(f[3])) * int(f[4]), int(f[4])) for f in F if (f[1], int(f[9])) in mid_next]
+    vs = pt.verdict_stats(done)
+    return {"fills": len(F), "settled_fills": len(done), "events": len(by_ev), "net_usd": net / 100,
+            "capital_usd": cap / 100, "return_pct": 100 * net / cap if cap else float("nan"),
+            "net_c_per_contract": net / qty if qty else float("nan"), "fees_usd": sum(f[5] for f in F) / 100,
+            "hit_rate": float(np.mean([f[6] > 0 for f in done])) if done else float("nan"),
+            "top10_event_share": top10 / net if net > 0 else float("nan"),
+            "markout_c_per_contract": sum(m for m, _ in mk) / sum(q for _, q in mk) if mk else float("nan"),
+            "ci": vs["event"], "ci_day_clusters": vs["day"], "_done": done}
+
+
+def peak_open_capital(keys, settled_at: dict, days) -> float:
+    """Largest capital (USD) in open positions at any day end: fills quoted by then, events not yet settled."""
+    best = 0.0
+    for d_end in days:
+        cap = sum(float(k[6]) for k in keys if int(k[7]) < d_end and (settled_at.get(k[0]) is None or settled_at[k[0]] > d_end))
+        best = max(best, cap)
+    return best / 100
+
+
+def daily_series(curve, stream, arm, start, cut):
+    """End-of-day total P&L (USD) per UTC day from the hourly ledger curve, live hours before the cut."""
+    pts = [(H, c.get(stream, {}).get(arm)) for H, c in curve if start <= H < cut and c.get(stream, {}).get(arm) is not None]
+    days = {}
+    for H, v in pts:
+        days[(H + H_NS) // DAY_NS] = v          # value recorded for hour H is known at H+1h
+    ks = sorted(days)
+    return [k * DAY_NS + DAY_NS for k in ks], [days[k] for k in ks]
+
+
+def max_drawdown(values):
+    """Largest fall (USD) from a running peak of a P&L curve (peak starts at 0)."""
+    peak, mdd = 0.0, 0.0
+    for v in values:
+        peak = max(peak, v)
+        mdd = max(mdd, peak - v)
+    return mdd
+
+
+def risk_metrics(day_totals, capital, rf_annual=None, spy_daily=None):
+    """Daily returns = change in total P&L / capital. Annualised over 365 days (Kalshi trades every day)."""
+    tot = np.asarray(day_totals, float)
+    if len(tot) < 2 or not capital:
+        return {"days": len(tot)}
+    r = np.diff(np.concatenate([[0.0], tot])) / capital
+    out = {"days": len(r), "ann_return_pct": 100 * r.mean() * 365, "ann_vol_pct": 100 * r.std(ddof=1) * np.sqrt(365)}
+    rf = (rf_annual or 0.0) / 365
+    sd = r.std(ddof=1)
+    out["sharpe"] = float((r.mean() - rf) / sd * np.sqrt(365)) if sd > 0 else float("nan")
+    out["short_sample_warning"] = len(r) < 60
+    if spy_daily is not None:
+        a, b = np.asarray(spy_daily[0], float), np.asarray(spy_daily[1], float)
+        if len(a) >= 3 and np.std(a) > 0 and np.std(b) > 0:
+            out["corr_spy"] = float(np.corrcoef(a, b)[0, 1])
+    return out
+
+
+# ---------------------------------------------------------------- benchmarks
+
+def fetch_spy_and_tbill(lo: dt.date, hi: dt.date):
+    """SPY daily closes (Stooq, split-adjusted close) and the mean 3-month T-bill rate (FRED DTB3) over [lo, hi]."""
+    import requests
+    out = {}
+    try:
+        t = requests.get("https://stooq.com/q/d/l/?s=spy.us&i=d", timeout=60, headers={"User-Agent": "fyp-cut-report"}).text
+        rows = [l.split(",") for l in t.strip().splitlines()[1:]]
+        px = {dt.date.fromisoformat(r[0]): float(r[4]) for r in rows if len(r) > 4 and r[4]}
+        days = sorted(d for d in px if lo <= d <= hi)
+        out["spy_close"] = {d.isoformat(): px[d] for d in days}
+        if len(days) >= 2:
+            out["spy_return_pct"] = 100 * (px[days[-1]] / px[days[0]] - 1)
+    except Exception as e:
+        out["spy_error"] = repr(e)[:200]
+    if "spy_close" not in out or len(out["spy_close"]) < 2:
+        try:    # fallback: FRED's S&P 500 price index (no dividends; about 0.1 pt/month below SPY's total return)
+            t = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500", timeout=60).text
+            rows = [l.split(",") for l in t.strip().splitlines()[1:]]
+            px = {dt.date.fromisoformat(r[0]): float(r[1]) for r in rows if len(r) > 1 and r[1] not in (".", "")}
+            days = sorted(d for d in px if lo <= d <= hi)
+            out["spy_close"] = {d.isoformat(): px[d] for d in days}
+            out["index_source"] = "FRED SP500 (price index, no dividends)"
+            out.pop("spy_error", None)
+            if len(days) >= 2:
+                out["spy_return_pct"] = 100 * (px[days[-1]] / px[days[0]] - 1)
+        except Exception as e:
+            out["spy_error"] = repr(e)[:200]
+    else:
+        out["index_source"] = "Stooq SPY close"
+    try:
+        t = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3", timeout=60).text
+        vals = [float(r.split(",")[1]) for r in t.strip().splitlines()[1:]
+                if r.split(",")[1] not in (".", "") and lo <= dt.date.fromisoformat(r.split(",")[0]) <= hi]
+        if vals:
+            out["tbill_rate_pct"] = float(np.mean(vals))
+            out["tbill_return_pct"] = out["tbill_rate_pct"] * (hi - lo).days / 365
+    except Exception as e:
+        out["tbill_error"] = repr(e)[:200]
+    return out
+
+
+# ---------------------------------------------------------------- report
+
+def mids_next_hour(hours):
+    """{(ticker, H): mid one hour after H (cents)} from the logged scores (both candidate files)."""
+    import paper_trader as pt
+    one, two = pt.load_scores(hours)
+    out = {}
+    for d in (one, two):
+        if d is None:
+            continue
+        for tk, H, b, a in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
+            out[(tk, int(H) - H_NS)] = (b + a) / 2
+    return out
+
+
+def posted_orders(hours):
+    """{arm: number of posted orders (ticker, H, side[, price])} in the given hours, from the logged scores."""
+    import paper_trader as pt
+    import train_baselines as tb
+    import retrain_g2 as rg
+    one, two = pt.load_scores(hours)
+    base = {"lin2": pickle.loads(tb.model_path("lin2").read_bytes()), "mlp2": pickle.loads(tb.model_path("mlp2").read_bytes()),
+            "g2w1": pickle.loads(rg.model_path("W1", "G2").read_bytes()), "g2w2": pickle.loads(rg.model_path("W2", "G2").read_bytes())}
+    sc = pt.arm_scores(one, two, base)
+    return {a: int(sum(1 for v in s.values() if v > pt.THRESHOLD_C)) for a, s in sc.items()}
+
+
+def build(cut: str, settle_by: str, bench=True):
+    import paper_trader as pt
+    start, fills, curve = read_ledger(LEDGER)
+    if start is None:
+        raise SystemExit("no ledger entries: the live test has not started")
+    cut_ns, settle_ns = ns_of(cut), ns_of(settle_by)
+    markets = pickle.loads((LIVE / "paper" / "markets.pkl").read_bytes())
+    results = {tk: m.get("result") for tk, m in markets.items()}
+    settled_at = settle_times(markets)
+    hours = [h for h in pt.scored_hours(dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H"))
+             if ns_of(h) < cut_ns]
+    mid_next = mids_next_hour(hours + [dt.datetime.fromtimestamp(cut_ns / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H")])
+    posted = posted_orders(hours)
+    lo, hi = dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).date(), dt.datetime.fromtimestamp(cut_ns / 1e9, dt.timezone.utc).date()
+    bm = fetch_spy_and_tbill(lo, hi) if bench else {}
+    spy = bm.get("spy_close", {})
+    spy_days = sorted(spy)
+    spy_ret = {spy_days[i]: spy[spy_days[i]] / spy[spy_days[i - 1]] - 1 for i in range(1, len(spy_days))}
+    rep = {"cut": cut, "settle_by": settle_by, "live_start": dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).isoformat(),
+           "hours": len(hours), "benchmarks": {k: v for k, v in bm.items() if k != "spy_close"}, "arms": {}}
+    for (w, a), keys in sorted(fills.items()):
+        keys = [k for k in keys if start <= int(k[7]) < cut_ns]
+        m = fill_metrics(keys, results, settled_at, settle_ns, mid_next)
+        m.pop("_done")
+        filled_orders = len({(k[1], k[7], k[2], k[3]) for k in keys})
+        if w == "primary" and posted.get(a):
+            m["fill_rate"] = filled_orders / posted[a]
+            m["posted_orders"] = posted[a]
+        day_ends, totals = daily_series(curve, w, a, start, cut_ns)
+        cap = peak_open_capital(keys, settled_at, day_ends)
+        m["peak_open_capital_usd"] = cap
+        m["max_drawdown_usd"] = max_drawdown([c.get(w, {}).get(a, 0.0) for H, c in curve if start <= H < cut_ns])
+        m["max_drawdown_pct_of_peak_capital"] = 100 * m["max_drawdown_usd"] / cap if cap else float("nan")
+        pair = None
+        if spy_ret:
+            dates = [dt.datetime.fromtimestamp((de - DAY_NS) / 1e9, dt.timezone.utc).date().isoformat() for de in day_ends]
+            dd = np.diff(np.concatenate([[0.0], totals]))
+            both = [(spy_ret[d_], v / cap) for d_, v in zip(dates, dd) if d_ in spy_ret and cap]
+            pair = ([x for x, _ in both], [y for _, y in both]) if both else None
+        m["risk"] = risk_metrics(totals, cap, bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None, pair)
+        rep["arms"].setdefault(w, {})[a] = m
+    return rep
+
+
+# ---------------------------------------------------------------- self-test
+
+def self_test() -> bool:
+    import tempfile
+    import paper_ledger as pl_
+    ok = True
+
+    def check(msg, c):
+        nonlocal ok
+        ok &= bool(c)
+        print(f"  [{'PASS' if c else 'FAIL'}] {msg}")
+
+    check("max drawdown: peak 5 then down to 1 -> 4", max_drawdown([1, 5, 3, 1, 4]) == 4)
+    check("max drawdown of a curve that only falls from 0", max_drawdown([-2, -3]) == 3)
+    r = risk_metrics([1.0, 2.0, 3.0, 4.0], 100.0, rf_annual=0.0)
+    check("constant daily gain: zero volatility -> Sharpe undefined, return 1%/day x 365", np.isnan(r["sharpe"]) and abs(r["ann_return_pct"] - 365) < 1e-9)
+    r2 = risk_metrics([1.0, 0.0, 2.0, 1.0, 3.0], 100.0, rf_annual=0.05)
+    check("Sharpe subtracts the T-bill and annualises with sqrt(365); short-sample flagged",
+          abs(r2["sharpe"] - ((np.mean([1, -1, 2, -1, 2]) / 100 - 0.05 / 365) / (np.std([1, -1, 2, -1, 2], ddof=1) / 100) * np.sqrt(365))) < 1e-9
+          and r2["short_sample_warning"])
+    H0 = ns_of("20261020T10")
+    curve = [(H0, {"primary": {"g2": 1.0}}), (H0 + 5 * H_NS, {"primary": {"g2": 3.0}}), (H0 + 20 * H_NS, {"primary": {"g2": 2.0}})]
+    de, tot = daily_series(curve, "primary", "g2", H0, H0 + 30 * H_NS)
+    check("daily series: last value of each UTC day (20 Oct ends at 3.0, 21 Oct at 2.0)", tot == [3.0, 2.0] and len(de) == 2)
+    keys = [("E1", "E1-A", 1, 40, 10, 2.0, 400.0, H0), ("E2", "E2-A", -1, 70, 10, 0.0, 300.0, H0),
+            ("E3", "E3-A", 1, 50, 10, 0.0, 500.0, H0 + H_NS)]
+    res = {"E1-A": "yes", "E2-A": "yes", "E3-A": None}
+    st = {"E1": H0 + 2 * H_NS, "E2": H0 + 3 * H_NS, "E3": None}
+    m = fill_metrics(keys, res, st, H0 + 10 * H_NS, {("E1-A", H0): 45.0})
+    # E1: bought YES 40, settles YES: +600 - 2 = 598; E2: sold YES 70, settles YES: -300; E3 open
+    check(f"net after fees over settled events only (+$2.98, got {m['net_usd']:.2f})", abs(m["net_usd"] - 2.98) < 1e-9)
+    check("hit rate = share of settled fills with positive net (1 of 2)", m["hit_rate"] == 0.5)
+    check("fees summed over all fills ($0.02)", abs(m["fees_usd"] - 0.02) < 1e-9)
+    check("markout: +1 x (45 - 40) = +5c per contract over the fill with a next-hour mid", m["markout_c_per_contract"] == 5.0)
+    check("concentration: top events' share of net", abs(m["top10_event_share"] - 1.0) < 1e-9)
+    cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
+    check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
+    mk = {"T1-A": {"result": "yes", "settled_ns": 5}, "T1-B": {"result": "no", "settled_ns": 9}, "T2-A": {"result": "", "settled_ns": None}}
+    check("settle times by event from the cache", settle_times(mk) == {"T1": 9, "T2": None})
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        pl_.round_update(d, {"primary": {"g2": [pl_.as_fill(k, None) for k in keys[:2]]}}, H0, set(), {}, lambda H: dt.datetime.fromtimestamp(H / 1e9, dt.timezone.utc).strftime("%Y%m%dT%H"),
+                         lambda live, s: {}, results={})
+        s0, fl, cv = read_ledger(d)
+        check("ledger reader recovers the live start, fills and curve", s0 == H0 and len(fl[("primary", "g2")]) == 2 and len(cv) == 1)
+    print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
+    return ok
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--cut", help="first hour NOT included, YYYYmmddTHH (UTC)")
+    ap.add_argument("--settle-by", help="events settled by this hour count, YYYYmmddTHH (UTC)")
+    ap.add_argument("--no-benchmarks", action="store_true")
+    ap.add_argument("--out", default=None)
+    a = ap.parse_args()
+    if a.self_test:
+        sys.exit(0 if self_test() else 1)
+    rep = build(a.cut.replace("-", "").replace(":", ""), a.settle_by.replace("-", "").replace(":", ""), not a.no_benchmarks)
+    txt = json.dumps(rep, indent=1, default=float)
+    if a.out:
+        Path(a.out).write_text(txt)
+    print(txt)
+
+
+if __name__ == "__main__":
+    main()

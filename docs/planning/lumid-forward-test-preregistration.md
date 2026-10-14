@@ -616,3 +616,12 @@ amendment makes the fills and P&L live too.
 to: pessimistic (verdicts), optimistic and strict (bounds) on the primary order window, each its own ledger stream
 (`primary`, `primary_opt`, `primary_strict`), plus the L3 decision-time sensitivity (pessimistic). Found missing in
 review before any live P&L; no change of rule.
+
+**Section 6 implementation note (2026-10-15, before the live start).** `stg_infra/cut_report.py` computes the cut
+metrics from the live ledger. Daily series: the ledger's total P&L (realised + marked, net of fees) at each UTC
+day's end; daily return = change / peak capital in open positions over the live period (section 6's "peak capital
+committed"); annualised over 365 days (Kalshi trades every day); Sharpe over the mean 3-month T-bill rate (FRED
+DTB3); maximum drawdown of the hourly total-P&L curve. Index benchmark: Stooq SPY close where available, else
+FRED SP500 (price index without dividends, about 0.1 point per month below SPY's total return; the source used is
+printed in the report). Added descriptive metrics: fill rate, hit rate, top-10-event profit share, fees paid,
+peak open capital, 1-hour markout. Reporting only; no rule changes.
