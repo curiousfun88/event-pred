@@ -566,3 +566,11 @@ G2-W3 and `lin2` on the six L9 folds: each model's top-ranked candidates at fixe
 30, 40% of each fold's candidates), return and net P&L pooled over the folds, beside each model's own 1c rule.
 Answers whether `lin2`'s higher return comes from ranking or from posting fewer orders. Changes no arm, rule
 or verdict; the pre-registered `g2` - `lin2` comparison stays in net return, with net P&L reported beside it.
+
+**Exploratory note 3 (2026-10-14, before any live P&L; nothing is selected or deployed).** Sensitivity analysis of the
+neural baseline `mlp2`, to check whether its instability comes from its fixed settings. Eight settings, each one
+change from `mlp2` (as A15 for G2): `mlp2` itself; hidden (32); hidden (128, 64); hidden (64, 32, 16); L2 1e-3;
+L2 1e-2; learning rate 3e-4; tanh activation. Same six folds as L9 (2026-04..08 from A15's table, trained on all
+earlier months; September trained on all months through 2026-08), same time-ordered early stopping, A15's offline
+score. Reported per setting: every fold, mean, worst month, months positive, beside G2's recipe and `lin2`. No
+setting is selected, adopted or added as an arm; `mlp2` stays as frozen in L6.
