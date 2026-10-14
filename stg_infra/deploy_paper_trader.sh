@@ -20,13 +20,13 @@ wait_quiet() {   # producer logged this hour and minute < 58 (sandbox clock)
 }
 
 copy_files() {   # new files only; none is imported by the producer
-  tar -cf - stg_infra/paper_trader.py stg_infra/lumid_sandbox_keeper.py stg_infra/examples/train_baselines.py \
+  tar -cf - stg_infra/paper_trader.py stg_infra/paper_ledger.py stg_infra/lumid_sandbox_keeper.py stg_infra/examples/train_baselines.py \
       stg_infra/fetch_kalshi_api_months.py docs/planning/l4_candidate_pool.json \
       runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_lin2_W3_model.json \
       runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_mlp2_W3_model.json \
       runs/maker/policy_G2_W1_model.pkl runs/maker/policy_G2_W1_model.json \
       runs/maker/policy_G2_W2_model.pkl runs/maker/policy_G2_W2_model.json \
-    | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_G2_W1_model.pkl runs/maker/policy_G2_W2_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1"
+    | $S "cd $R && tar -xf - && sha1sum runs/maker/policy_lin2_W3_model.pkl runs/maker/policy_mlp2_W3_model.pkl runs/maker/policy_G2_W1_model.pkl runs/maker/policy_G2_W2_model.pkl | cut -c1-16 && $PY stg_infra/paper_trader.py --self-test | tail -1 && $PY stg_infra/paper_ledger.py --self-test | tail -1 && $PY stg_infra/lumid_sandbox_keeper.py --self-test | tail -1"
 }
 
 case "${1:-}" in
@@ -38,7 +38,7 @@ check)
   ;;
 enable)
   copy_files || { echo "ABORT: copy or self-test failed; nothing enabled"; exit 2; }
-  $S "echo '$PY stg_infra/paper_trader.py --loop' > /home/curiouslearner842/.lumid/paper_cmd && cat /home/curiouslearner842/.lumid/paper_cmd" || exit 3
+  $S "echo '$PY stg_infra/paper_trader.py --loop --ledger --fleet --pat-file /home/curiouslearner842/.lumid/lumid_pat' > /home/curiouslearner842/.lumid/paper_cmd && cat /home/curiouslearner842/.lumid/paper_cmd" || exit 3
   $S 'pkill -f "[l]umid_sandbox_keeper.py --run"; echo keeper stopped'
   sleep 3
   $S "bash $R/stg_infra/lumid_start.sh"

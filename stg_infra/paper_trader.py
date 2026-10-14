@@ -452,7 +452,7 @@ def cmd_fetch_tape(since, rps):
         print(json.dumps({"tape": h, "trades": len(df), "tickers": len(tks), "api_calls": k.calls}), flush=True)
 
 
-def cmd_run(since, rps, write=True, check_only=False):
+def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None):
     import live_signal_producer as lp
     import simulate_maker as s
     import train_baselines as tb
@@ -518,6 +518,7 @@ def cmd_run(since, rps, write=True, check_only=False):
     settled_at = event_settled_at(events, markets)
     result = {"hours": [hours[0], hours[-1], len(hours)], "check": chk, "tape_hours": len(hours), "windows": {}}
     folds = None
+    ledger_fills = {}
     for w in WINDOWS:                    # primary first: the L7 selection uses g2's primary-window fills
         Lw = apply_window(legs, cuts, w)
         fills = run_arms(Lw, events, charged, months, scores, ONE_ARMS + TWO_ARMS)
@@ -525,6 +526,7 @@ def cmd_run(since, rps, write=True, check_only=False):
             folds = walk_forward_selection(fills["g2"], settled_at, cat_f, in_primary)
             result["g2_sel_folds"] = folds
         fills["g2_sel"] = g2_sel_fills(fills["g2"], folds, cat_f, in_primary)
+        ledger_fills[w] = {a: [f for f in fl if in_primary(f)] for a, fl in fills.items()}   # L10: verdict universe
         res = {}
         for arm, fl in fills.items():
             mask = settled_mask(fl, Lw, events)
@@ -556,7 +558,39 @@ def cmd_run(since, rps, write=True, check_only=False):
         result["windows"][w] = res
     if write:
         (PAPER / "summary.json").write_text(json.dumps(result, indent=1, default=float))
+    if ledger:
+        result["ledger"] = ledger_round(ledger_fills, ns_of(hours[-1]), events, markets, one, two, pat)
     return result
+
+
+def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat):
+    """L10: append this round's ledger entries (paper_ledger) and post the newest to Research Fleet."""
+    import paper_ledger as pl_
+    import polars as pl
+    settled_at = event_settled_at(events, markets)
+    settled = {ev for ev, t in settled_at.items() if t is not None}
+    q = pl.concat([d.select("ticker", "H_ns", "bid_c", "ask_c") for d in (one, two) if d is not None])
+    last = q.sort("H_ns").group_by("ticker").agg(pl.col("bid_c").last(), pl.col("ask_c").last())
+    mids = {tk: (b + a) / 2 for tk, b, a in zip(last["ticker"].to_list(), last["bid_c"].to_list(), last["ask_c"].to_list())}
+
+    def verdict(live, settled_now):
+        w = live.get("primary", {})
+        g2 = [f for f in w.get("g2", []) if f[0] in settled_now]
+        rnd = [f for f in w.get("rnd2", []) if f[0] in settled_now]
+        vs, ps = verdict_stats(g2), paired_stats(g2, rnd)
+        return {"g2_return_settled_pct": vs["event"]["ret"], "g2_lo_one_sided": vs["event"]["lo_one_sided"],
+                "g2_lo95": vs["event"]["lo95"], "g2_hi95": vs["event"]["hi95"], "g2_events": vs["event"]["clusters"],
+                "g2_minus_rnd2": ps["event"]["diff"], "g2_minus_rnd2_lo_one_sided": ps["event"]["lo_one_sided"],
+                "day_cluster": {"g2_lo_one_sided": vs["day"]["lo_one_sided"],
+                                "g2_minus_rnd2_lo_one_sided": ps["day"]["lo_one_sided"]}}
+    written = pl_.round_update(PAPER / "ledger", ledger_fills, complete_H, settled, mids, stamp_of, verdict)
+    jobs = []
+    if written and pat:
+        jobs.append(pl_.post_fleet(written[-1], pat))
+    info = {"entries_written": [e["H"] for e in written], "fleet_job": jobs[-1] if jobs else None,
+            "verification_issues": written[0]["verification"] if written else []}
+    print(json.dumps({"ledger": info}), flush=True)
+    return info
 
 
 # ---------------------------------------------------------------- self-test
@@ -693,6 +727,9 @@ def main():
     ap.add_argument("--check", action="store_true", help="candidate regeneration only: never simulates fills or P&L")
     ap.add_argument("--since", default=L2_FIX)
     ap.add_argument("--rps", type=float, default=2.0, help="L7: <= 2 requests/s")
+    ap.add_argument("--ledger", action="store_true", help="L10: append the live ledger each round")
+    ap.add_argument("--fleet", action="store_true", help="L10: post each round's ledger summary to Research Fleet")
+    ap.add_argument("--pat-file", default="~/.lumid_pat")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
@@ -700,8 +737,9 @@ def main():
         cmd_fetch_tape(a.since, a.rps)
     if a.check:
         cmd_run(a.since, a.rps, write=False, check_only=True)
+    pat = Path(a.pat_file).expanduser().read_text().strip() if a.fleet else None
     if a.run:
-        cmd_run(a.since, a.rps)
+        cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat)
     if a.loop:
         last = None
         while True:      # one round per hour, in the producer's quiet minutes (L7 item 4), never during its cycle
@@ -714,7 +752,7 @@ def main():
                 t0 = time.time()
                 try:
                     cmd_fetch_tape(a.since, a.rps)
-                    cmd_run(a.since, a.rps)
+                    cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat)
                 except Exception as e:
                     print(json.dumps({"error": repr(e)[:300], "at": time.time()}), flush=True)
                 print(json.dumps({"round": stamp, "secs": round(time.time() - t0, 1)}), flush=True)

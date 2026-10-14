@@ -585,3 +585,29 @@ P&L pooled per year; offline scoring (no inventory interaction), as note 2.
 **Exploratory note 5 (2026-10-14; diagnostic, nothing selected).** Pick overlap behind note 4: at each matched share,
 the fraction of G2's (2026) / G's (2025) selected candidates that the linear and the neural design also select, per
 year, same models and data as note 4. Tests whether the 2025 convergence at high shares is mechanical overlap.
+
+## Amendment L10 (2026-10-14, BEFORE any live fill, outcome or P&L is computed): live paper-trading ledger; the forward-test verdicts use live-ledgered hours only
+
+**Why.** The supervisor (2026-10-14) requires live paper trading, not a replay of logged decisions: results must
+be recorded as time passes, without knowledge of the future. Decisions are already live (the producer); this
+amendment makes the fills and P&L live too.
+
+**Changes (fixed now).**
+1. **Ledger** (`stg_infra/paper_ledger.py`, run by `paper_trader.py --loop --ledger --fleet` in the production
+   sandbox, started and watched by the keeper). Each round (hourly, in the producer's quiet minutes), for every
+   completed hour not yet recorded, one entry file is appended (`runs/live/paper/ledger/entries/<hour>.json`):
+   that hour's new fills per order window and arm (L4 primary universe), the events settled since the previous
+   round with each arm's realised P&L, and cumulative realised, unrealised (open positions at the latest
+   logged mid, net of fees) and total P&L, capital and return per arm, plus the verdict statistics so far.
+   Entries are hash-chained (each carries the previous entry's sha256) and never rewritten.
+2. **Re-verification.** Every round recomputes all fills; recorded fills must match exactly (L3 item 3).
+   Any mismatch is recorded in the next entry and reported; recorded entries are never repaired.
+3. **Third-party timestamps.** Each round posts the newest entry's summary (cumulative P&L of the main arms,
+   the one-sided verdict bounds so far) and its hash to Research Fleet as a FlowMesh job (`fwdtest-pnl-<hour>`).
+4. **Live start S** = the first ledgered hour, recorded in `ledger/state.json` and the report. **The verdicts
+   of §5 (one-sided, L8) are taken on fills in hours >= S only.** Hours from the L2 fix to S are computed by the
+   same engine as a replay and reported separately, labelled replay, never pooled into the verdicts.
+5. **Reporting.** Hourly P&L = change in total P&L between entries; cumulative realised P&L is the verdict basis
+   (settled events, as §2). Cuts unchanged (interim 2026-10-28, final 2026-11-11); the interim cut covers live
+   hours from S.
+6. Unchanged: arms, models, rules, universe, order windows, statistics (L3-L9).
