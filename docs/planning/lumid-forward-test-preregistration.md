@@ -553,3 +553,10 @@ exactly. September fold, offline score: W3 +2.36% (A13 simulator figure for the 
 includes inventory interaction). Prediction partly held: W3 highest mean; the most variable recipe was W2,
 not W1. Files: `results/live/l9_window_selection.json`, `logs/v2_forecast/l9_window_selection.log` (resumed
 run; the first run, interrupted after 8 of 18 fits, is in `l9_window_selection_interrupted.log`).
+
+**Exploratory note (2026-10-14, before any live P&L; no decision depends on it).** After L9, the same six folds
+are scored for the baselines the live test uses, offline: random selection at W3's kept share (mean of 20
+seeds), `wide3` (spread >= 3c), `liq` (trades_24h >= the fold month's median; the live rule uses the hour's
+median, which the stored table cannot reproduce), and the `lin2` and `mlp2` designs refit per fold on the
+same windows as W3 (September: the frozen `lin2`/`mlp2`). Reported as exploratory, pre-live context for the
+live comparisons; it changes no arm, rule or verdict.
