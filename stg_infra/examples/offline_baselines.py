@@ -308,6 +308,87 @@ def main_mlp_sensitivity():
     print(json.dumps(summ, indent=1))
 
 
+SHARES4 = (0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50)
+
+
+def _acc_add(acc, model, pred, net, cap):
+    for sh in SHARES4:
+        keep = top_share(pred, sh) > 1
+        a = acc.setdefault(model, {}).setdefault(str(sh), [0.0, 0.0])
+        a[0] += float(net[keep].sum()); a[1] += float(cap[keep].sum())
+    keep = pred > 1.0
+    a = acc[model].setdefault("own_1c", [0.0, 0.0])
+    a[0] += float(net[keep].sum()); a[1] += float(cap[keep].sum())
+
+
+def _acc_out(acc):
+    return {m: {sh: {"ret": 100 * a[0] / a[1] if a[1] else float("nan"), "net_usd": a[0] / 100} for sh, a in v.items()}
+            for m, v in acc.items()}
+
+
+def main_curves_full():
+    """Exploratory note 4: G2/G vs linear and neural at matched shares, 2026 folds and 2025 test months."""
+    import maker_policy as mp
+    import retrain_g2 as rg
+    import simulate_maker as s
+    import train_baselines as tb
+    import tune_gbm as tg
+    out = {}
+    # ---- 2026: L9 folds, models refit per fold (September: frozen models)
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    cat_col = feats.index("cat_i")
+    acc = {}
+    for tm in tg.TEST_MONTHS:
+        te, tr = D["month"] == tm, D["month"] < tm
+        net, cap = D["net_c"][te], D["capital_c"][te]
+        R_tr, R_te = rows_from_X(D["X"][tr], feats, cats, D["month"][tr]), rows_from_X(D["X"][te], feats, cats)
+        p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
+        _acc_add(acc, "G2", p3, net, cap)
+        _acc_add(acc, "Linear", tb.predict(tb.fit_lin2(R_tr, D["y"][tr]), R_te), net, cap)
+        _acc_add(acc, "Neural", tb.predict(tb.fit_mlp2(R_tr, D["y"][tr], log=lambda *a: None), R_te), net, cap)
+        print(json.dumps({"2026 fold": tm}), flush=True)
+    rows, net, cap, qty = september_rows()
+    w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
+    _acc_add(acc, "G2", w3["model"].predict(rg.matrix("G2", rows, w3["cats"])), net, cap)
+    _acc_add(acc, "Linear", tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows), net, cap)
+    _acc_add(acc, "Neural", tb.predict(pickle.loads(tb.model_path("mlp2").read_bytes()), rows), net, cap)
+    out["2026"] = _acc_out(acc)
+    del D, rows
+    # ---- 2025: G's test months, frozen models, features month by month (A12)
+    import baselines_2025 as b25
+    F = dict(np.load(_REPO / "runs/maker/cache/b0b6c1550b3b8345.fills.npz", allow_pickle=True))
+    month = np.array([s.month_of(int(h)) for h in F["hour_ns"]])
+    G = pickle.loads(mp.model_path("G").read_bytes())
+    L = pickle.loads(b25.MODELS["lin2"].read_bytes()); N = pickle.loads(b25.MODELS["mlp2"].read_bytes())
+    lookup = mp.category_lookup()
+    acc = {}
+    for mo in b25.TEST:
+        legs, events, charged = s.load([mo], "mece")
+        rows, net, cap = [], [], []
+        for i in np.where(month == mo)[0]:
+            if F["ticker"][i] not in legs:
+                continue
+            r = mp.quote_features(legs, events, charged, lookup, mo, F["event"][i], F["ticker"][i],
+                                  int(F["hour_ns"][i]), int(F["side"][i]), int(F["price"][i]))
+            if r is not None:
+                rows.append(r); net.append(F["net_c"][i]); cap.append(F["capital_c"][i])
+        net, cap = np.asarray(net, float), np.asarray(cap, float)
+        _acc_add(acc, "G", G["model"].predict(mp.to_matrix(rows, G["cats"])), net, cap)
+        _acc_add(acc, "Linear", tb.predict(L, rows), net, cap)
+        _acc_add(acc, "Neural", tb.predict(N, rows), net, cap)
+        print(json.dumps({"2025 month": mo, "fills": len(rows)}), flush=True)
+        del legs, events, charged, rows
+    out["2025"] = _acc_out(acc)
+    d = json.loads(OUT.read_text()) if OUT.exists() else {}
+    d["volume_curves_full"] = out
+    OUT.write_text(json.dumps(d, indent=1, default=float))
+    for yr, v in out.items():
+        print(yr)
+        for sh in [str(x) for x in SHARES4] + ["own_1c"]:
+            print(f"  {sh:>7}  " + "  ".join(f"{m} {v[m][sh]['ret']:+6.2f}% {v[m][sh]['net_usd']:+8.0f}" for m in v))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -342,10 +423,13 @@ def main():
     ap.add_argument("--sep-sim", action="store_true", help="September validation in the full simulator, every baseline")
     ap.add_argument("--curve", action="store_true", help="volume-matched G2-W3 vs lin2 (exploratory note 2)")
     ap.add_argument("--mlp-sens", action="store_true", help="neural-baseline sensitivity analysis (exploratory note 3)")
+    ap.add_argument("--curves-full", action="store_true", help="volume-matched curves, both baselines, both years (note 4)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    if a.mlp_sens:
+    if a.curves_full:
+        main_curves_full()
+    elif a.mlp_sens:
         main_mlp_sensitivity()
     elif a.curve:
         main_curve()
