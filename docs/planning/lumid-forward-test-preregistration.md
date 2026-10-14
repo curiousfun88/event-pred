@@ -625,3 +625,21 @@ DTB3); maximum drawdown of the hourly total-P&L curve. Index benchmark: Stooq SP
 FRED SP500 (price index without dividends, about 0.1 point per month below SPY's total return; the source used is
 printed in the report). Added descriptive metrics: fill rate, hit rate, top-10-event profit share, fees paid,
 peak open capital, 1-hour markout. Reporting only; no rule changes.
+
+## Amendment L11 (2026-10-15, BEFORE any live fill, outcome or P&L is computed, and BEFORE the check below is run): the weather exclusion is decided on the six-month walk-forward
+
+**Why.** L1 excluded weather series (`KXHIGH*`, `KXLOW*`) on one validation month (G2-W3 weather -1.60%, CI -5.2 to
++2.0, not significant). The six walk-forward months of L9 allow a stronger basis.
+
+**Rule (fixed now).** G2-W3's recipe (all history, G2 settings) is scored on the six L9 folds (2026-04..08 from A15's
+table, each trained on all earlier months; 2026-09-07..10-05 with the frozen G2-W3), restricted to weather series
+(category Climate and Weather; within the 23 A13 series these are exactly the `KXHIGH*` series), with A15's offline
+score (fills predicted above 1c; net / capital). **If the mean weather return over the six folds is > 0, weather is
+re-included in the primary universe (L4) before the live start; otherwise the L1 exclusion stands.** Non-weather is
+scored the same way and reported beside it.
+
+**Also (reporting only, whatever the outcome).** The live report adds a descriptive `weather` universe (all
+`KXHIGH*`/`KXLOW*` series the producer scores; never a verdict) and a trade-date daily series (each fill's final net
+on its quoting day) beside the equity-curve series, so Sharpe and drawdown are computed as in the 2025 results.
+
+**Prediction (before running).** Weather mean negative; the exclusion stands.
