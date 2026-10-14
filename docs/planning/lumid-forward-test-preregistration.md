@@ -649,3 +649,11 @@ on its quoting day) beside the equity-curve series, so Sharpe and drawdown are c
 **weather is re-included in the primary universe** for every arm and both cuts; the L4 pool without weather is
 reported as the descriptive `non_weather` universe, and weather alone as `weather`. The prediction (exclusion stands)
 was wrong. File: `results/live/l11_weather_split.json`.
+
+**Exploratory note 6 (2026-10-15, after L11, before any live P&L; descriptive, no decision depends on it).** The
+model's weather edge by month (`stg_infra/examples/weather_edge_by_month.py`, `results/live/weather_edge_by_month.json`):
+picks earned +1.3 to +3.1c per contract in 2025-05..12 (6 of 8 event-cluster CIs above 0; Sep 2025 the best, +3.07c,
+so not seasonal) and +0.3 to +2.0c in 2026-01..08 (no CI above 0, intervals about twice as wide), then -0.99c
+[-3.59, +1.52] in 2026-09-07..10-05. Each of Aug and Sep 2026 is within noise of the 2026 level, and a similar dip
+(Jan-Feb 2026) reversed. The clearer change is 2025 -> 2026: a smaller, noisier edge while median weather trades in 24 h
+rose from about 50 to 300-380.
