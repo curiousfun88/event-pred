@@ -545,3 +545,11 @@ W3's September result, which favours W3 in the live comparison regardless of thi
 late T13 cycle (started 13:57) ended at 14:26, and the producer loop by design waits for the next full hour
 after any cycle. Normal hourly operation resumed at T15 (1,909 s). Gaps attributable to the 2026-10-13 batch
 jobs and outage: T09, T11, T14 (not produced), T13 (order window about 2 min), T08, T10, T12 (late).
+
+**L9 result (2026-10-14 03:00 UTC, before any live P&L).** Mean return over the six folds: W1 +1.53%, W2 +1.88%,
+**W3 +2.65%** (worst month: W1 +0.90%, W2 -0.40%, W3 +1.95%); W3 positive in all six months and best in four.
+**W3 is selected; the headline arm `g2` (G2-W3) is unchanged.** W3's April-August folds equal A15's `hgb_a12`
+exactly. September fold, offline score: W3 +2.36% (A13 simulator figure for the same window: +1.41%, which
+includes inventory interaction). Prediction partly held: W3 highest mean; the most variable recipe was W2,
+not W1. Files: `results/live/l9_window_selection.json`, `logs/v2_forecast/l9_window_selection.log` (resumed
+run; the first run, interrupted after 8 of 18 fits, is in `l9_window_selection_interrupted.log`).
