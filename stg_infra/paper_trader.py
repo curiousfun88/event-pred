@@ -452,7 +452,7 @@ def cmd_fetch_tape(since, rps):
         print(json.dumps({"tape": h, "trades": len(df), "tickers": len(tks), "api_calls": k.calls}), flush=True)
 
 
-def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None):
+def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, ledger_dir=None):
     import live_signal_producer as lp
     import simulate_maker as s
     import train_baselines as tb
@@ -559,11 +559,11 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None):
     if write:
         (PAPER / "summary.json").write_text(json.dumps(result, indent=1, default=float))
     if ledger:
-        result["ledger"] = ledger_round(ledger_fills, ns_of(hours[-1]), events, markets, one, two, pat)
+        result["ledger"] = ledger_round(ledger_fills, ns_of(hours[-1]), events, markets, one, two, pat, ledger_dir)
     return result
 
 
-def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat):
+def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat, ledger_dir=None):
     """L10: append this round's ledger entries (paper_ledger) and post the newest to Research Fleet."""
     import paper_ledger as pl_
     import polars as pl
@@ -583,7 +583,8 @@ def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat):
                 "g2_minus_rnd2": ps["event"]["diff"], "g2_minus_rnd2_lo_one_sided": ps["event"]["lo_one_sided"],
                 "day_cluster": {"g2_lo_one_sided": vs["day"]["lo_one_sided"],
                                 "g2_minus_rnd2_lo_one_sided": ps["day"]["lo_one_sided"]}}
-    written = pl_.round_update(PAPER / "ledger", ledger_fills, complete_H, settled, mids, stamp_of, verdict)
+    written = pl_.round_update(Path(ledger_dir) if ledger_dir else PAPER / "ledger", ledger_fills, complete_H, settled, mids,
+                               stamp_of, verdict)
     jobs = []
     if written and pat:
         jobs.append(pl_.post_fleet(written[-1], pat))
@@ -730,6 +731,8 @@ def main():
     ap.add_argument("--ledger", action="store_true", help="L10: append the live ledger each round")
     ap.add_argument("--fleet", action="store_true", help="L10: post each round's ledger summary to Research Fleet")
     ap.add_argument("--pat-file", default="~/.lumid_pat")
+    ap.add_argument("--blind-test", metavar="DIR", help="one engine + ledger round into DIR; prints structure, timing "
+                    "and memory only (no P&L), writes no summary, posts nothing")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
@@ -738,6 +741,22 @@ def main():
     if a.check:
         cmd_run(a.since, a.rps, write=False, check_only=True)
     pat = Path(a.pat_file).expanduser().read_text().strip() if a.fleet else None
+    if a.blind_test:
+        import resource
+        t0 = time.time()
+        r = cmd_run(a.since, a.rps, write=False, ledger=True, pat=None, ledger_dir=a.blind_test)
+        import paper_ledger as pl_
+        d = Path(a.blind_test)
+        ents = sorted((d / "entries").glob("*.json"))
+        chain_ok, prev = True, ""
+        for e in ents:
+            j = json.loads(e.read_text())
+            chain_ok &= j["prev_hash"] == prev and j["hash"] == pl_.sha({k: v for k, v in j.items() if k != "hash"})
+            prev = j["hash"]
+        print(json.dumps({"BLIND_TEST": {"secs": round(time.time() - t0, 1), "max_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024,
+                          "candidate_check": r["check"], "entries": [e.stem for e in ents], "chain_ok": chain_ok,
+                          "verification_issues": r["ledger"]["verification_issues"],
+                          "arms": sorted(json.loads(ents[-1].read_text())["cumulative"].get("primary", {})) if ents else []}}), flush=True)
     if a.run:
         cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat)
     if a.loop:
