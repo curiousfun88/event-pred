@@ -127,6 +127,48 @@ def main_run():
     print(json.dumps(summ, indent=1))
 
 
+def dollars(pred, net, cap, qty):
+    keep = pred > 1.0
+    return {"net_usd": float(net[keep].sum() / 100), "capital_usd": float(cap[keep].sum() / 100),
+            "contracts": int(qty[keep].sum()), "kept": int(keep.sum())}
+
+
+def main_dollars():
+    """Total net P&L and capital (USD) per fold for W3, lin2 and random at W3's share (mean of 20 seeds)."""
+    import retrain_g2 as rg
+    import train_baselines as tb
+    import tune_gbm as tg
+    l9 = json.loads(L9.read_text())
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    cat_col = feats.index("cat_i")
+    res = {}
+
+    def rnd(n, share, net, cap, qty):
+        ds = [dollars(np.where(np.random.default_rng(s_).random(n) < share, 2.0, -np.inf), net, cap, qty) for s_ in range(SEEDS)]
+        return {k: float(np.mean([d[k] for d in ds])) for k in ds[0]}
+    for i, tm in enumerate(tg.TEST_MONTHS):
+        te, tr = D["month"] == tm, D["month"] < tm
+        net, cap, qty = D["net_c"][te], D["capital_c"][te], D["qty"][te]
+        p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
+        pl = tb.predict(tb.fit_lin2(rows_from_X(D["X"][tr], feats, cats), D["y"][tr]), rows_from_X(D["X"][te], feats, cats))
+        res[tm] = {"W3": dollars(p3, net, cap, qty), "lin2": dollars(pl, net, cap, qty),
+                   "random": rnd(int(te.sum()), l9["folds"]["W3"][i]["share"], net, cap, qty),
+                   "quote_all": dollars(np.full(int(te.sum()), 2.0), net, cap, qty)}
+        print(json.dumps({tm: res[tm]}), flush=True)
+    rows, net, cap, qty = september_rows()
+    w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
+    p3 = w3["model"].predict(rg.matrix("G2", rows, w3["cats"]))
+    pl = tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows)
+    res["2026-09-07..10-05"] = {"W3": dollars(p3, net, cap, qty), "lin2": dollars(pl, net, cap, qty),
+                                "random": rnd(len(rows), l9["folds"]["W3"][-1]["share"], net, cap, qty),
+                                "quote_all": dollars(np.full(len(rows), 2.0), net, cap, qty)}
+    print(json.dumps({"2026-09-07..10-05": res["2026-09-07..10-05"]}), flush=True)
+    d = json.loads(OUT.read_text()) if OUT.exists() else {}
+    d["dollars"] = res
+    OUT.write_text(json.dumps(d, indent=1, default=float))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -146,6 +188,8 @@ def self_test() -> bool:
     check("random: one prediction array per seed", len(sc["random"]) == 3)
     net, cap, qty = np.array([10.0, -5, 20, 0]), np.array([100.0] * 4), np.ones(4)
     s = score_all(sc["wide3"], net, cap, qty)
+    dd = dollars(np.array([2.0, 0.0, 2.0, 2.0]), net, cap, qty)
+    check("dollars: kept net and capital in USD", dd == {"net_usd": 0.3, "capital_usd": 3.0, "contracts": 3, "kept": 3})
     check(f"score: kept fills' net / capital (wide3 keeps -5 and +20 -> +7.5%, got {s['ret']:+.2f})", abs(s["ret"] - 7.5) < 1e-9)
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
@@ -154,10 +198,11 @@ def self_test() -> bool:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--dollars", action="store_true", help="total net P&L and capital per fold (W3, lin2, random)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    main_run()
+    main_dollars() if a.dollars else main_run()
 
 
 if __name__ == "__main__":
