@@ -574,3 +574,10 @@ L2 1e-2; learning rate 3e-4; tanh activation. Same six folds as L9 (2026-04..08 
 earlier months; September trained on all months through 2026-08), same time-ordered early stopping, A15's offline
 score. Reported per setting: every fold, mean, worst month, months positive, beside G2's recipe and `lin2`. No
 setting is selected, adopted or added as an arm; `mlp2` stays as frozen in L6.
+
+**Exploratory note 4 (2026-10-14, before any live P&L; nothing is selected or deployed).** Volume-matched curves
+completed for both baselines and both years: G2-W3's recipe vs the `lin2` and `mlp2` designs on the six L9 folds
+(2026; `mlp2` refit per fold with its default settings, as in note 3), and the frozen G vs `lin2-2025` and
+`mlp2-2025` (A16 models) on G's test months 2025-08..11 (features month by month, BROAD pessimistic candidate
+fills). Each model's top-ranked candidates at 2, 5, 10, 15, 20, 25, 30, 40 and 50% of candidates; return and net
+P&L pooled per year; offline scoring (no inventory interaction), as note 2.
