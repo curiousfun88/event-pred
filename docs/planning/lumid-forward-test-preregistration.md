@@ -581,3 +581,7 @@ completed for both baselines and both years: G2-W3's recipe vs the `lin2` and `m
 `mlp2-2025` (A16 models) on G's test months 2025-08..11 (features month by month, BROAD pessimistic candidate
 fills). Each model's top-ranked candidates at 2, 5, 10, 15, 20, 25, 30, 40 and 50% of candidates; return and net
 P&L pooled per year; offline scoring (no inventory interaction), as note 2.
+
+**Exploratory note 5 (2026-10-14; diagnostic, nothing selected).** Pick overlap behind note 4: at each matched share,
+the fraction of G2's (2026) / G's (2025) selected candidates that the linear and the neural design also select, per
+year, same models and data as note 4. Tests whether the 2025 convergence at high shares is mechanical overlap.
