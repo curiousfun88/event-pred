@@ -169,6 +169,58 @@ def main_dollars():
     OUT.write_text(json.dumps(d, indent=1, default=float))
 
 
+def main_sep_sim():
+    """A13's September validation in the full simulator (inventory and limits), exactly as retrain_g2.validate
+    runs G2, for every live baseline. G2-W3 must reproduce A13's +1.41%."""
+    import maker_policy as mp
+    import retrain_g2 as rg
+    import simulate_maker as s
+    import train_baselines as tb
+    legs, events, charged, start, end = rg.val_data()
+    months = ["2026-09", "2026-10"]
+    lookup = mp.category_lookup()
+    win = lambda fl: [f for f in fl if start <= int(f[9]) < end]
+    cand = []
+    s.simulate(rg.sim_cfg("G2"), "pess", legs, events, charged, months, record=cand)
+    rows, keys = [], []
+    for ev, tk, H, sd, pr, b, a in cand:
+        if start <= int(H) < end:
+            r = rg.features("G2", legs, events, charged, lookup, ev, tk, int(H), int(sd), int(pr))
+            if r is not None:
+                rows.append(r); keys.append((tk, int(H), int(sd)))
+    hours = np.array([k[1] for k in keys])
+    w3 = pickle.loads(rg.model_path("W3", "G2").read_bytes())
+    p3 = w3["model"].predict(rg.matrix("G2", rows, w3["cats"]))
+    share = float(np.mean(p3 > 1.0))
+    tr24 = np.array([r["trades_24h"] for r in rows], float)
+    med = {h: np.median(tr24[hours == h]) for h in np.unique(hours)}
+    post = lambda m: np.where(m, 2.0, -np.inf)
+    arms = {"G2-W3": p3,
+            "lin2": tb.predict(pickle.loads(tb.model_path("lin2").read_bytes()), rows),
+            "mlp2": tb.predict(pickle.loads(tb.model_path("mlp2").read_bytes()), rows),
+            "wide3": post(np.array([r["spread"] for r in rows]) >= 3),
+            "liq": post(tr24 >= np.array([med[h] for h in hours]))}
+    for seed in range(5):                       # A13's random arm: 5 seeds at G2's share
+        arms[f"random_s{seed}"] = post(np.random.default_rng(seed).random(len(keys)) < share)
+    ALL = win(s.simulate(s.Config(**mp.BROAD), "pess", legs, events, charged, months))
+    out = {"quote_all": {**s.summarise(ALL)}, "g2_share": share, "candidates": len(keys)}
+    fills = {}
+    for name, pred in arms.items():
+        fl = win(s.simulate(rg.sim_cfg("G2", policy="x", policy_t=1.0), "pess", legs, events, charged, months,
+                            policy_scores=dict(zip(keys, pred))))
+        fills[name] = fl
+        out[name] = {**s.summarise(fl), "posted_share": float(np.mean(pred > 1.0))}
+        print(json.dumps({name: {k: out[name][k] for k in ("ret", "lo", "hi", "fills", "events", "net_c", "posted_share")}},
+                         default=float), flush=True)
+    for name in ("lin2", "mlp2", "wide3", "liq", "random_s0"):
+        out[f"G2-W3 minus {name}"] = rg.paired_diff_ci(fills["G2-W3"], fills[name])
+    out["random_mean_ret"] = float(np.mean([out[f"random_s{i}"]["ret"] for i in range(5)]))
+    d = json.loads(OUT.read_text()) if OUT.exists() else {}
+    d["september_full_simulator"] = out
+    OUT.write_text(json.dumps(d, indent=1, default=float))
+    print(json.dumps({k: v for k, v in out.items() if "minus" in k or k == "random_mean_ret"}, default=float))
+
+
 def self_test() -> bool:
     ok = True
 
@@ -199,10 +251,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--dollars", action="store_true", help="total net P&L and capital per fold (W3, lin2, random)")
+    ap.add_argument("--sep-sim", action="store_true", help="September validation in the full simulator, every baseline")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    main_dollars() if a.dollars else main_run()
+    if a.sep_sim:
+        main_sep_sim()
+    elif a.dollars:
+        main_dollars()
+    else:
+        main_run()
 
 
 if __name__ == "__main__":
