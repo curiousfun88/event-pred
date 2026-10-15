@@ -7,8 +7,10 @@ or published).
 WHY. Lumid sandboxes expire after at most 24 h (docs: lum.id/docs/sandboxes.md). The producer
 needs a machine that is always on; the home folder (/home/<user>) is network storage shared by
 every sandbox of the user on one site and survives a sandbox's deletion, so code, venv, state
-and logs carry over. The `office` site is used because Kalshi throttles the `home` site's shared
-outgoing address (every request 429, 2026-10-11) but not office's (80/80 at the producer's rate).
+and logs carry over. The `office` site was used first because Kalshi throttles the `home` site's shared
+outgoing address (every request 429 at 8/s, 2026-10-11) but not office's (80/80 at the producer's rate). Since
+L13 (--bulk, ~400 calls an hour) a home cycle completes in ~9 min despite the throttling, so either site can host
+it; ~/.lumid/site selects the site.
 
 WHAT. Runs beside the producer in the sandbox, every CHECK_S seconds:
   1. watchdog: if no producer process is running here, start it (command in PRODUCER_CMD_FILE);
@@ -41,18 +43,32 @@ import time
 from pathlib import Path
 
 USER = "curiouslearner842"
-SITE_API = "https://lum.id/sbx/office/api"
-GW = ["-p", "31226", "gw@lum.id"]
 HOME = Path(f"/home/{USER}")
 REPO = HOME / "event-pred"
 CFG = HOME / ".lumid"
+# Each site has its own shared home, so ~/.lumid/site names the site this keeper runs on (default office).
+# 2026-10-15: office down for over a day; home added as a second host (pinned image: the venv lives in the
+# shared home and is bound to the image's Python).
+SITES = {"office": {"api": "https://lum.id/sbx/office/api", "port": "31226", "spec": {}},
+         "home": {"api": "https://lum.id/sbx/api", "port": "31223", "spec": {"image": "python:3.11"}}}
+
+
+def site_conf(cfg_dir: Path = CFG) -> dict:
+    f = cfg_dir / "site"
+    name = f.read_text().strip() if f.exists() else "office"
+    return {"name": name, **SITES[name]}
+
+
+SITE = site_conf()
+SITE_API = SITE["api"]
+GW = ["-p", SITE["port"], "gw@lum.id"]
 PAT_FILE, KEY_FILE, PRODUCER_CMD_FILE = CFG / "sbx_pat", CFG / "sbx_key", CFG / "producer_cmd"
 PAPER_CMD_FILE = CFG / "paper_cmd"   # paper trader (L3/L7): started and watched iff this file exists
 LOG = REPO / "logs/sbx_keeper.log"
 RUNS = REPO / "runs/live/runs.jsonl"
 START = REPO / "stg_infra/lumid_start.sh"
 NAMES = ("prod-a", "prod-b")
-SPEC = {"cpu": 2, "memory_gi": 8, "ttl_hours": 24}
+SPEC = {"cpu": 2, "memory_gi": 8, "ttl_hours": 24, **SITE["spec"]}
 CHECK_S = 300
 LEAD_S = 3 * 3600            # start looking for a quiet moment 3 h before expiry
 LAST_CHANCE_S = 45 * 60      # hand over regardless of the producer once this little is left
@@ -251,6 +267,13 @@ def self_test() -> bool:
     lines = [json.dumps({"H": "20261011T14"}), "not json", json.dumps({"H": "20261011T15"})]
     check("hour logged when runs.jsonl has this hour", hour_logged(lines, now))
     check("hour not logged when only the previous hour is", not hour_logged(lines[:2], now))
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        check("no site file -> office (port 31226)", site_conf(Path(td))["port"] == "31226")
+        (Path(td) / "site").write_text("home\n")
+        sc = site_conf(Path(td))
+        check("site file 'home' -> home API, port 31223, pinned python:3.11",
+              sc["api"] == "https://lum.id/sbx/api" and sc["port"] == "31223" and sc["spec"] == {"image": "python:3.11"})
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
