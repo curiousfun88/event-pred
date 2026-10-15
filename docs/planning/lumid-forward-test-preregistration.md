@@ -739,3 +739,9 @@ and the loop fix (T12 late, snapshot 12:28); 15:54-17:54 laptop paper trader (le
 producer stopped (last laptop hour T19); 19:39 home sandbox `prod-a` created (4 h lifetime, so its first handover is
 observed the same evening), laptop live state copied (trade store, scores, run log, stamps, tapes); 19:44:48 keeper on
 home started the producer and the paper trader (fresh ledger). Exactly one producer ran at every moment.
+20:44:56 first home handover failed partway: the keeper could not stop the producer it had started (home forbids
+signalling another session, own children included; PermissionError), leaving `prod-b` created and idle while `prod-a`
+kept running. Fixed (1f2e395): no signals; the successor's keeper waits until the predecessor is deleted via the API.
+20:56:23 new keeper started in `prod-b` (waiting); 20:56:37 `prod-a` deleted (its producer, paper trader -- first
+round unfinished, no entry written -- and old keeper stopped with it); 20:56:39 `prod-b` started producer and paper
+trader. One producer at every moment; producer hours T20 (prod-a) and from T21 (prod-b).
