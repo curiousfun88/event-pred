@@ -674,3 +674,22 @@ the laptop producer first, and every move between hosts is recorded here with it
 **Missing hours (fixed now).** An hour with no live snapshot is missing. It is never reconstructed later from
 historical prices (that would be a replay), and it is excluded from every arm alike. Verdicts are computed over the
 hours actually recorded; the report lists every gap with its cause. A host change does not reset S or the ledger.
+
+## Amendment L13 (2026-10-15, BEFORE the first ledger entry): fewer Kalshi calls, same data
+
+**Why.** The producer made about 5,800 Kalshi calls an hour (one candle call and one trade call per leg). Lumid's
+home site shares one outbound address whose Kalshi allowance other users mostly consume (at 1 request per 20 s,
+3 of 4 succeed; at 8/s, 0 of 50), and any host is more robust with fewer calls. Only *how* the data is fetched
+changes; the data, its timing and every feature are unchanged.
+
+**Change (`--bulk`).** (1) Price history: Kalshi's batch candle endpoint, 100 legs per call, same window and
+parsing (~4,600 calls -> ~50). (2) Trades: a leg's trades are fetched only if the listing's total traded volume
+changed since its last fetch; otherwise the stored trades are complete. Trades after H are kept in the store and
+cut at H when features are computed (without this, a trade between H and the listing would be counted in the volume
+yet dropped, and lost on a skipped leg -- found and fixed before any use).
+
+**Equivalence (before use).** Self-tests: batch == per-leg candles; skipped-leg trades seen by the features equal a
+full per-ticker refetch, including a trade one minute after H. Live data, 2026-10-15 11:00 UTC hour: per-leg and
+batch candles for 500 random open legs (3,262 candles) identical, 0 mismatched legs (526 calls vs 5). Every hour,
+an audit refetches up to 30 skipped legs and logs any trade missing from the store (`skip_audit` in the hour's
+summary); any miss is reported, and the affected hours are listed in the report.

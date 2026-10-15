@@ -22,7 +22,7 @@ After=network-online.target
 [Service]
 WorkingDirectory=$REPO
 Environment=OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2
-ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --pat-file /root/.lumid_pat >> logs/v2_forecast/live_producer_service.log 2>&1'
+ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --bulk --pat-file /root/.lumid_pat >> logs/v2_forecast/live_producer_service.log 2>&1'
 Restart=always
 RestartSec=60
 MemoryMax=3500M

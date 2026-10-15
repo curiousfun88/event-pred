@@ -322,7 +322,7 @@ def series_meta(k: Kalshi, series_list, cache, now_s):
     return cache
 
 
-def update_trades(k: Kalshi, tickers, store, H):
+def update_trades(k: Kalshi, tickers, store, H, keep_after=False):
     """Incremental trade store (time, count, taker side): keep trades in (H-25h, H]; fetch only what is new."""
     # Each trade's id is stored WITH the trade, so "already seen" can only mean "stored". Until
     # 2026-10-11 (amendment L2) the seen-set also held ids of trades fetched after H and then
@@ -348,7 +348,7 @@ def update_trades(k: Kalshi, tickers, store, H):
         s_ = np.concatenate([have["s"], np.array([x[2] for x in new], float)])
         i_ = np.concatenate([have["id"], np.array([x[3] for x in new], object)])
         o = np.argsort(t, kind="stable"); t, c, s_, i_ = t[o], c[o], s_[o], i_[o]
-        keep = (t > lo) & (t <= H)
+        keep = (t > lo) & ((t <= H) | keep_after)    # L13 (bulk): trades after H are kept; features cut at H
         store[tk] = {"t": t[keep], "c": c[keep], "s": s_[keep], "id": i_[keep]}
     return store
 
@@ -368,6 +368,72 @@ def candle_history(k: Kalshi, legs_needed, H):
                 rows.append((e, np.nan if b is None else float(b), np.nan if a is None else float(a)))
         out[tk] = rows
     return out
+
+
+def candle_history_bulk(k, legs_needed, H, per_call=100):
+    """As candle_history, from Kalshi's batch endpoint (up to 100 markets per call): same window, same parsing,
+    same output. Amendment L13: ~4,600 per-leg calls an hour become ~50."""
+    out = {}
+    s_ = H // 1_000_000_000
+    tks = [tk for tk, _ in legs_needed]
+    for i in range(0, len(tks), per_call):
+        d = k.get("markets/candlesticks", market_tickers=",".join(tks[i:i + per_call]),
+                  start_ts=s_ - 26 * 3600, end_ts=s_ - 1, period_interval=60)
+        for mk in d.get("markets", []):
+            rows = []
+            for c in mk.get("candlesticks", []):
+                b = (c.get("yes_bid") or {}).get("close_dollars")
+                a = (c.get("yes_ask") or {}).get("close_dollars")
+                e = int(c["end_period_ts"]) * 1_000_000_000
+                if e < H:
+                    rows.append((e, np.nan if b is None else float(b), np.nan if a is None else float(a)))
+            out[mk["market_ticker"]] = rows
+    for tk in tks:
+        out.setdefault(tk, [])
+    return out
+
+
+def features_window(v, H):
+    """(t, count, side) of the stored trades at or before H: what the features see in either mode."""
+    m = v["t"] <= H
+    return v["t"][m], v["c"][m], v["s"][m]
+
+
+def trade_fetch_plan(tickers, store, vol_now, vol_prev):
+    """L13: tickers whose trades must be fetched this hour. A ticker is skipped iff its stored entry is in the
+    current format and the listing's total traded volume equals the volume at the last fetch (no trade since)."""
+    fetch, skip = [], []
+    for tk in tickers:
+        have = store.get(tk)
+        same = (have is not None and "id" in have and vol_prev.get(tk) is not None
+                and vol_now.get(tk) is not None and vol_now[tk] == vol_prev[tk])
+        (skip if same else fetch).append(tk)
+    return fetch, skip
+
+
+def prune_trades(store, tickers, H):
+    """Drop each ticker's trades at or before H-25h (bulk mode keeps trades after H, as update_trades does)."""
+    lo = H - 25 * H_NS
+    for tk in tickers:
+        v = store[tk]
+        keep = v["t"] > lo
+        store[tk] = {key: arr[keep] for key, arr in v.items()}
+    return store
+
+
+def skip_audit(k, store, skipped, H, n=30, seed=None):
+    """L13 check, every hour: fetch up to n skipped tickers anyway and count trades at or before H missing from
+    the store. Any miss means the volume field lagged; it is logged in the hour's summary."""
+    rng = np.random.default_rng(seed if seed is not None else int(H // H_NS))
+    pick = list(rng.choice(skipped, size=min(n, len(skipped)), replace=False)) if skipped else []
+    missed = 0
+    for tk in pick:
+        have = set(store[tk]["id"].tolist())
+        lo_s = int((H - 25 * H_NS) // 1_000_000_000)
+        for tr in k.pages("markets/trades", "trades", ticker=tk, min_ts=lo_s, limit=1000):
+            if iso_ns(tr["created_time"]) <= H and tr["trade_id"] not in have:
+                missed += 1
+    return {"checked": len(pick), "missed_trades": missed}
 
 
 # ---------------------------------------------------------------- one run
@@ -592,12 +658,24 @@ def run_once(args) -> dict:
     legs0, events0, charged = build_structures(evs, H, {}, {}, info, now_ns)
     c0 = candidates_at(legs0, events0, charged, H) + candidates_at(legs0, events0, charged, H, "both")
     need = sorted({(c[1], legs0[c[1]]["series"]) for c in c0})
-    hist = candle_history(k, need, H)
+    hist = (candle_history_bulk if args.bulk else candle_history)(k, need, H)
     vol = {m["ticker"]: float(m.get("volume_24h_fp") or 0) for e in evs for m in e["markets"]}
     tstore = load_state("trades2.pkl", {})
-    tstore = update_trades(k, [tk for tk, _ in need if vol.get(tk, 0) > 0], tstore, H)
+    want = [tk for tk, _ in need if vol.get(tk, 0) > 0]
+    audit = None
+    if args.bulk:                                   # L13: skip tickers with no trade since the last fetch
+        vol_tot = {m["ticker"]: m.get("volume_fp") for e in evs for m in e["markets"]}
+        vol_prev = load_state("vol_seen.pkl", {})
+        fetch, skip = trade_fetch_plan(want, tstore, vol_tot, vol_prev)
+        tstore = update_trades(k, fetch, tstore, H, keep_after=True)
+        tstore = prune_trades(tstore, skip, H)
+        audit = skip_audit(k, tstore, skip, H)
+        save_state("vol_seen.pkl", {**{tk: v for tk, v in vol_prev.items() if tk in legs0},
+                                    **{tk: vol_tot.get(tk) for tk in want}})
+    else:
+        tstore = update_trades(k, want, tstore, H)
     tstore = {tk: v for tk, v in tstore.items() if tk in legs0}
-    trades = {tk: (v["t"], v["c"], v["s"]) for tk, v in tstore.items()}
+    trades = {tk: features_window(v, H) for tk, v in tstore.items()}
 
     legs, events, charged = build_structures(evs, H, hist, trades, info, now_ns)
     lookup = mp.category_lookup()
@@ -676,6 +754,7 @@ def run_once(args) -> dict:
                "share_g": round(float(np.mean(p_g > THRESHOLD_C)) if len(p_g) else 0.0, 4),
                "share_g2": round(share2, 4), "share_g2p": round(share2p, 4), "signal_rows": len(sig),
                "hist_legs": len(hist), "trade_legs": len(trades), "api_calls": k.calls,
+               "bulk": bool(args.bulk), "skip_audit": audit,
                "secs": round(time.time() - t0, 1), "models": {a: m[2] for a, m in models.items()},
                "published": sent if sent is not None else "dry-run",
                "published_rows": accepted_rows if sent is not None else 0,
@@ -693,6 +772,28 @@ def run_once(args) -> dict:
 
 
 # ---------------------------------------------------------------- self-test
+
+def equiv_check(args, n_legs=500, seed=0):
+    """L13: on the current hour, per-leg and batch candles for a random sample of open legs must be identical."""
+    k = Kalshi(rps=min(args.rps, 4.0))
+    H = hour_floor(time.time_ns())
+    evs = [e for e in k.pages("events", "events", status="open", with_nested_markets="true", limit=200) if event_ok(e)]
+    legs = sorted({(m["ticker"], e["series_ticker"]) for e in evs for m in e["markets"]})
+    rng = np.random.default_rng(seed)
+    need = [legs[i] for i in sorted(rng.choice(len(legs), size=min(n_legs, len(legs)), replace=False))]
+    c0 = k.calls
+    a = candle_history(k, need, H)
+    c1 = k.calls
+    b = candle_history_bulk(k, need, H)
+    c2 = k.calls
+    eq = lambda x, y: x == y or (np.isnan(x) and np.isnan(y))
+    diff = [tk for tk, _ in need if len(a[tk]) != len(b[tk])
+            or not all(r[0] == q[0] and eq(r[1], q[1]) and eq(r[2], q[2]) for r, q in zip(a[tk], b[tk]))]
+    out = {"H": H, "legs": len(need), "candles": sum(len(v) for v in a.values()), "per_leg_calls": c1 - c0,
+           "batch_calls": c2 - c1, "mismatched_legs": len(diff), "examples": diff[:5]}
+    print(json.dumps(out))
+    return not diff
+
 
 def self_test() -> bool:
     ok = True
@@ -733,6 +834,57 @@ def self_test() -> bool:
     st = update_trades(_K(H2 + 15 * 60 * 10**9), ["X"], old, H2)
     check("trade store: an old-format entry is refetched in full (repairs earlier losses)",
           list(st["X"]["id"]) == ["t1", "t2", "t3"])
+
+    # L13 bulk mode: (1) batch candles == per-leg candles; (2) skipping tickers with unchanged total volume loses
+    # no trade, including one made between H and the listing (counted in the volume, after the H cut)
+    tapes = {"X": [("x1", H1 - 30 * 60 * 10**9), ("x2", H1 + 60 * 10**9), ("x3", H1 + 40 * 60 * 10**9)],
+             "Y": [("y1", H1 - 30 * 60 * 10**9), ("y2", H1 + 60 * 10**9)]}
+    cand = {"X": [(H1 - 2 * H_NS, "0.10", "0.20"), (H1 - H_NS, None, "0.30"), (H1, "0.5", "0.6")],
+            "Y": [(H1 - 3 * H_NS, "0.40", "0.45")]}
+
+    class _KB:
+        def __init__(self, now):
+            self.now, self.calls = now, 0
+
+        def pages(self, path, key, ticker, min_ts, limit):
+            self.calls += 1
+            for tid, t in tapes[ticker]:
+                if min_ts * 10**9 <= t <= self.now:
+                    yield {"trade_id": tid, "created_time": _iso(t), "count": 1, "taker_side": "yes"}
+
+        def get(self, path, **q):
+            self.calls += 1
+            c = lambda tk: [{"end_period_ts": e // 10**9, "yes_bid": {"close_dollars": b_}, "yes_ask": {"close_dollars": a_}}
+                            for e, b_, a_ in cand.get(tk, [])]
+            if path == "markets/candlesticks":
+                return {"markets": [{"market_ticker": tk, "candlesticks": c(tk)} for tk in q["market_tickers"].split(",")]}
+            return {"candlesticks": c(path.split("/")[3])}
+    need = [("X", "S"), ("Y", "S"), ("Z", "S")]
+    kb = _KB(H1)
+    bulk_h, single_h = candle_history_bulk(kb, need, H1, per_call=2), candle_history(_KB(H1), need, H1)
+    same = all(len(bulk_h[t]) == len(single_h[t]) and all(
+        x[0] == y[0] and (x[1] == y[1] or (np.isnan(x[1]) and np.isnan(y[1]))) and (x[2] == y[2] or (np.isnan(x[2]) and np.isnan(y[2])))
+        for x, y in zip(bulk_h[t], single_h[t])) for t in "XYZ")
+    check(f"L13: batch candles identical to per-leg candles (2 calls for 3 legs, per-leg 3)", same and kb.calls == 2)
+    vol_at = lambda tk, L: sum(1 for _, t in tapes[tk] if t <= L)
+    stb, seen = {}, {}
+    for Hh in (H1, H2):
+        L, T = Hh + 2 * 60 * 10**9, Hh + 15 * 60 * 10**9
+        vnow = {tk: vol_at(tk, L) for tk in "XY"}
+        fetch, skip = trade_fetch_plan(["X", "Y"], stb, vnow, seen)
+        kb = _KB(T)
+        stb = update_trades(kb, fetch, stb, Hh, keep_after=True)
+        stb = prune_trades(stb, skip, Hh)
+        seen = {**seen, **vnow}
+    ref = update_trades(_KB(H2 + 15 * 60 * 10**9), ["X", "Y"], {}, H2)
+    fw = {tk: list(features_window(stb[tk], H2)[0]) for tk in "XY"}
+    check(f"L13: at H2 Y is skipped (volume unchanged) and X fetched ({fetch}, {skip})", fetch == ["X"] and skip == ["Y"] and kb.calls == 1)
+    check("L13: bulk-mode trades seen by the features equal a full per-ticker refetch, incl. the trade 1 min after H1",
+          all(fw[tk] == list(ref[tk]["t"]) for tk in "XY") and len(fw["Y"]) == 2)
+    au = skip_audit(_KB(H2 + 15 * 60 * 10**9), stb, ["Y"], H2)
+    check("L13: skip audit finds no missed trade when the store is complete", au == {"checked": 1, "missed_trades": 0})
+    bad = {**stb, "Y": {key: v[:1] for key, v in stb["Y"].items()}}
+    check("L13: skip audit counts a trade missing from the store", skip_audit(_KB(H2 + 15 * 60 * 10**9), bad, ["Y"], H2)["missed_trades"] == 1)
 
     H = 1_791_212_400 * 1_000_000_000          # a top-of-hour, 2026-10
     close = "2026-10-06T07:59:00Z"
@@ -930,9 +1082,13 @@ def main():
                     help="never publish tickers starting with these (amendment L1: KXHIGH KXLOW)")
     ap.add_argument("--rps", type=float, default=8.0)
     ap.add_argument("--fleet", action="store_true", help="post each hour's summary as a FlowMesh job to Research Fleet (L5)")
+    ap.add_argument("--bulk", action="store_true", help="L13: batch candle calls; skip trade fetches for tickers with no new volume")
+    ap.add_argument("--equiv-check", action="store_true", help="L13: compare bulk vs per-leg candles on the current hour, then exit")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
+    if a.equiv_check:
+        sys.exit(0 if equiv_check(a) else 1)
     if a.pending:
         for st, _, batch, done, legacy in pending_hours(a.resend_since, load_state("publish_log.pkl", {}),
                                                         LIVE_DIR / "runs.jsonl", LIVE_DIR / "payloads"):
