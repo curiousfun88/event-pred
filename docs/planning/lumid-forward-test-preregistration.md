@@ -706,3 +706,29 @@ files, model ids) is written to `runs/live/stamps/<H>.json` and submitted to the
 `runs/live/paper/ledger/stamps/`). The calendars' receipts are upgraded to Bitcoin attestations with `ots upgrade`
 before each cut, and `ots verify` checks them. Research Fleet records continue whenever Lumid answers; either record
 is sufficient. A failed stamp is logged in the hour's summary, never fatal.
+
+## Amendment L15 (2026-10-15, BEFORE any verdict is computed): first ledger voided after its own check failed; ledger restarted
+
+**What happened.** The ledger started on the laptop at 15:54 UTC (first entry H = 2026-10-15 T15). Its second round
+(entry T16) reported verification issues on every arm: re-simulated fills for T15 differed from the recorded ones. Two
+defects in the paper trader, neither in the producer or the models:
+1. *Tape alignment.* `fetch_tape_hour` built price/count/side with one sort (time, price, count, side) and ticker/
+   trade id with another (time only). Trades sharing a timestamp could be paired with another trade's market or
+   price (up to 110 trades an hour sat on timestamps shared across markets).
+2. *Tie order.* `load_tape` sorted by (ticker, time) only, so the order of same-timestamp trades (5,445 of 10,926 in
+   T15) was arbitrary run to run; fill splits changed and, through the per-event inventory limit, fill totals too.
+Also the check compared pre-start reference hours (never recorded) and reported them as extra; corrected.
+
+**Fix (commit 0fa7bfe).** Tape columns from one sorted list; ties broken as in every backtest (time, price, count,
+side, then trade id); the check covers only hours >= the ledger start. Self-tests: alignment under shared timestamps;
+one order for 20 shuffles; pre-start fills not compared.
+
+**Determinism on live data (before restart).** All tapes refetched with the fixed code (same trade counts per hour).
+Two consecutive ledger rounds in a test folder: round A (tapes to T16) wrote T16; round B (tapes to T17, active-event
+recomputation) re-derived T16 identically and wrote T17: 0 verification issues, chain ok, 0 candidate mismatches, all 13
+arms (`logs/v2_forecast/l15_determinism_round{A,B}.log`). The Lumid blind tests ran one round only, which is why this
+was not caught before.
+
+**Restart.** The two-entry ledger (`runs/live/paper/ledger_void_20261015`), the old tapes and the g2 selection archive
+are kept, marked void, and never used. The ledger restarts empty; the new first entry is the new S (L10). No verdict or
+P&L figure from the void ledger was computed or looked at.
