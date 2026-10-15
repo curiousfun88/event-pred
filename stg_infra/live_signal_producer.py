@@ -1149,6 +1149,10 @@ def main():
                 if (time.time_ns() - hour_floor(time.time_ns())) < 25 * 60 * 1_000_000_000:
                     time.sleep(180)
                     continue
+                nxt = hour_floor(time.time_ns()) + H_NS + 60 * 1_000_000_000   # too late to retry: next hour
+                while time.time_ns() < nxt:
+                    time.sleep(20)
+                continue
             # back to the top: if the cycle ran into the next hour, that hour runs at once (late) instead of being
             # skipped until the hour after (2026-10-15: a cycle started 11:59 ended 12:07 and T12 was skipped);
             # otherwise hour_done() waits, in short steps against the wall clock (suspends overshoot long sleeps)
