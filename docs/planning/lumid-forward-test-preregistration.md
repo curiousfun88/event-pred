@@ -732,3 +732,10 @@ was not caught before.
 **Restart.** The two-entry ledger (`runs/live/paper/ledger_void_20261015`), the old tapes and the g2 selection archive
 are kept, marked void, and never used. The ledger restarts empty; the new first entry is the new S (L10). No verdict or
 P&L figure from the void ledger was computed or looked at.
+
+**L12 host log.** 2026-10-15 (UTC): 10:36 laptop producer service started (first cycle T11, failed 11:46 under
+Kalshi throttling caused by Claude's concurrent tests; rerun late at 11:59 with `--bulk`); 12:27 restarted with `--ots`
+and the loop fix (T12 late, snapshot 12:28); 15:54-17:54 laptop paper trader (ledger voided, L15); 19:37:43 laptop
+producer stopped (last laptop hour T19); 19:39 home sandbox `prod-a` created (4 h lifetime, so its first handover is
+observed the same evening), laptop live state copied (trade store, scores, run log, stamps, tapes); 19:44:48 keeper on
+home started the producer and the paper trader (fresh ledger). Exactly one producer ran at every moment.
