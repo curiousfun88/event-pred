@@ -760,6 +760,8 @@ def run_once(args) -> dict:
                "published_rows": accepted_rows if sent is not None else 0,
                "publish_complete": (len(ok_b) == n_batches(len(sig), args.batch)) if sent is not None else None,
                "resent": resent if sent is not None else None}
+    if args.ots:
+        summary["ots"] = ots_stamp(summary, LIVE_DIR / "stamps")
     if args.fleet:
         import requests
         pat = Path(args.pat_file).expanduser().read_text().strip()
@@ -793,6 +795,24 @@ def equiv_check(args, n_legs=500, seed=0):
            "batch_calls": c2 - c1, "mismatched_legs": len(diff), "examples": diff[:5]}
     print(json.dumps(out))
     return not diff
+
+
+def ots_stamp(summary, out_dir, run=None):
+    """L14: write the hour's audit record (H, snapshot and decision times, sha256 of its files) to
+    stamps/<H>.json and submit it to the public OpenTimestamps calendars (`ots stamp` -> <H>.json.ots). Independent of
+    Lumid; never fatal. Returns "ok" or "error: ..."."""
+    import subprocess
+    out_dir = Path(out_dir); out_dir.mkdir(parents=True, exist_ok=True)
+    rec = out_dir / f"{summary['H']}.json"
+    rec.write_text(json.dumps({k: summary[k] for k in ("H", "snap_ns", "t_decided_ns", "sha256", "models")}, sort_keys=True))
+    ots = Path(sys.executable).parent / "ots"
+    run = run or (lambda cmd: subprocess.run(cmd, capture_output=True, text=True, timeout=90))
+    try:
+        r = run([str(ots), "stamp", str(rec)])
+        ok = r.returncode == 0 and Path(str(rec) + ".ots").exists()
+        return "ok" if ok else f"error: rc={r.returncode} {(r.stderr or '')[-200:]}"
+    except Exception as e:
+        return f"error: {e!r}"[:240]
 
 
 def self_test() -> bool:
@@ -884,6 +904,21 @@ def self_test() -> bool:
     au = skip_audit(_KB(H2 + 15 * 60 * 10**9), stb, ["Y"], H2)
     check("L13: skip audit finds no missed trade when the store is complete", au == {"checked": 1, "missed_trades": 0})
     bad = {**stb, "Y": {key: v[:1] for key, v in stb["Y"].items()}}
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        sm = {"H": "20261015T12", "snap_ns": 1, "t_decided_ns": 2, "sha256": {"one_x.parquet": "ab"}, "models": {"g": "e3"}, "events": 9}
+
+        def fake_ots(cmd):
+            Path(cmd[-1] + ".ots").write_bytes(b"x")
+            return type("R", (), {"returncode": 0, "stderr": ""})()
+        r_ok = ots_stamp(sm, td, run=fake_ots)
+        rec = json.loads((Path(td) / "20261015T12.json").read_text())
+        check("L14: the stamped record holds H, times, hashes and model ids only; stamp ok",
+              r_ok == "ok" and set(rec) == {"H", "snap_ns", "t_decided_ns", "sha256", "models"})
+
+        def boom(cmd):
+            raise OSError("no network")
+        check("L14: a stamping failure is reported, never raised", ots_stamp({**sm, "H": "x"}, td, run=boom).startswith("error"))
     check("L13: skip audit counts a trade missing from the store", skip_audit(_KB(H2 + 15 * 60 * 10**9), bad, ["Y"], H2)["missed_trades"] == 1)
 
     H = 1_791_212_400 * 1_000_000_000          # a top-of-hour, 2026-10
@@ -1082,6 +1117,7 @@ def main():
                     help="never publish tickers starting with these (amendment L1: KXHIGH KXLOW)")
     ap.add_argument("--rps", type=float, default=8.0)
     ap.add_argument("--fleet", action="store_true", help="post each hour's summary as a FlowMesh job to Research Fleet (L5)")
+    ap.add_argument("--ots", action="store_true", help="L14: OpenTimestamps record of each hour's hashes (stamps/)")
     ap.add_argument("--bulk", action="store_true", help="L13: batch candle calls; skip trade fetches for tickers with no new volume")
     ap.add_argument("--equiv-check", action="store_true", help="L13: compare bulk vs per-leg candles on the current hour, then exit")
     a = ap.parse_args()

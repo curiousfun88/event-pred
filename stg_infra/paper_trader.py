@@ -483,7 +483,7 @@ def cmd_fetch_tape(since, rps):
         print(json.dumps({"tape": h, "trades": len(df), "tickers": len(tks), "api_calls": k.calls}), flush=True)
 
 
-def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, ledger_dir=None):
+def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, ledger_dir=None, ots=False):
     import live_signal_producer as lp
     import simulate_maker as s
     import train_baselines as tb
@@ -605,11 +605,11 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     if write:
         (PAPER / "summary.json").write_text(json.dumps(result, indent=1, default=float))
     if ledger:
-        result["ledger"] = ledger_round(ledger_fills, ns_of(hours[-1]), events, markets, one, two, pat, ledger_dir)
+        result["ledger"] = ledger_round(ledger_fills, ns_of(hours[-1]), events, markets, one, two, pat, ledger_dir, ots)
     return result
 
 
-def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat, ledger_dir=None):
+def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat, ledger_dir=None, ots=False):
     """L10: append this round's ledger entries (paper_ledger) and post the newest to Research Fleet."""
     import paper_ledger as pl_
     import polars as pl
@@ -636,7 +636,12 @@ def ledger_round(ledger_fills, complete_H, events, markets, one, two, pat, ledge
     jobs = []
     if written and pat:
         jobs.append(pl_.post_fleet(written[-1], pat))
-    info = {"entries_written": [e["H"] for e in written], "fleet_job": jobs[-1] if jobs else None,
+    stamp = None
+    if written and ots:                  # L14: independent public timestamp of the ledger head
+        e = written[-1]
+        stamp = pl_.ots_stamp({"H": e["H"], "entry_hash": e["hash"], "prev_hash": e["prev_hash"]},
+                              (Path(ledger_dir) if ledger_dir else PAPER / "ledger") / "stamps" / f"ledger_{e['H']}.json")
+    info = {"entries_written": [e["H"] for e in written], "fleet_job": jobs[-1] if jobs else None, "ots": stamp,
             "verification_issues": written[0]["verification"] if written else []}
     print(json.dumps({"ledger": info}), flush=True)
     return info
@@ -787,6 +792,7 @@ def main():
     ap.add_argument("--rps", type=float, default=2.0, help="L7: <= 2 requests/s")
     ap.add_argument("--ledger", action="store_true", help="L10: append the live ledger each round")
     ap.add_argument("--fleet", action="store_true", help="L10: post each round's ledger summary to Research Fleet")
+    ap.add_argument("--ots", action="store_true", help="L14: OpenTimestamps record of each round's ledger head")
     ap.add_argument("--pat-file", default="~/.lumid_pat")
     ap.add_argument("--blind-test", metavar="DIR", help="one engine + ledger round into DIR; prints structure, timing "
                     "and memory only (no P&L), writes no summary, posts nothing")
@@ -815,7 +821,7 @@ def main():
                           "verification_issues": r["ledger"]["verification_issues"],
                           "arms": sorted(json.loads(ents[-1].read_text())["cumulative"].get("primary", {})) if ents else []}}), flush=True)
     if a.run:
-        cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat)
+        cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat, ots=a.ots)
     if a.loop:
         last = None
         while True:      # one round per hour, in the producer's quiet minutes (L7 item 4), never during its cycle
@@ -828,7 +834,7 @@ def main():
                 t0 = time.time()
                 try:
                     cmd_fetch_tape(a.since, a.rps)
-                    cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat)
+                    cmd_run(a.since, a.rps, ledger=a.ledger, pat=pat, ots=a.ots)
                 except Exception as e:
                     print(json.dumps({"error": repr(e)[:300], "at": time.time()}), flush=True)
                 print(json.dumps({"round": stamp, "secs": round(time.time() - t0, 1)}), flush=True)

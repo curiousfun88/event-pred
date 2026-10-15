@@ -693,3 +693,16 @@ full per-ticker refetch, including a trade one minute after H. Live data, 2026-1
 batch candles for 500 random open legs (3,262 candles) identical, 0 mismatched legs (526 calls vs 5). Every hour,
 an audit refetches up to 30 skipped legs and logs any trade missing from the store (`skip_audit` in the hour's
 summary); any miss is reported, and the affected hours are listed in the report.
+
+## Amendment L14 (2026-10-15, BEFORE the first ledger entry): an independent public timestamp each hour
+
+**Why.** Research Fleet's job service also runs on Lumid's office site: since the outage every hourly post fails
+("502 compute service unreachable"), so the scores had no third-party timestamp. Hour 2026-10-15 T11 (the first laptop
+hour) has no Research Fleet record for this reason.
+
+**Change.** Each producer hour, the audit record (H, snapshot time, decision time, sha256 of the hour's score and signal
+files, model ids) is written to `runs/live/stamps/<H>.json` and submitted to the public OpenTimestamps calendars
+(`ots stamp`, `--ots`); each ledger round does the same for the ledger head (entry hash and previous hash,
+`runs/live/paper/ledger/stamps/`). The calendars' receipts are upgraded to Bitcoin attestations with `ots upgrade`
+before each cut, and `ots verify` checks them. Research Fleet records continue whenever Lumid answers; either record
+is sufficient. A failed stamp is logged in the hour's summary, never fatal.

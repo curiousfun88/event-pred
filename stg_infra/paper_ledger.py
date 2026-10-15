@@ -202,6 +202,21 @@ def post_fleet(entry: dict, pat: str, url="https://lum.id/api/v1/me/fleet/jobs")
 
 # ---------------------------------------------------------------- self-test
 
+def ots_stamp(rec: dict, path: Path, run=None) -> str:
+    """L14: write `rec` (JSON) to `path` and submit it to the public OpenTimestamps calendars (`ots stamp`
+    -> path.ots). Independent of Lumid; never fatal. Returns "ok" or "error: ..."."""
+    import subprocess
+    path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(rec, sort_keys=True))
+    run = run or (lambda cmd: subprocess.run(cmd, capture_output=True, text=True, timeout=90))
+    try:
+        r = run([str(Path(sys.executable).parent / "ots"), "stamp", str(path)])
+        ok = r.returncode == 0 and Path(str(path) + ".ots").exists()
+        return "ok" if ok else f"error: rc={r.returncode} {(r.stderr or '')[-200:]}"
+    except Exception as e:
+        return f"error: {e!r}"[:240]
+
+
 def self_test() -> bool:
     import tempfile
     ok = True
@@ -210,6 +225,17 @@ def self_test() -> bool:
         nonlocal ok
         ok &= bool(c)
         print(f"  [{'PASS' if c else 'FAIL'}] {msg}")
+
+    with tempfile.TemporaryDirectory() as td:
+        def fake(cmd):
+            Path(cmd[-1] + ".ots").write_bytes(b"x")
+            return type("R", (), {"returncode": 0, "stderr": ""})()
+        r = ots_stamp({"H": "20261015T12", "entry_hash": "ab"}, Path(td) / "ledger_20261015T12.json", run=fake)
+        check("L14: ledger head stamped (record written, .ots present)", r == "ok" and (Path(td) / "ledger_20261015T12.json.ots").exists())
+        def boom(cmd):
+            raise OSError("offline")
+        check("L14: ledger stamping failure is reported, never raised", ots_stamp({"H": "x"}, Path(td) / "x.json", run=boom).startswith("error"))
+
 
     H0 = 1_000 * H_NS
     stamp = lambda H: f"h{H // H_NS}"

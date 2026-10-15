@@ -24,7 +24,7 @@ After=network-online.target
 [Service]
 WorkingDirectory=$REPO
 Environment=OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2
-ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --bulk --pat-file /root/.lumid_pat >> logs/v2_forecast/live_producer_service.log 2>&1'
+ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --bulk --ots --pat-file /root/.lumid_pat >> logs/v2_forecast/live_producer_service.log 2>&1'
 Restart=always
 RestartSec=60
 MemoryMax=3500M
@@ -40,7 +40,7 @@ EOF
     systemctl --user is-active -q maker-producer || { echo "producer not running: start it first"; exit 2; }
     systemd-run --user --unit=paper-trader --working-directory="$REPO" -p MemoryMax=3000M -p CPUQuota=200% \
       -p Restart=always -p RestartSec=60 -E OMP_NUM_THREADS=2 -E OPENBLAS_NUM_THREADS=2 \
-      /bin/bash -c "exec nice -n 10 $REPO/.venv/bin/python stg_infra/paper_trader.py --loop --ledger --fleet --pat-file /root/.lumid_pat >> logs/v2_forecast/paper_trader_service.log 2>&1"
+      /bin/bash -c "exec nice -n 10 $REPO/.venv/bin/python stg_infra/paper_trader.py --loop --ledger --fleet --ots --pat-file /root/.lumid_pat >> logs/v2_forecast/paper_trader_service.log 2>&1"
     sleep 5; systemctl --user is-active paper-trader
     ;;
   paper-stop)
