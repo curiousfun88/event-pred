@@ -140,14 +140,26 @@ def ssh_gw(cmd, timeout=120):
                            *GW, cmd], capture_output=True, text=True, timeout=timeout)
 
 
-def producer_pids():
-    r = subprocess.run(["pgrep", "-f", "[l]ive_signal_producer.py"], capture_output=True, text=True)
+def proc_pattern(script: str, py: str = None) -> str:
+    """pgrep -f pattern for '<venv python> stg_infra/<script>' at the START of a command line only. 2026-10-15: the
+    unanchored '[l]ive_signal_producer.py' matched an ssh shell whose text merely mentioned the script, and the
+    watchdog took it for a running producer (start delayed 5 min)."""
+    import re
+    py = py or str(HOME / "venv/bin/python")
+    return "^" + re.escape(py) + r" stg_infra/" + re.escape(script)
+
+
+def _pids(script):
+    r = subprocess.run(["pgrep", "-f", proc_pattern(script)], capture_output=True, text=True)
     return [int(p) for p in r.stdout.split() if int(p) != os.getpid()]
+
+
+def producer_pids():
+    return _pids("live_signal_producer.py")
 
 
 def paper_pids():
-    r = subprocess.run(["pgrep", "-f", "[p]aper_trader.py --loop"], capture_output=True, text=True)
-    return [int(p) for p in r.stdout.split() if int(p) != os.getpid()]
+    return _pids("paper_trader.py --loop")
 
 
 def start_paper():
@@ -267,6 +279,12 @@ def self_test() -> bool:
     lines = [json.dumps({"H": "20261011T14"}), "not json", json.dumps({"H": "20261011T15"})]
     check("hour logged when runs.jsonl has this hour", hour_logged(lines, now))
     check("hour not logged when only the previous hour is", not hour_logged(lines[:2], now))
+    import re
+    pat = proc_pattern("live_signal_producer.py", "/home/u/venv/bin/python")
+    check("watchdog pattern matches the producer process",
+          re.search(pat, "/home/u/venv/bin/python stg_infra/live_signal_producer.py --loop --fleet") is not None)
+    check("watchdog pattern ignores a shell that only mentions the script",
+          re.search(pat, '/bin/sh -c echo "/home/u/venv/bin/python stg_infra/live_signal_producer.py" > cmd') is None)
     import tempfile
     with tempfile.TemporaryDirectory() as td:
         check("no site file -> office (port 31226)", site_conf(Path(td))["port"] == "31226")
