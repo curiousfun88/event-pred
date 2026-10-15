@@ -31,7 +31,7 @@ CPUQuota=200%
 [Install]
 WantedBy=default.target
 EOF
-    systemctl --user daemon-reload && systemctl --user start maker-producer
+    systemctl --user daemon-reload && systemctl --user restart maker-producer
     sleep 5; systemctl --user is-active maker-producer; tail -3 "$REPO/logs/v2_forecast/live_producer_service.log"
     ;;
   stop)
