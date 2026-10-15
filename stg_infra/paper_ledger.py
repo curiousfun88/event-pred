@@ -119,7 +119,8 @@ def write_entry(d: Path, H: int, stamp: str, new_fills: dict, settlements: list,
     tmp.replace(p)
     st.update({"start_H": st.get("start_H", start_H), "start_stamp": st.get("start_stamp", stamp), "last_H": H,
                "last_stamp": stamp, "head": entry["hash"], "settled_events": sorted(settled_events)})
-    (d / "state.json").write_text(json.dumps(st, indent=1))
+    tmp_st = d / "state.json.tmp"                    # atomic: a sandbox deleted mid-write never leaves a torn state
+    tmp_st.write_text(json.dumps(st, indent=1)); tmp_st.replace(d / "state.json")
     return entry
 
 

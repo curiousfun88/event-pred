@@ -10,6 +10,6 @@ if pgrep -f "[l]umid_sandbox_keeper.py --run" > /dev/null; then
     echo "keeper already running on $(hostname)"
     exit 0
 fi
-setsid nohup /home/$U/venv/bin/python stg_infra/lumid_sandbox_keeper.py --run \
+setsid nohup /home/$U/venv/bin/python stg_infra/lumid_sandbox_keeper.py --run "$@" \
     >> logs/sbx_keeper.out 2>&1 < /dev/null &
 echo "keeper started on $(hostname)"

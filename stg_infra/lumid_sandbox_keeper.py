@@ -90,15 +90,34 @@ def successor_name(mine: str, existing) -> str | None:
     return None
 
 
-def should_hand_over(now: float, expires_at: float, minute: int, hour_logged: bool) -> str | None:
+def should_hand_over(now: float, expires_at: float, minute: int, hour_logged: bool, paper_idle: bool = True) -> str | None:
     left = expires_at - now
     if left >= LEAD_S:
         return None
     if left < LAST_CHANCE_S:
         return "last chance"
-    if hour_logged and QUIET_MIN <= minute <= QUIET_MAX:
+    if hour_logged and paper_idle and QUIET_MIN <= minute <= QUIET_MAX:
         return "quiet"
     return None
+
+
+def paper_idle(paper_log_lines, now_utc: dt.datetime) -> bool:
+    """The paper trader has finished this hour's round: its last {"round": H} line is for the current hour."""
+    stamp = now_utc.strftime("%Y%m%dT%H")
+    for line in reversed(paper_log_lines[-200:]):
+        try:
+            d = json.loads(line)
+        except ValueError:
+            continue
+        if "round" in d:
+            return d["round"] == stamp
+    return False
+
+
+def predecessor_gone(rows, name: str) -> bool:
+    """The predecessor sandbox no longer exists (deleted) or is no longer Running."""
+    row = next((r for r in rows if r.get("name") == name), None)
+    return row is None or row.get("phase") not in ("Running", "Pending")
 
 
 def hour_logged(runs_lines, now_utc: dt.datetime) -> bool:
@@ -197,29 +216,36 @@ def hand_over(me, rows, reason):
         log("handover failed: successor not Running; deleting it, will retry", successor=succ)
         api("DELETE", f"/sandboxes/{succ}")
         return False
-    for p in producer_pids() + paper_pids():
-        os.kill(p, 15)
-    log("producer (and paper trader) stopped here; starting in successor", successor=succ)
-    r = ssh_gw(f"bash {START}")
-    time.sleep(20)
-    # "[l]ive..." matches the process but not this command line itself, which would otherwise
-    # make pgrep report the check's own shell as a running producer/keeper
-    chk = ssh_gw("hostname; pgrep -f '[l]ive_signal_producer.py' >/dev/null && echo PRODUCER_OK; "
-                 "pgrep -f '[l]umid_sandbox_keeper.py --run' >/dev/null && echo KEEPER_OK")
-    ok = f"sbx-{USER}-{succ}" in chk.stdout and "PRODUCER_OK" in chk.stdout and "KEEPER_OK" in chk.stdout
+    # No kill: on the home site a sandbox may not signal a process in another session, its own children included
+    # (2026-10-15: PermissionError stopped the first home handover). The successor's keeper starts in --wait-for
+    # mode and starts producer and paper trader only once this sandbox is gone; deleting this sandbox through the
+    # API stops everything here. So two producers never run at once, and nothing is killed by signal.
+    r = ssh_gw(f"bash {START} --wait-for {me}")
+    time.sleep(15)
+    chk = ssh_gw(f"hostname; pgrep -f '{proc_pattern('lumid_sandbox_keeper.py --run')}' >/dev/null && echo KEEPER_OK")
+    ok = f"sbx-{USER}-{succ}" in chk.stdout and "KEEPER_OK" in chk.stdout
     if not ok:
-        log("handover failed: successor not confirmed; restarting producer here", start=r.stdout[-300:],
+        log("handover failed: successor keeper not confirmed; deleting successor, will retry", start=r.stdout[-300:],
             check=chk.stdout[-300:], err=chk.stderr[-300:])
-        start_producer()
+        api("DELETE", f"/sandboxes/{succ}")
         return False
-    log("handover confirmed; deleting this sandbox", successor=succ)
+    log("handover confirmed (successor keeper waiting); deleting this sandbox, which stops its producer and paper trader",
+        successor=succ)
     api("DELETE", f"/sandboxes/{me}")
     return True
 
 
-def run():
+def run(wait_for=None):
     me = my_name(socket.gethostname())
-    log("keeper started", sandbox=me)
+    log("keeper started", sandbox=me, wait_for=wait_for)
+    while wait_for:                                  # successor: start nothing until the predecessor is gone
+        try:
+            if predecessor_gone(api("GET", "/sandboxes")["sandboxes"], wait_for):
+                log("predecessor gone; taking over", predecessor=wait_for)
+                break
+        except Exception as e:
+            log("keeper error while waiting", error=repr(e)[:300])
+        time.sleep(15)
     while True:
         try:
             if not producer_pids():
@@ -234,7 +260,9 @@ def run():
                 now = time.time()
                 utc = dt.datetime.now(dt.timezone.utc)
                 lines = RUNS.read_text().splitlines() if RUNS.exists() else []
-                reason = should_hand_over(now, float(mine["expires_at"]), utc.minute, hour_logged(lines, utc))
+                plog = REPO / "logs/paper_trader.log"
+                idle = (not PAPER_CMD_FILE.exists()) or paper_idle(plog.read_text().splitlines() if plog.exists() else [], utc)
+                reason = should_hand_over(now, float(mine["expires_at"]), utc.minute, hour_logged(lines, utc), idle)
                 if reason and hand_over(me, rows, reason):
                     return
         except Exception as e:                      # never die: a dead keeper means a dead producer at expiry
@@ -279,6 +307,14 @@ def self_test() -> bool:
     lines = [json.dumps({"H": "20261011T14"}), "not json", json.dumps({"H": "20261011T15"})]
     check("hour logged when runs.jsonl has this hour", hour_logged(lines, now))
     check("hour not logged when only the previous hour is", not hour_logged(lines[:2], now))
+    check("quiet minute but paper trader mid-round -> wait", should_hand_over(T, T + 2 * 3600, 45, True, False) is None)
+    check("last chance hands over even mid-round", should_hand_over(T, T + 30 * 60, 45, True, False) == "last chance")
+    pl = [json.dumps({"round": "20261011T14", "secs": 9}), json.dumps({"tape": "x"}), json.dumps({"round": "20261011T15", "secs": 9})]
+    check("paper idle when its last round line is this hour", paper_idle(pl, now))
+    check("paper busy when this hour's round has not finished", not paper_idle(pl[:2] + [json.dumps({"tape": "y"})], now))
+    check("predecessor gone: deleted, or no longer Running", predecessor_gone([{"name": "prod-b", "phase": "Running"}], "prod-a")
+          and predecessor_gone([{"name": "prod-a", "phase": "Terminating"}], "prod-a")
+          and not predecessor_gone([{"name": "prod-a", "phase": "Running"}], "prod-a"))
     import re
     pat = proc_pattern("live_signal_producer.py", "/home/u/venv/bin/python")
     check("watchdog pattern matches the producer process",
@@ -300,13 +336,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--run", action="store_true")
+    ap.add_argument("--wait-for", help="with --run: start producer and paper trader only once this sandbox is gone")
     ap.add_argument("--status", action="store_true")
     ap.add_argument("--handover-now", action="store_true", help="test the handover once, now")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
     if a.run:
-        run()
+        run(a.wait_for)
     elif a.status:
         status()
     elif a.handover_now:
