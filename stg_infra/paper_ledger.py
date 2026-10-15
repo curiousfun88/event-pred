@@ -59,12 +59,14 @@ def recorded_fills(d: Path) -> dict:
     return out
 
 
-def verify(recorded: dict, fills_by: dict, upto_H: int, events=None) -> list:
-    """Recorded fills must equal recomputed fills for hours <= upto_H, for the events recomputed this round
-    (`events`; None = all). Returns mismatches (never repairs)."""
+def verify(recorded: dict, fills_by: dict, upto_H: int, events=None, start_H=None) -> list:
+    """Recorded fills must equal recomputed fills for hours in [start_H, upto_H], for the events recomputed this
+    round (`events`; None = all). Hours before start_H are never recorded (reference only), so they are not
+    compared (2026-10-15 fix: they were, and every pre-start fill showed as 'extra'). Returns mismatches."""
     bad = []
+    lo = start_H if start_H is not None else -1
     for (w, arm), rec in recorded.items():
-        now = {fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if int(f[9]) <= upto_H}
+        now = {fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if lo <= int(f[9]) <= upto_H}
         rec_h = {r for r in rec if r[7] <= upto_H and (events is None or r[0] in events)}
         if now != rec_h:
             bad.append({"window": w, "arm": arm, "missing_now": len(rec_h - now), "extra_now": len(now - rec_h)})
@@ -131,7 +133,7 @@ def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, 
     start_H = st.get("start_H", complete_H)
     last_H = st.get("last_H", start_H - H_NS)
     rec = recorded_fills(d)
-    bad = verify(rec, fills_by, last_H, events) if rec else []
+    bad = verify(rec, fills_by, last_H, events, start_H) if rec else []
     prev_settled = set(st.get("settled_events", []))
     res = results or {}
     value = lambda key: as_fill(key, res.get(key[1]))
@@ -235,6 +237,14 @@ def self_test() -> bool:
         def boom(cmd):
             raise OSError("offline")
         check("L14: ledger stamping failure is reported, never raised", ots_stamp({"H": "x"}, Path(td) / "x.json", run=boom).startswith("error"))
+    k_pre = ("E", "T", 1, 40, 10, 0.0, 400.0, 100)
+    k_in = ("E", "T", 1, 40, 10, 0.0, 400.0, 200)
+    f = lambda k: (k[0], k[1], k[2], k[3], k[4], k[5], 0.0, k[6], float("nan"), k[7])
+    rec = {("primary", "g"): {k_in}}
+    check("verify: a fill before the ledger's start is not compared (not 'extra')",
+          verify(rec, {"primary": {"g": [f(k_pre), f(k_in)]}}, 300, None, start_H=200) == [])
+    check("verify: a recorded fill missing from the recomputation is still reported",
+          verify(rec, {"primary": {"g": [f(k_pre)]}}, 300, None, start_H=200) != [])
 
 
     H0 = 1_000 * H_NS

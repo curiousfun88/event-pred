@@ -421,11 +421,26 @@ def fetch_tape_hour(k, H, tickers):
     for tr in k.pages("markets/trades", "trades", min_ts=H // 10**9, max_ts=(H + H_NS) // 10**9 + 1, limit=1000):
         if tr["ticker"] in tickers:
             rows.append(tr)
-    t, p, c, s_ = st.trade_arrays(rows)
-    ids = [tr["trade_id"] for tr in sorted(rows, key=lambda tr: st.ts_ns(tr["created_time"]))]
-    tk = [tr["ticker"] for tr in sorted(rows, key=lambda tr: st.ts_ns(tr["created_time"]))]
-    df = pl.DataFrame({"ticker": tk, "t": t, "price_c": p, "count": c, "side": s_, "trade_id": ids})
+    # every column from ONE list (2026-10-15 fix): trade_arrays re-sorts by (t, price, count, side) while ids and
+    # tickers were sorted by t alone, so trades sharing a timestamp could be paired with another trade's market
+    df = tape_frame([(tr["ticker"], tr["trade_id"], st.ts_ns(tr["created_time"]),
+                      round(float(tr.get("yes_price_dollars", tr.get("yes_price", 0) / 100)) * 100, 6),
+                      float(tr.get("count_fp", tr.get("count", 0))), 1 if tr["taker_side"] == "yes" else -1)
+                     for tr in rows])
     return df.filter((pl.col("t") > H) & (pl.col("t") <= H + H_NS))
+
+
+TAPE_ORDER = ["ticker", "t", "price_c", "count", "side", "trade_id"]   # ties as the backtests (trade_arrays), then id
+
+
+def tape_frame(rows):
+    """Tape DataFrame from (ticker, trade_id, t, price_c, count, side) rows, in TAPE_ORDER."""
+    import polars as pl
+    cols = list(zip(*rows)) if rows else [[]] * 6
+    return pl.DataFrame({"ticker": list(cols[0]), "trade_id": list(cols[1]), "t": pl.Series(list(cols[2]), dtype=pl.Int64),
+                         "price_c": pl.Series(list(cols[3]), dtype=pl.Float64), "count": pl.Series(list(cols[4]), dtype=pl.Float64),
+                         "side": pl.Series(list(cols[5]), dtype=pl.Int64)}).select(
+        ["ticker", "t", "price_c", "count", "side", "trade_id"]).sort(TAPE_ORDER)
 
 
 def load_tape(hours):
@@ -433,7 +448,7 @@ def load_tape(hours):
     fs = [TAPE / f"trades_{h}.parquet" for h in hours if (TAPE / f"trades_{h}.parquet").exists()]
     if not fs:
         return {}, []
-    d = pl.concat([pl.read_parquet(f) for f in fs]).unique("trade_id").sort(["ticker", "t"])
+    d = pl.concat([pl.read_parquet(f) for f in fs]).unique("trade_id", keep="first", maintain_order=True).sort(TAPE_ORDER)
     out = {}
     for (tk,), g in d.group_by(["ticker"], maintain_order=True):
         out[tk] = (g["t"].to_numpy(), g["price_c"].to_numpy(), g["count"].to_numpy(), g["side"].to_numpy())
@@ -661,6 +676,22 @@ def self_test() -> bool:
 
     H0 = ns_of("20261012T10")
     check("stamp/ns round trip", stamp_of(ns_of("20261012T10")) == "20261012T10")
+    # 2026-10-15 fixes: tape rows stay aligned under shared timestamps; order is the same whatever the input order
+    import random
+    T = H0 + 600 * 10**9
+    rows = [("A", "a1", T, 7.0, 11.0, 1), ("B", "b1", T, 40.0, 3.0, -1), ("A", "a2", T, 5.0, 1.0, 1),
+            ("A", "a3", T, 6.0, 1.0, 1), ("B", "b0", T - 1, 41.0, 2.0, 1)]
+    fr = tape_frame(rows)
+    kept = {(tk, i): (p_, c_) for tk, i, p_, c_ in zip(fr["ticker"], fr["trade_id"], fr["price_c"], fr["count"])}
+    check("tape: every trade keeps its own market, price and size when timestamps are shared",
+          kept == {(r[0], r[1]): (r[3], r[4]) for r in rows})
+    orders = set()
+    for seed in range(20):
+        rr = rows[:]; random.Random(seed).shuffle(rr)
+        orders.add(tuple(tape_frame(rr)["trade_id"].to_list()))
+    check(f"tape: one order for 20 shuffles of tied trades ({orders})", len(orders) == 1)
+    check("tape: ties as the backtests (time, then price): A's trades at T in price order 5, 6, 7",
+          fr.filter(pl.col("ticker") == "A")["price_c"].to_list() == [5.0, 6.0, 7.0])
     t = np.array([H0 + 1, H0 + H_NS, H0 + H_NS + 1], np.int64)
     check("trade hour: (H, H+1h] belongs to H", list(hour_of_trade(t)) == [H0, H0, H0 + H_NS])
 
