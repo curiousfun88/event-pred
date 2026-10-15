@@ -657,3 +657,20 @@ so not seasonal) and +0.3 to +2.0c in 2026-01..08 (no CI above 0, intervals abou
 [-3.59, +1.52] in 2026-09-07..10-05. Each of Aug and Sep 2026 is within noise of the 2026 level, and a similar dip
 (Jan-Feb 2026) reversed. The clearer change is 2025 -> 2026: a smaller, noisier edge while median weather trades in 24 h
 rose from about 50 to 300-380.
+
+## Amendment L12 (2026-10-15, BEFORE the first ledger entry): host fallback and missing hours
+
+**Incident.** The last hourly Research Fleet record from the Lumid producer is 2026-10-14 12:31 UTC (hour T12). From
+then the Lumid office sandbox service did not answer authenticated API calls or ssh (checked 10:27-10:33 UTC on
+15 Oct; lum.id itself answered). The outage began in the keeper's handover window, so the most likely cause is that
+the handover could not create the next sandbox and the running one expired; this is not verified. Hours from T13 on
+14 Oct until the fallback starts are lost (reference hours only; the ledger had not started).
+
+**Fallback.** While Lumid is unavailable, the producer runs on the laptop (`stg_infra/laptop_fallback.sh`): same code
+and models, `--loop --fleet`, so each hour is still hashed and recorded on Research Fleet. The paper trader and ledger
+run on the same host as the producer. Exactly one producer runs at a time; moving back to Lumid is done by stopping
+the laptop producer first, and every move between hosts is recorded here with its time.
+
+**Missing hours (fixed now).** An hour with no live snapshot is missing. It is never reconstructed later from
+historical prices (that would be a replay), and it is excluded from every arm alike. Verdicts are computed over the
+hours actually recorded; the report lists every gap with its cause. A host change does not reset S or the ledger.
