@@ -258,6 +258,27 @@ def backup_tick(last: float, now: float = None, run_once=None) -> float:
     return now
 
 
+FLEET_EVERY_S = 3600
+
+
+def fleet_tick(last: float, now: float = None, run=None) -> float:
+    """Hourly: re-post to Research Fleet any producer hour or ledger entry whose live post failed (home's job service
+    rejects about half; office is down). Never raises; logs failures only. Returns the time of the last attempt."""
+    now = time.time() if now is None else now
+    if now - last < FLEET_EVERY_S:
+        return last
+    try:
+        cmd = [str(HOME / "venv/bin/python"), "stg_infra/fleet_backfill.py", "--runs", "runs/live/runs.jsonl",
+               "--ledger", "runs/live/paper/ledger", "--pat-file", str(CFG / "lumid_pat")]
+        r = (run or (lambda c: subprocess.run(c, cwd=REPO, capture_output=True, text=True, timeout=1800)))(cmd)
+        tail = (r.stdout or "").strip().splitlines()[-1:] or [""]
+        if r.returncode != 0 or '"failed": 0' not in tail[0]:
+            log("fleet backfill incomplete", rc=r.returncode, last=tail[0][:200], err=(r.stderr or "")[-200:])
+    except Exception as e:
+        log("fleet backfill error", error=repr(e)[:300])
+    return now
+
+
 def run(wait_for=None):
     me = my_name(socket.gethostname())
     log("keeper started", sandbox=me, wait_for=wait_for)
@@ -269,7 +290,7 @@ def run(wait_for=None):
         except Exception as e:
             log("keeper error while waiting", error=repr(e)[:300])
         time.sleep(15)
-    last_backup = 0.0
+    last_backup = last_fleet = 0.0
     while True:
         try:
             if not producer_pids():
@@ -279,6 +300,7 @@ def run(wait_for=None):
                 log("watchdog: paper trader not running; starting it")
                 start_paper()
             last_backup = backup_tick(last_backup)
+            last_fleet = fleet_tick(last_fleet)
             rows = api("GET", "/sandboxes")["sandboxes"]
             mine = next((r for r in rows if r["name"] == me), None)
             if mine and mine.get("expires_at"):
@@ -307,6 +329,9 @@ def status():
 # ---------------------------------------------------------------- self-test
 
 def self_test() -> bool:
+    global LOG
+    import tempfile
+    LOG = Path(tempfile.mkdtemp()) / "keeper_selftest.log"      # never write to the live log from a test
     ok = True
 
     def check(msg, c):
@@ -345,6 +370,12 @@ def self_test() -> bool:
           and calls == [])
     if BACKUP_KEY.exists():
         check("backup: due after 10 min, attempt time returned", backup_tick(0.0, 700.0, run_once=lambda: {"ok": True}) == 700.0)
+    R = type("R", (), {})
+    ok_r = R(); ok_r.returncode, ok_r.stdout, ok_r.stderr = 0, '{"posted": 2, "failed": 0}\n', ""
+    seen = []
+    check("fleet backfill: hourly, not again within the hour", fleet_tick(0.0, 4000.0, run=lambda c: seen.append(c) or ok_r) == 4000.0
+          and fleet_tick(4000.0, 5000.0, run=lambda c: seen.append(c) or ok_r) == 4000.0 and len(seen) == 1)
+    check("fleet backfill: a crash never raises", fleet_tick(0.0, 1e9, run=lambda c: 1 / 0) == 1e9)
     check("backup: a crashing backup never raises", isinstance(backup_tick(0.0, 1e9, run_once=lambda: 1 / 0), float))
     import re
     pat = proc_pattern("live_signal_producer.py", "/home/u/venv/bin/python")
