@@ -792,3 +792,8 @@ Active from the next sandbox handover.
 03:16 UTC) left the sandbox's clone behind, so backup pushes were refused for 5.5 h; the staleness check failed from about
 04:30 UTC and GitHub emailed the owner ("live-test-staleness: All jobs have failed"). Fixed 08:42 UTC (clone rebased, 18
 backup commits pushed, none lost); the backup now pulls before pushing.
+2026-10-16 08:40 UTC handover prod-a -> prod-b (batched settlement refresh live; rounds 2.6 h -> 5-20 min); 13:40 UTC
+handover prod-b -> prod-a (ledger check compares an arm from the hour it joined; backup pulls before push; public dashboard
+summary). One producer at every moment. Public dashboard: https://curiousfun88.github.io/event-pred-live/ (reads the
+backup's site/summary.json). Entries 10-16 T08-T10 carry check notes on liq_traded's pre-join hours only (nothing
+recorded missing); a check artefact, not a ledger discrepancy.
