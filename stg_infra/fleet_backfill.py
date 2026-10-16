@@ -40,6 +40,11 @@ def missing_entries(entry_files):
     return [json.loads(Path(f).read_text()) for f in sorted(entry_files)]
 
 
+def unreadable(done_ids: dict, readable) -> list:
+    """Names whose posted job's result cannot be read back (home has accepted jobs and then lost their contents)."""
+    return [name for name, jid in done_ids.items() if not readable(jid)]
+
+
 def run(runs_lines, entries, post_hour, post_entry, done: set, dry=False):
     stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     log = []
@@ -87,6 +92,8 @@ def self_test() -> bool:
     d2 = set()
     run(lines, [], lambda r: "error: home: HTTP 502", lambda e: "x", d2)
     check("a failed post is retried on the next run", d2 == set())
+    check("unreadable: only posted jobs whose result cannot be read are re-posted",
+          unreadable({"a": "id1", "b": "id2", "c": None}, lambda j: j != "id2") == ["b"])
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
@@ -107,15 +114,34 @@ def main():
     import paper_ledger as pl_
     pat = Path(a.pat_file).expanduser().read_text().strip()
     donep = Path(a.done)
-    done = set(json.loads(donep.read_text())) if donep.exists() else set()
+    raw = json.loads(donep.read_text()) if donep.exists() else {}
+    done_ids = raw if isinstance(raw, dict) else {n: None for n in raw}
+    H = {"Authorization": f"Bearer {pat}"}
+
+    def readable(jid):
+        if not jid:
+            return True                                   # posted before ids were kept: not re-checked
+        try:
+            r = requests.get(f"{lp.FLEET_URL}/{jid}", params={"view": "result"}, headers=H, timeout=60)
+            outs = r.json().get("data", {}).get("outputs") or [{}]
+            return r.status_code == 200 and not outs[0].get("error")
+        except Exception:
+            return True                                   # cannot tell now: try again next run
+    for name in unreadable(done_ids, readable):
+        print(json.dumps({"job": name, "result": "unreadable after posting; re-posting"}))
+        done_ids.pop(name)
+    done = set(done_ids)
     post_hour = lambda rec: lp.post_fleet(rec, lambda body: requests.post(
         lp.FLEET_URL, json=body, headers={"Authorization": f"Bearer {pat}"}, timeout=60))
     post_entry = lambda e: pl_.post_fleet(e, pat)
     entries = missing_entries((Path(a.ledger) / "entries").glob("*.json")) if a.ledger else []
     log = run(Path(a.runs).read_text().splitlines(), entries, post_hour, post_entry, done, a.dry_run)
     if not a.dry_run:
+        for n, r in log:
+            if not str(r).startswith(("error", "dry")):
+                done_ids[n] = r
         donep.parent.mkdir(parents=True, exist_ok=True)
-        donep.write_text(json.dumps(sorted(done)))
+        donep.write_text(json.dumps(done_ids, indent=0))
     for n, r in log:
         print(json.dumps({"job": n, "result": r}))
     print(json.dumps({"posted": sum(1 for _, r in log if not str(r).startswith(("error", "dry"))),
