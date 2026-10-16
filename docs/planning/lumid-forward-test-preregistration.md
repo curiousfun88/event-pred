@@ -788,3 +788,7 @@ address. It now fetches an event whole only when new, when a candidate leg is un
 refreshes known legs 100 tickers per call. Same cache contents: self-tests, and on 60 live events (426 legs, 18 of them
 settled since the cached copy) the batched and per-event refreshes agreed on every leg (0 mismatches; 5 calls vs 60).
 Active from the next sandbox handover.
+**L16 alert verified in practice (2026-10-16).** A commit made on GitHub in the backup repository (the alert workflow,
+03:16 UTC) left the sandbox's clone behind, so backup pushes were refused for 5.5 h; the staleness check failed from about
+04:30 UTC and GitHub emailed the owner ("live-test-staleness: All jobs have failed"). Fixed 08:42 UTC (clone rebased, 18
+backup commits pushed, none lost); the backup now pulls before pushing.
