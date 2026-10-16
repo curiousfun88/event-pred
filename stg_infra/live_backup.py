@@ -56,6 +56,59 @@ def heartbeat(repo: Path) -> dict:
             "ledger_entries": len(ent)}
 
 
+ARM_NAMES = {"g2": "G2", "g": "G", "lin2": "Linear", "mlp2": "Neural", "rnd2": "Random (same share)", "cand": "Quote all",
+             "wide3": "Wide spreads", "liq": "Liquid only", "liq_traded": "Liquid (traded markets)", "g2p": "G2 two-level",
+             "rnd2p": "Random two-level", "g2w1": "G2 W1", "g2w2": "G2 W2", "g2_sel": "G2 selected categories"}
+
+
+PAGE = "stg_infra/live_dashboard/index.html"
+
+
+def publish_page(repo: Path, clone: Path) -> bool:
+    """Copy the dashboard page to the backup repo's root (GitHub Pages serves it) and keep .nojekyll there."""
+    src, dst = repo / PAGE, clone / "index.html"
+    (clone / ".nojekyll").touch()
+    if not src.exists() or (dst.exists() and dst.read_bytes() == src.read_bytes()):
+        return False
+    shutil.copy2(src, dst)
+    return True
+
+
+def build_summary(repo: Path) -> dict:
+    """The public dashboard's data (site/summary.json): every ledger entry's cumulative figures per strategy (primary
+    window, pessimistic fills) and the test's status. Read-only on the ledger."""
+    d = repo / "runs/live/paper/ledger"
+    ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
+    rows, issues, last = [], 0, None
+    for f in ents:
+        e = json.loads(f.read_text())
+        issues += len(e.get("verification") or [])
+        last = e
+        for a, c in e.get("cumulative", {}).get("primary", {}).items():
+            rows.append({"H": e.get("H", f.stem), "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
+                         "realised_usd": round(c["realised_usd"], 2), "unrealised_usd": round(c["unrealised_usd"], 2),
+                         "capital_usd": round(c["capital_usd"], 2), "fills": c["fills"]})
+    st = json.loads((d / "state.json").read_text()) if (d / "state.json").exists() else {}
+    v = (last or {}).get("verdict") or {}
+    return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+            "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
+            "verification_issues": issues, "g2_settled_events": v.get("g2_events"),
+            "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "rows": rows}
+
+
+def write_summary(repo: Path, clone: Path) -> bool:
+    """Write site/summary.json if the ledger part changed (atomic). Returns True if it was rewritten."""
+    out = clone / "site/summary.json"
+    new = build_summary(repo)
+    if out.exists():
+        old = json.loads(out.read_text())
+        if all(old.get(k) == new.get(k) for k in new if k != "generated_utc"):
+            return False
+    out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".tmp"); tmp.write_text(json.dumps(new)); tmp.replace(out)
+    return True
+
+
 def sync(repo: Path, clone: Path, items=ITEMS) -> int:
     """Copy each item (file or directory) from repo into clone, replacing files whose size or mtime differ;
     returns the number of files copied. Never deletes from the clone (the backup only grows)."""
@@ -99,6 +152,8 @@ def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=N
             git(clone, "config", "user.name", "event-pred live backup")
             git(clone, "config", "user.email", "live-backup@users.noreply.github.com")
         copied = sync(repo, clone)
+        write_summary(repo, clone)                       # the public dashboard's data (site/)
+        publish_page(repo, clone)
         hb = heartbeat(repo)
         hbp = clone / "heartbeat.json"
         old = json.loads(hbp.read_text()) if hbp.exists() else {}
@@ -172,6 +227,10 @@ def self_test() -> bool:
         log2 = subprocess.run(["git", "--git-dir", str(remote), "log", "--oneline", "main"], capture_output=True, text=True).stdout
         check(f"a commit made on the remote does not block the next backup ({r4.get('ok')})",
               r4.get("ok") and "web edit" in log2 and log2.splitlines()[0].split(" ", 1)[1].startswith("backup "))
+        sm = json.loads((clone / "site/summary.json").read_text())
+        check("summary for the public dashboard: entries, status and the latest producer hour",
+              sm["entries"] == 1 and sm["latest_entry"] == "20261016T02" and sm["latest_producer_hour"] == "20261016T03")
+        check("summary unchanged when the ledger is unchanged (no needless commit)", write_summary(repo, clone) is False)
         r3 = run_once(repo, clone, "does-not-matter", key=td / "nokey", push=False)
         check("an unreachable remote or failure never raises", isinstance(r3, dict))
         bad = run_once(repo, td / "clone2", str(td / "missing.git"), key=td / "nokey")
@@ -185,11 +244,19 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--loop", action="store_true")
+    ap.add_argument("--summary-loop", action="store_true", help="only rewrite site/summary.json every 5 min (no git)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
     if a.once:
         print(json.dumps(run_once()))
+    elif a.summary_loop:
+        while True:
+            try:
+                write_summary(REPO, CLONE)
+            except Exception as e:
+                print(json.dumps({"summary_error": repr(e)[:200]}), flush=True)
+            time.sleep(300)
     elif a.loop:
         while True:
             print(json.dumps(run_once()), flush=True)
