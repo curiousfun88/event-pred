@@ -118,7 +118,7 @@ def build_summary(repo: Path) -> dict:
     window, pessimistic fills) and the test's status. Read-only on the ledger."""
     d = repo / "runs/live/paper/ledger"
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
-    rows, issues, prejoin, last = [], 0, 0, None
+    rows, main_rows, issues, prejoin, last = [], [], 0, 0, None
     for f in ents:
         e = json.loads(f.read_text())
         for x in e.get("verification") or []:
@@ -129,6 +129,9 @@ def build_summary(repo: Path) -> dict:
             else:
                 issues += 1
         last = e
+        for a, c in ((e.get("main_result_l18") or {}).get("cumulative") or {}).items():    # L18 main result over time
+            main_rows.append({"H": e.get("H", f.stem), "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
+                              "realised_usd": round(c["realised_usd"], 2), "capital_usd": round(c["capital_usd"], 2)})
         for a, c in e.get("cumulative", {}).get("primary", {}).items():
             rows.append({"H": e.get("H", f.stem), "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
                          "realised_usd": round(c["realised_usd"], 2), "unrealised_usd": round(c["unrealised_usd"], 2),
@@ -139,7 +142,8 @@ def build_summary(repo: Path) -> dict:
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
             "verification_issues": issues, "late_arm_prejoin_notes": prejoin, "g2_settled_events": v.get("g2_events"),
-            "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "rows": rows}
+            "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "main_rows": main_rows,
+            "rows": rows}
 
 
 def write_summary(repo: Path, clone: Path) -> bool:
