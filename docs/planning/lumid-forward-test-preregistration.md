@@ -781,3 +781,10 @@ recomputation is exact), and reports `g2` - `liq_traded` beside `g2` - `liq`.
 **L17 cut procedure.** The ledger round recomputes only events active in the last 4 days, so before each cut the paper
 trader is run once in full (`python stg_infra/paper_trader.py --run`, no ledger, every event) on the copy of `runs/live`
 the cut is computed from; `cut_report.py` then reads `liq_traded` from that recomputation for every hour from S.
+
+**Operations note (2026-10-16; no change to any rule, model or statistic).** Paper-trader rounds on home took 1.6-2.6 h,
+almost all waiting on Kalshi: the settlement refresh made one call per active event (~2,650) through home's throttled
+address. It now fetches an event whole only when new, when a candidate leg is uncached, or once per 24 h, and otherwise
+refreshes known legs 100 tickers per call. Same cache contents: self-tests, and on 60 live events (426 legs, 18 of them
+settled since the cached copy) the batched and per-event refreshes agreed on every leg (0 mismatches; 5 calls vs 60).
+Active from the next sandbox handover.

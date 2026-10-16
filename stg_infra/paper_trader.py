@@ -460,18 +460,40 @@ def load_tape(hours):
     return out, [f.stem.split("_")[1] for f in fs]
 
 
-def refresh_markets(k, events, cache):
-    """Settlement result and close time per ticker, for events not yet final in `cache`."""
+def market_row(m):
     import smoke_test_2026 as st
-    for ev in sorted(events):
-        tks = events[ev]
-        if all(cache.get(t, {}).get("result") in ("yes", "no") for t in tks):
-            continue
+    return {"result": m.get("result") or "", "status": m.get("status"),
+            "close_ns": st.ts_ns(m["close_time"]) if m.get("close_time") else None,
+            "settled_ns": st.ts_ns(m["settlement_ts"]) if m.get("settlement_ts") else
+            (st.ts_ns(m["close_time"]) if m.get("close_time") and m.get("result") in ("yes", "no") else None)}
+
+
+FULL_EVERY_NS = 24 * H_NS
+
+
+def refresh_markets(k, events, cache, full=None, now_ns=None, batch=100):
+    """Settlement result and close time per ticker, for events not yet final in `cache`.
+    2026-10-16 (no change to what is cached): an event is fetched whole (all its legs, one call) when it is new, has a
+    candidate leg not yet cached, or was last fetched whole over 24 h ago; otherwise its cached legs are refreshed in
+    batches of `batch` tickers (one call per 100 legs instead of one per event). `full` = {event: last whole fetch ns};
+    it is updated in place. On Lumid home the per-event refresh took >2 h a round under Kalshi throttling."""
+    full = {} if full is None else full
+    now_ns = time.time_ns() if now_ns is None else now_ns
+    final = lambda t: cache.get(t, {}).get("result") in ("yes", "no")
+    pending = [ev for ev in sorted(events) if not all(final(t) for t in events[ev])]
+    legs_of = {}
+    for tk in cache:
+        legs_of.setdefault(tk.rsplit("-", 1)[0], []).append(tk)
+    whole = [ev for ev in pending if any(t not in cache for t in events[ev]) or now_ns - full.get(ev, 0) > FULL_EVERY_NS]
+    for ev in whole:
         for m in k.pages("markets", "markets", event_ticker=ev, limit=1000):
-            cache[m["ticker"]] = {"result": m.get("result") or "", "status": m.get("status"),
-                                  "close_ns": st.ts_ns(m["close_time"]) if m.get("close_time") else None,
-                                  "settled_ns": st.ts_ns(m["settlement_ts"]) if m.get("settlement_ts") else
-                                  (st.ts_ns(m["close_time"]) if m.get("close_time") and m.get("result") in ("yes", "no") else None)}
+            cache[m["ticker"]] = market_row(m)
+        full[ev] = now_ns
+    ws = set(whole)
+    tks = sorted({t for ev in pending if ev not in ws for t in legs_of.get(ev, events[ev]) if not final(t)})
+    for i in range(0, len(tks), batch):
+        for m in k.pages("markets", "markets", tickers=",".join(tks[i:i + batch]), limit=1000):
+            cache[m["ticker"]] = market_row(m)
     return cache
 
 
@@ -533,8 +555,12 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
         if d is not None:
             for ev, tk in zip(d["event"].to_list(), d["ticker"].to_list()):
                 evs.setdefault(ev, set()).add(tk)
-    markets = refresh_markets(k, {e: sorted(t) for e, t in evs.items()}, markets)
+    fpath = PAPER / "markets_full.pkl"
+    # first use: every cached event was fetched whole by the previous (per-event) refresh, so it counts as fresh
+    full = pickle.loads(fpath.read_bytes()) if fpath.exists() else {tk.rsplit("-", 1)[0]: time.time_ns() for tk in markets}
+    markets = refresh_markets(k, {e: sorted(t) for e, t in evs.items()}, markets, full)
     mpath.write_bytes(pickle.dumps(markets))
+    fpath.write_bytes(pickle.dumps(full))
     sp = LIVE / "state" / "series.pkl"
     fee_types = {se: c.get("fee_type") for se, c in (pickle.loads(sp.read_bytes()) if sp.exists() else {}).items()}
     legs, events, charged = build_legs(one, two, tape, markets, fee_types)
@@ -681,6 +707,35 @@ def self_test() -> bool:
 
     H0 = ns_of("20261012T10")
     check("stamp/ns round trip", stamp_of(ns_of("20261012T10")) == "20261012T10")
+    # 2026-10-16: batched market refresh gives the same cache as the per-event refresh
+    world = {f"E{i}-{l}": {"ticker": f"E{i}-{l}", "result": ("yes" if (l == "A" and i % 2) else ""), "status": "active",
+                           "close_time": "2026-10-20T00:00:00Z"} for i in range(250) for l in "AB"}
+
+    class _KM:
+        calls = 0
+
+        def pages(self, path, key, limit, event_ticker=None, tickers=None):
+            self.calls += 1
+            if event_ticker:
+                yield from (m for t, m in world.items() if t.startswith(event_ticker + "-"))
+            else:
+                yield from (world[t] for t in tickers.split(",") if t in world)
+    evm = {f"E{i}": [f"E{i}-A"] for i in range(250)}
+    kold, knew = _KM(), _KM()
+    c_old = {}
+    for ev in sorted(evm):                                  # the old rule: whole event, every pending event
+        if not all(c_old.get(t, {}).get("result") in ("yes", "no") for t in evm[ev]):
+            for m in kold.pages("markets", "markets", limit=1000, event_ticker=ev):
+                c_old[m["ticker"]] = market_row(m)
+    warm = {t: {**market_row(m), "result": ""} for t, m in world.items()}     # yesterday's cache: nothing settled yet
+    fl = {ev: H0 for ev in evm}
+    c_new = refresh_markets(knew, evm, dict(warm), fl, now_ns=H0 + H_NS)
+    same = all(c_new[t] == c_old[t] for t in c_old)
+    check(f"markets: batched refresh = per-event refresh on known legs ({knew.calls} calls vs {kold.calls})", same and knew.calls < kold.calls)
+    c_full = refresh_markets(_KM(), evm, dict(warm), {ev: H0 for ev in evm}, now_ns=H0 + 25 * H_NS)
+    check("markets: an event not fetched whole for 24 h is fetched whole again", all(c_full[t] == c_old[t] for t in c_old))
+    c_newleg = refresh_markets(_KM(), {"E1": ["E1-A", "E1-C"]}, {}, {}, now_ns=H0)
+    check("markets: an event with an uncached candidate leg is fetched whole", "E1-B" in c_newleg)
     # 2026-10-15 fixes: tape rows stay aligned under shared timestamps; order is the same whatever the input order
     import random
     T = H0 + 600 * 10**9
