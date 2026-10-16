@@ -74,6 +74,45 @@ def publish_page(repo: Path, clone: Path) -> bool:
     return True
 
 
+SPLIT_ARMS = ("g2", "lin2", "mlp2", "g", "rnd2", "cand")
+MAIN_FROM_NS = int(dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc).timestamp()) * 10**9   # L18: main result counts from here
+
+
+def settled_split(repo: Path, ents) -> list:
+    """L18: settled-only net P&L per strategy on the 23 training series (main result) and on the full universe (L4),
+    from the ledger's recorded fills and the paper trader's settlement cache. Descriptive; the verdicts come from the
+    cut report."""
+    import pickle
+    mp_ = repo / "runs/live/paper/markets.pkl"
+    if not mp_.exists() or not ents:
+        return []
+    markets = pickle.loads(mp_.read_bytes())
+    sys.path.insert(0, str(repo / "stg_infra"))
+    sys.path.insert(0, str(repo / "stg_infra/examples"))
+    from fetch_kalshi_api_months import SERIES_A13
+    a13 = set(SERIES_A13)
+    agg = {}
+    for f in ents:
+        e = json.loads(f.read_text())
+        for a, rows in e.get("new_fills", {}).get("primary", {}).items():
+            if a not in SPLIT_ARMS:
+                continue
+            for r in rows:
+                ev, tk, side, price, qty, fee, cap, H = r
+                res = markets.get(tk, {}).get("result")
+                if res not in ("yes", "no"):
+                    continue
+                pay = 100 if res == "yes" else 0
+                net = ((pay - price) * qty if side > 0 else (price - pay) * qty) - fee
+                for u in ((["train23"] if ev.split("-")[0] in a13 and H >= MAIN_FROM_NS else []) + ["full"]
+                          + (["full_same"] if H >= MAIN_FROM_NS else [])):
+                    x = agg.setdefault((u, a), [0.0, 0.0, 0, set()])
+                    x[0] += net / 100; x[1] += cap / 100; x[2] += 1; x[3].add(ev)
+    return [{"universe": u, "arm": ARM_NAMES.get(a, a), "net_usd": round(x[0], 2), "capital_usd": round(x[1], 2),
+             "return_pct": round(100 * x[0] / x[1], 2) if x[1] else None, "settled_fills": x[2], "events": len(x[3])}
+            for (u, a), x in sorted(agg.items())]
+
+
 def build_summary(repo: Path) -> dict:
     """The public dashboard's data (site/summary.json): every ledger entry's cumulative figures per strategy (primary
     window, pessimistic fills) and the test's status. Read-only on the ledger."""
@@ -96,10 +135,11 @@ def build_summary(repo: Path) -> dict:
                          "capital_usd": round(c["capital_usd"], 2), "fills": c["fills"]})
     st = json.loads((d / "state.json").read_text()) if (d / "state.json").exists() else {}
     v = (last or {}).get("verdict") or {}
+    settled = settled_split(repo, ents)
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
             "verification_issues": issues, "late_arm_prejoin_notes": prejoin, "g2_settled_events": v.get("g2_events"),
-            "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "rows": rows}
+            "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "rows": rows}
 
 
 def write_summary(repo: Path, clone: Path) -> bool:

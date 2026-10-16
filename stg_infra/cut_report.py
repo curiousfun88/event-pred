@@ -91,10 +91,18 @@ def is_weather_key(k) -> bool:
     return str(k[0]).split("-")[0].startswith(("KXHIGH", "KXLOW"))
 
 
+def is_train23_key(k) -> bool:
+    """L18: the event's series is one of the 23 series G2 was trained and backtested on."""
+    from fetch_kalshi_api_months import SERIES_A13
+    return str(k[0]).split("-")[0] in set(SERIES_A13)
+
+
 def universe_splits(keys, results, settled_at, settle_by, mid_next):
-    """L11: verdict figures for the weather and non-weather parts of the primary universe (descriptive only)."""
+    """Verdict figures for parts of the primary universe: weather / non-weather (L11, descriptive) and the 23 training
+    series / the rest (L18: train23 is the main result)."""
     out = {}
-    for name, keep in (("non_weather", lambda k: not is_weather_key(k)), ("weather", is_weather_key)):
+    for name, keep in (("non_weather", lambda k: not is_weather_key(k)), ("weather", is_weather_key),
+                       ("train23", is_train23_key), ("other", lambda k: not is_train23_key(k))):
         m = fill_metrics([k for k in keys if keep(k)], results, settled_at, settle_by, mid_next)
         m.pop("_done", None)
         out[name] = m
@@ -475,7 +483,34 @@ def build(cut: str, settle_by: str, bench=True):
         m["max_drawdown_tradedate_usd"] = max_drawdown(td_cum)
         m["splits"] = universe_splits(keys, results, settled_at, settle_ns, mid_next)   # L11: descriptive
         rep["arms"].setdefault(w, {})[a] = m
+    rep["headline"] = headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt)
     return rep
+
+
+MAIN_FROM = "20261016T17"   # L18: the main result counts quoting hours from here (after L18 was public)
+
+
+def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt, main_from=None):
+    """L18: the main result on the 23 training series from MAIN_FROM, and the full universe from S beside it: per stream,
+    G2's return (event-cluster CI and the L8 one-sided bound) and G2 minus rnd2 (paired)."""
+    main_from = ns_of(MAIN_FROM) if main_from is None else main_from
+    out = {}
+    for (w, a) in sorted({(w, a) for w, a in fills if a == "g2"}):
+        g2 = [k for k in fills[(w, "g2")] if start <= int(k[7]) < cut_ns]
+        rnd = [k for k in fills.get((w, "rnd2"), []) if start <= int(k[7]) < cut_ns]
+        res = {}
+        for uname, keep in (("train23 (L18 main result, hours from 2026-10-16 17:00 UTC)", lambda k: is_train23_key(k) and int(k[7]) >= main_from),
+                            ("train23, every hour from S (reported, not the main result)", is_train23_key),
+                            ("full universe (every hour from S)", lambda k: True),
+                            ("full universe, same hours as the main result (descriptive)", lambda k: int(k[7]) >= main_from)):
+            mg = fill_metrics([k for k in g2 if keep(k)], results, settled_at, settle_ns, mid_next)
+            mr = fill_metrics([k for k in rnd if keep(k)], results, settled_at, settle_ns, mid_next)
+            dg, dr = mg.pop("_done"), mr.pop("_done")
+            res[uname] = {"g2": {k: mg[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills", "events",
+                                                     "ci", "ci_day_clusters") if k in mg},
+                          "g2_minus_rnd2": pt.paired_stats(dg, dr)}
+        out[w] = res
+    return out
 
 
 # ---------------------------------------------------------------- self-test
@@ -533,6 +568,21 @@ def self_test() -> bool:
         check("L17: recomputed arm read from the paper trader's fills: hours >= start, primary universe only",
               list(rf) == [("primary", "liq_traded")] and len(rf[("primary", "liq_traded")]) == 1
               and rf[("primary", "liq_traded")][0][7] == H0)
+    import paper_trader as pt_h
+    kh = [("KXHIGHNY-26OCT20", "KXHIGHNY-26OCT20-B70", 1, 30, 10, 0.0, 300.0, H0),            # a training series
+          ("KXESOCCERGAME-26OCT20X", "KXESOCCERGAME-26OCT20X-A", -1, 60, 10, 0.0, 400.0, H0)]  # not one
+    rh = {"KXHIGHNY-26OCT20-B70": "yes", "KXESOCCERGAME-26OCT20X-A": "yes"}
+    sh = {"KXHIGHNY-26OCT20": H0 + H_NS, "KXESOCCERGAME-26OCT20X": H0 + H_NS}
+    hl = headline({("primary", "g2"): kh, ("primary", "rnd2"): kh[1:]}, H0, H0 + 5 * H_NS, rh, sh, H0 + 10 * H_NS, {}, pt_h, main_from=H0)
+    P = hl["primary"]
+    t23 = P["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]; full = P["full universe (every hour from S)"]
+    check(f"L18 headline: train23 holds only the training series (+$7.00), the full universe both (+$7.00 - $4.00)",
+          abs(t23["g2"]["net_usd"] - 7.0) < 1e-9 and abs(full["g2"]["net_usd"] - 3.0) < 1e-9 and "g2_minus_rnd2" in t23)
+    hl2 = headline({("primary", "g2"): kh, ("primary", "rnd2"): kh[1:]}, H0, H0 + 5 * H_NS, rh, sh, H0 + 10 * H_NS, {}, pt_h, main_from=H0 + H_NS)
+    m2 = hl2["primary"]["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]["g2"]
+    check("L18 main result counts only hours from its registration (a fill before it is excluded)", m2.get("fills", 0) == 0)
+    same = hl2["primary"]["full universe, same hours as the main result (descriptive)"]["g2"]
+    check("like-for-like: the full universe over the main result's hours excludes earlier fills too", same.get("fills", 0) == 0)
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
     # behaviour metrics on planted fills: (event, ticker, side, price, qty, fee, net, capital, markout, H)
