@@ -79,10 +79,16 @@ def build_summary(repo: Path) -> dict:
     window, pessimistic fills) and the test's status. Read-only on the ledger."""
     d = repo / "runs/live/paper/ledger"
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
-    rows, issues, last = [], 0, None
+    rows, issues, prejoin, last = [], 0, 0, None
     for f in ents:
         e = json.loads(f.read_text())
-        issues += len(e.get("verification") or [])
+        for x in e.get("verification") or []:
+            # entries 10-16 T08-T10: liq_traded (L17, joined at T06) was compared on hours before it joined; nothing
+            # recorded was missing (missing_now 0). A check artefact, fixed in paper_ledger.verify; counted apart.
+            if x.get("arm") == "liq_traded" and x.get("missing_now") == 0:
+                prejoin += 1
+            else:
+                issues += 1
         last = e
         for a, c in e.get("cumulative", {}).get("primary", {}).items():
             rows.append({"H": e.get("H", f.stem), "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
@@ -92,7 +98,7 @@ def build_summary(repo: Path) -> dict:
     v = (last or {}).get("verdict") or {}
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
-            "verification_issues": issues, "g2_settled_events": v.get("g2_events"),
+            "verification_issues": issues, "late_arm_prejoin_notes": prejoin, "g2_settled_events": v.get("g2_events"),
             "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "rows": rows}
 
 

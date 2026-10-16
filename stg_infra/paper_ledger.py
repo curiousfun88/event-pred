@@ -59,13 +59,25 @@ def recorded_fills(d: Path) -> dict:
     return out
 
 
-def verify(recorded: dict, fills_by: dict, upto_H: int, events=None, start_H=None) -> list:
+def arm_since(d: Path) -> dict:
+    """{(window, arm): H_ns of the first entry that records the arm} (an arm added mid-test, L17, starts later)."""
+    out = {}
+    for p in sorted((d / "entries").glob("*.json")):
+        e = json.loads(p.read_text())
+        for w, arms in e.get("new_fills", {}).items():
+            for arm in arms:
+                out.setdefault((w, arm), int(e["H_ns"]))
+    return out
+
+
+def verify(recorded: dict, fills_by: dict, upto_H: int, events=None, start_H=None, since=None) -> list:
     """Recorded fills must equal recomputed fills for hours in [start_H, upto_H], for the events recomputed this
     round (`events`; None = all). Hours before start_H are never recorded (reference only), so they are not
     compared (2026-10-15 fix: they were, and every pre-start fill showed as 'extra'). Returns mismatches."""
     bad = []
-    lo = start_H if start_H is not None else -1
+    lo0 = start_H if start_H is not None else -1
     for (w, arm), rec in recorded.items():
+        lo = max(lo0, (since or {}).get((w, arm), lo0))     # 2026-10-16: an arm is compared from the hour it joined
         now = {fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if lo <= int(f[9]) <= upto_H}
         rec_h = {r for r in rec if r[7] <= upto_H and (events is None or r[0] in events)}
         if now != rec_h:
@@ -134,7 +146,7 @@ def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, 
     start_H = st.get("start_H", complete_H)
     last_H = st.get("last_H", start_H - H_NS)
     rec = recorded_fills(d)
-    bad = verify(rec, fills_by, last_H, events, start_H) if rec else []
+    bad = verify(rec, fills_by, last_H, events, start_H, arm_since(d)) if rec else []
     prev_settled = set(st.get("settled_events", []))
     res = results or {}
     value = lambda key: as_fill(key, res.get(key[1]))
@@ -252,6 +264,12 @@ def self_test() -> bool:
     rec = {("primary", "g"): {k_in}}
     check("verify: a fill before the ledger's start is not compared (not 'extra')",
           verify(rec, {"primary": {"g": [f(k_pre), f(k_in)]}}, 300, None, start_H=200) == [])
+    k_late = ("E", "T", 1, 40, 10, 0.0, 400.0, 300)
+    rec2 = {("primary", "new_arm"): {k_late}}
+    check("verify: an arm that joined later is not compared on hours before it joined",
+          verify(rec2, {"primary": {"new_arm": [f(k_in), f(k_late)]}}, 300, None, start_H=200, since={("primary", "new_arm"): 300}) == [])
+    check("verify: ... but a change after it joined is still reported",
+          verify(rec2, {"primary": {"new_arm": [f(k_in)]}}, 300, None, start_H=200, since={("primary", "new_arm"): 300}) != [])
     check("verify: a recorded fill missing from the recomputation is still reported",
           verify(rec, {"primary": {"g": [f(k_pre)]}}, 300, None, start_H=200) != [])
 
