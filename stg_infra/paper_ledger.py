@@ -34,6 +34,16 @@ H_NS = 3_600_000_000_000
 MAIN_ARMS = ("g2", "rnd2", "cand", "g", "g2p", "rnd2p", "wide3", "liq", "lin2", "mlp2", "g2w1", "g2w2", "g2_sel")
 
 
+MAIN_FROM_STAMP = "20261016T17"     # L18: the main result counts quoting hours from here
+MAIN_FROM_NS = 1792170000 * 10**9    # 2026-10-16 17:00 UTC
+
+
+def in_main(f) -> bool:
+    """L18 main result: a fill on one of the 23 backtested series, quoted from MAIN_FROM on."""
+    from fetch_kalshi_api_months import SERIES_A13
+    return int(f[9]) >= MAIN_FROM_NS and str(f[0]).split("-")[0] in set(SERIES_A13)
+
+
 def fill_key(f):
     """Identity of a fill that cannot change after the hour: (event, ticker, side, price, qty, fee, capital, H)."""
     return (str(f[0]), str(f[1]), int(f[2]), int(f[3]), int(f[4]), round(float(f[5]), 6), round(float(f[7]), 6), int(f[9]))
@@ -115,7 +125,7 @@ def pnl_state(live_fills, settled_events: set, mids: dict):
 
 
 def write_entry(d: Path, H: int, stamp: str, new_fills: dict, settlements: list, cumulative: dict, verdict: dict,
-                verification: list, start_H: int, settled_events: list):
+                verification: list, start_H: int, settled_events: list, main_result: dict = None):
     """Append the entry for hour H and advance the chain. Refuses to overwrite."""
     st = load_state(d)
     (d / "entries").mkdir(parents=True, exist_ok=True)
@@ -125,6 +135,8 @@ def write_entry(d: Path, H: int, stamp: str, new_fills: dict, settlements: list,
     entry = {"H": stamp, "H_ns": H, "live_start": st.get("start_stamp") or stamp, "prev_hash": st.get("head", ""),
              "new_fills": {w: {a: [list(fill_key(f)) for f in fl] for a, fl in arms.items()} for w, arms in new_fills.items()},
              "settlements": settlements, "cumulative": cumulative, "verdict": verdict, "verification": verification}
+    if main_result is not None:      # L18: the main result (23 series, hours from MAIN_FROM), primary window
+        entry["main_result_l18"] = {"universe": "train23", "from": MAIN_FROM_STAMP, "cumulative": main_result}
     entry["hash"] = sha(entry)
     tmp = p.with_suffix(".tmp")
     tmp.write_text(json.dumps(entry, default=float))
@@ -171,8 +183,9 @@ def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, 
                     settlements.append({"event": ev, "realised_usd": per})
         cumulative = {w: {a: pnl_state(fl, settle_now, mids) for a, fl in arms.items()} for w, arms in live.items()}
         verdict = verdict_fn(live, settle_now) if last else {}
+        main = {a: pnl_state([f for f in fl if in_main(f)], settle_now, mids) for a, fl in live.get("primary", {}).items()}
         e = write_entry(d, H, stamp_of(H), new, settlements, cumulative, verdict, bad if i == 0 else [], start_H,
-                        settle_now)
+                        settle_now, main)
         written.append(e)
         for w, arms in new.items():                         # this hour is now recorded
             for a, fl in arms.items():
@@ -189,12 +202,17 @@ def fleet_summary(entry: dict, window="primary") -> tuple:
         if a in cum:
             met[f"{a}_total_usd"] = round(cum[a]["total_usd"], 2)
             met[f"{a}_realised_usd"] = round(cum[a]["realised_usd"], 2)
+    mr = (entry.get("main_result_l18") or {}).get("cumulative", {})
+    for a in MAIN_ARMS:
+        if a in mr:
+            met[f"{a}_main_total_usd"] = round(mr[a]["total_usd"], 2)
+            met[f"{a}_main_realised_usd"] = round(mr[a]["realised_usd"], 2)
     v = entry.get("verdict", {})
     for k in ("g2_lo_one_sided", "g2_minus_rnd2_lo_one_sided", "g2_return_settled_pct"):
         if isinstance(v.get(k), (int, float)) and v.get(k) == v.get(k):
             met[k] = round(float(v[k]), 4)
     out = {"H": entry["H"], "live_start": entry["live_start"], "entry_hash": entry["hash"], "prev_hash": entry["prev_hash"],
-           "cumulative_primary": cum, "verdict": v, "settlements": len(entry["settlements"]),
+           "cumulative_primary": cum, "main_result_l18": entry.get("main_result_l18"), "verdict": v, "settlements": len(entry["settlements"]),
            "verification_issues": entry["verification"]}
     return met, out
 
@@ -264,6 +282,17 @@ def self_test() -> bool:
     rec = {("primary", "g"): {k_in}}
     check("verify: a fill before the ledger's start is not compared (not 'extra')",
           verify(rec, {"primary": {"g": [f(k_pre), f(k_in)]}}, 300, None, start_H=200) == [])
+    f9 = lambda ev, H: (ev, ev + "-A", 1, 40, 10, 0.0, 0.0, 400.0, float("nan"), H)
+    check("L18 main result: a 23-series fill from 16 Oct 17:00 UTC counts; earlier, or another series, does not",
+          in_main(f9("KXMLSGAME-26OCT17ABC", MAIN_FROM_NS)) and not in_main(f9("KXMLSGAME-26OCT17ABC", MAIN_FROM_NS - 1))
+          and not in_main(f9("KXESOCCERGAME-26OCT17X", MAIN_FROM_NS)))
+    ent = {"H": "20261017T01", "live_start": "20261015T19", "hash": "h", "prev_hash": "p", "settlements": [], "verification": [],
+           "cumulative": {"primary": {"g2": {"total_usd": -1.0, "realised_usd": -2.0, "unrealised_usd": 1.0, "capital_usd": 9.0}}},
+           "main_result_l18": {"universe": "train23", "from": MAIN_FROM_STAMP,
+                               "cumulative": {"g2": {"total_usd": 3.0, "realised_usd": 2.5, "unrealised_usd": 0.5, "capital_usd": 4.0}}}}
+    met, outd = fleet_summary(ent)
+    check("L18 main result carried in the Research Fleet record (metrics and output)",
+          met.get("g2_main_total_usd") == 3.0 and met.get("g2_total_usd") == -1.0 and outd["main_result_l18"]["from"] == "20261016T17")
     k_late = ("E", "T", 1, 40, 10, 0.0, 400.0, 300)
     rec2 = {("primary", "new_arm"): {k_late}}
     check("verify: an arm that joined later is not compared on hours before it joined",

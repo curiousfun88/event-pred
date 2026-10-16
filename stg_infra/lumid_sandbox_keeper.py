@@ -279,6 +279,30 @@ def fleet_tick(last: float, now: float = None, run=None) -> float:
     return now
 
 
+DAILY_FILE = REPO / "runs/live/daily_posted.json"
+
+
+def daily_tick(now_utc=None, post=None):
+    """Once per UTC day (from 02:00 UTC): post yesterday's summary to Research Fleet; retried until accepted."""
+    try:
+        sys.path.insert(0, str(REPO / "stg_infra"))
+        import live_backup as lb
+        posted = set(json.loads(DAILY_FILE.read_text())) if DAILY_FILE.exists() else set()
+        day = lb.daily_due(now_utc or dt.datetime.now(dt.timezone.utc), posted)
+        if day is None:
+            return None
+        jid = lb.post_daily(REPO, (CFG / "lumid_pat").read_text().strip(), day, post=post)
+        if jid.startswith("error"):
+            log("daily summary not posted yet", day=day, err=jid[:200])
+            return None
+        DAILY_FILE.write_text(json.dumps(sorted(posted | {day})))
+        log("daily summary posted", day=day, job=jid)
+        return jid
+    except Exception as e:
+        log("daily summary error", error=repr(e)[:300])
+        return None
+
+
 def run(wait_for=None):
     me = my_name(socket.gethostname())
     log("keeper started", sandbox=me, wait_for=wait_for)
@@ -301,6 +325,7 @@ def run(wait_for=None):
                 start_paper()
             last_backup = backup_tick(last_backup)
             last_fleet = fleet_tick(last_fleet)
+            daily_tick()
             rows = api("GET", "/sandboxes")["sandboxes"]
             mine = next((r for r in rows if r["name"] == me), None)
             if mine and mine.get("expires_at"):

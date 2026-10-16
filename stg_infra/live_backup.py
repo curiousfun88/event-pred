@@ -155,6 +155,59 @@ def write_summary(repo: Path, clone: Path) -> bool:
     return True
 
 
+def daily_record(repo: Path, day: str) -> dict:
+    """The daily Research Fleet summary for UTC day `day` (YYYYMMDD): the three results of L18 (settled only), status,
+    and the latest ledger entry's hash, which ties it to the hourly audit trail."""
+    sm = build_summary(repo)
+    ents = sorted((repo / "runs/live/paper/ledger/entries").glob("*.json"))
+    head = json.loads(ents[-1].read_text())["hash"] if ents else None
+    return {"day": day, "generated_utc": sm["generated_utc"], "live_since": sm["live_since"], "latest_entry": sm["latest_entry"],
+            "latest_entry_hash": head, "entries": sm["entries"], "verification_issues": sm["verification_issues"],
+            "main_result_from": "20261016T17", "settled": sm["settled"], "dashboard": "https://curiousfun88.github.io/event-pred-live/"}
+
+
+def daily_body(rec: dict, site: str) -> dict:
+    """FlowMesh job (same shape as the hourly records): metrics = G2 and random on each universe."""
+    met = {}
+    for r in rec["settled"]:
+        if r["arm"] in ("G2", "Random (same share)", "Quote all") and r["return_pct"] is not None:
+            key = {"G2": "g2", "Random (same share)": "rnd2", "Quote all": "cand"}[r["arm"]]
+            met[f"{key}_{r['universe']}_net_usd"] = r["net_usd"]
+            met[f"{key}_{r['universe']}_ret_pct"] = r["return_pct"]
+    code = (f"import json\nREC = json.loads({json.dumps(json.dumps(rec))})\nMET = json.loads({json.dumps(json.dumps(met))})\n\n\n"
+            f"def main():\n    return {{'metrics': MET, 'output': REC}}\n")
+    wf = {"apiVersion": "flowmesh/v1", "kind": "Task", "metadata": {"name": f"fwdtest-daily-{rec['day']}"},
+          "spec": {"taskType": "python", "code": code}}
+    return {"workflow": json.dumps(wf), "site": site}
+
+
+def post_daily(repo: Path, pat: str, day: str, post=None) -> str:
+    """Post the day's summary to the first site that accepts it (home, else office). Returns the job id or 'error: ...'."""
+    rec = daily_record(repo, day)
+    if post is None:
+        import requests
+        post = lambda body: requests.post("https://lum.id/api/v1/me/fleet/jobs", json=body,
+                                          headers={"Authorization": f"Bearer {pat}"}, timeout=60)
+    errs = []
+    for site in ("home", "office"):
+        try:
+            r = post(daily_body(rec, site))
+            if r.status_code in (200, 201, 202):
+                return r.json()["data"]["id"]
+            errs.append(f"{site}: HTTP {r.status_code}")
+        except Exception as e:
+            errs.append(f"{site}: {e!r}"[:120])
+    return "error: " + " | ".join(errs)
+
+
+def daily_due(now_utc: dt.datetime, posted: set) -> str | None:
+    """The UTC day whose summary is due (yesterday, from 02:00 UTC once the ledger has caught up), unless posted."""
+    if now_utc.hour < 2:
+        return None
+    day = (now_utc - dt.timedelta(days=1)).strftime("%Y%m%d")
+    return None if day in posted else day
+
+
 def sync(repo: Path, clone: Path, items=ITEMS) -> int:
     """Copy each item (file or directory) from repo into clone, replacing files whose size or mtime differ;
     returns the number of files copied. Never deletes from the clone (the backup only grows)."""
@@ -281,6 +334,20 @@ def self_test() -> bool:
         check("an unreachable remote or failure never raises", isinstance(r3, dict))
         bad = run_once(repo, td / "clone2", str(td / "missing.git"), key=td / "nokey")
         check("a clone failure is reported, not raised", bad.get("ok") is False and bad.get("step") == "clone")
+    T = dt.datetime(2026, 10, 18, 1, 30, tzinfo=dt.timezone.utc)
+    check("daily: not due before 02:00 UTC; due for yesterday after; not again once posted",
+          daily_due(T, set()) is None and daily_due(T.replace(hour=3), set()) == "20261017"
+          and daily_due(T.replace(hour=3), {"20261017"}) is None)
+    with tempfile.TemporaryDirectory() as td2:
+        repo2 = Path(td2)
+        (repo2 / "runs/live/paper/ledger/entries").mkdir(parents=True)
+        (repo2 / "runs/live/paper/ledger/entries/20261017T23.json").write_text(json.dumps({"H": "20261017T23", "hash": "abc"}))
+        sent = []
+        R = type("R", (), {"status_code": 202, "json": lambda self: {"data": {"id": "home:fm:wfl-d"}}})
+        jid = post_daily(repo2, "pat", "20261017", post=lambda body: sent.append(body) or R())
+        wf = json.loads(sent[0]["workflow"])
+        check("daily: posted as fwdtest-daily-20261017 to home, carrying the ledger head hash",
+              jid == "home:fm:wfl-d" and wf["metadata"]["name"] == "fwdtest-daily-20261017" and "abc" in wf["spec"]["code"])
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
