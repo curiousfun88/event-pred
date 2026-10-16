@@ -778,3 +778,6 @@ over the candidates with `trades_24h` > 0 -- the more liquid half of markets tha
 Same fills, fees, limits and windows as every arm. It enters the ledger from the first round after deployment; the cut
 report also computes it from the paper trader's deterministic recomputation over all hours from S (L15 showed
 recomputation is exact), and reports `g2` - `liq_traded` beside `g2` - `liq`.
+**L17 cut procedure.** The ledger round recomputes only events active in the last 4 days, so before each cut the paper
+trader is run once in full (`python stg_infra/paper_trader.py --run`, no ledger, every event) on the copy of `runs/live`
+the cut is computed from; `cut_report.py` then reads `liq_traded` from that recomputation for every hour from S.

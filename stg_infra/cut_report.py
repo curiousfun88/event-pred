@@ -23,6 +23,9 @@ verdict figures, which follow sections 5 and L8.
 USAGE (from repo root; LIVE_DIR may point at a copy of the sandbox's runs/live):
     python stg_infra/cut_report.py --self-test
     python stg_infra/cut_report.py --cut 2026-10-28T00 --settle-by 2026-10-30T00 [--out results/live/cut_interim.json]
+
+BEFORE A CUT (L17): run `python stg_infra/paper_trader.py --run` once on the same copy of runs/live, so the
+descriptive arm liq_traded is recomputed for every event (ledger rounds recompute only recently active events).
 """
 from __future__ import annotations
 
@@ -370,11 +373,39 @@ def posted_orders(hours):
     return {a: int(sum(1 for v in s.values() if v > pt.THRESHOLD_C)) for a, s in sc.items()}
 
 
+RECOMPUTED_ARMS = ("liq_traded",)   # L17: added after S, so taken from the paper trader's exact recomputation
+
+
+def recomputed_fills(paper_dir: Path, arms, start_ns: int, pt) -> dict:
+    """{(stream, arm): [fill keys]} for descriptive arms added after the ledger start, read from the paper trader's
+    per-round recomputation (fills_<stream>_<arm>.parquet; deterministic, L15), primary universe, hours >= start."""
+    import polars as pl
+    pool = json.loads(pt.POOL.read_text())
+    prim = pt.universes(pool, set())["primary_L4"]
+    out = {}
+    for f in sorted(Path(paper_dir).glob("fills_*.parquet")):
+        stem = f.stem[len("fills_"):]
+        arm = next((a for a in arms if stem.endswith("_" + a)), None)
+        if arm is None:
+            continue
+        w = stem[: -len(arm) - 1]
+        d = pl.read_parquet(f)
+        if "H_ns" not in d.columns:
+            continue
+        out[(w, arm)] = [(e, t, int(si), int(pr), int(q), float(fe), float(c), int(h))
+                         for e, t, si, pr, q, fe, c, h in zip(d["event"], d["ticker"], d["side"], d["price"], d["qty"],
+                                                             d["fee_c"], d["capital_c"], d["H_ns"])
+                         if int(h) >= start_ns and prim(t, str(e).split("-")[0], "?")]
+    return out
+
+
 def build(cut: str, settle_by: str, bench=True):
     import paper_trader as pt
     start, fills, curve = read_ledger(LEDGER)
     if start is None:
         raise SystemExit("no ledger entries: the live test has not started")
+    recomputed = recomputed_fills(LIVE / "paper", RECOMPUTED_ARMS, start, pt)     # L17: descriptive arms from S
+    fills.update(recomputed)
     cut_ns, settle_ns = ns_of(cut), ns_of(settle_by)
     markets = pickle.loads((LIVE / "paper" / "markets.pkl").read_bytes())
     results = {tk: m.get("result") for tk, m in markets.items()}
@@ -488,6 +519,20 @@ def self_test() -> bool:
     check("L11 splits: weather = the KXHIGH fill only (-$3.01), non-weather = the rest (+$2.98)",
           abs(sp["weather"]["net_usd"] + 3.01) < 1e-9 and abs(sp["non_weather"]["net_usd"] - 2.98) < 1e-9
           and is_weather_key(kw[-1]) and not is_weather_key(kw[0]))
+    import tempfile, polars as pl_pl
+    import paper_trader as pt_
+    with tempfile.TemporaryDirectory() as td:
+        pl_pl.DataFrame([{"event": "KXHIGHNY-26OCT20", "ticker": "KXHIGHNY-26OCT20-B70", "side": 1, "price": 30, "qty": 10,
+                          "fee_c": 0.0, "net_c": 0.0, "capital_c": 300.0, "markout_c": 0.0, "H_ns": H0, "settled": True},
+                         {"event": "KXHIGHNY-26OCT19", "ticker": "KXHIGHNY-26OCT19-B70", "side": 1, "price": 30, "qty": 10,
+                          "fee_c": 0.0, "net_c": 0.0, "capital_c": 300.0, "markout_c": 0.0, "H_ns": H0 - H_NS, "settled": True},
+                         {"event": "KXNOTINPOOL-1", "ticker": "KXNOTINPOOL-1-A", "side": 1, "price": 30, "qty": 10,
+                          "fee_c": 0.0, "net_c": 0.0, "capital_c": 300.0, "markout_c": 0.0, "H_ns": H0, "settled": True}]
+                        ).write_parquet(Path(td) / "fills_primary_liq_traded.parquet")
+        rf = recomputed_fills(Path(td), RECOMPUTED_ARMS, H0, pt_)
+        check("L17: recomputed arm read from the paper trader's fills: hours >= start, primary universe only",
+              list(rf) == [("primary", "liq_traded")] and len(rf[("primary", "liq_traded")]) == 1
+              and rf[("primary", "liq_traded")][0][7] == H0)
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
     # behaviour metrics on planted fills: (event, ticker, side, price, qty, fee, net, capital, markout, H)

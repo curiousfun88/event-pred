@@ -62,8 +62,8 @@ FOLDS = (("20261011T15", "20261018T00", "20261018T00", "20261025T00"),
          ("20261025T00", "20261101T00", "20261101T00", "20261111T00"))
 MIN_EVENTS = 20
 ACTIVE_DAYS = 4          # L10: a ledger round recomputes events with a candidate in the last ACTIVE_DAYS days
-ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "lin2", "mlp2", "g2w1", "g2w2")
-PAIRS = (("g2", "rnd2"), ("g2p", "rnd2p"), ("g2", "g"), ("g2", "cand"), ("g2", "wide3"), ("g2", "liq"),
+ONE_ARMS = ("g", "g2", "rnd2", "cand", "wide3", "liq", "liq_traded", "lin2", "mlp2", "g2w1", "g2w2")   # liq_traded: L17
+PAIRS = (("g2", "rnd2"), ("g2p", "rnd2p"), ("g2", "g"), ("g2", "cand"), ("g2", "wide3"), ("g2", "liq"), ("g2", "liq_traded"),
          ("g2", "lin2"), ("g2", "mlp2"), ("g2", "g2w1"), ("g2", "g2w2"), ("g2_sel", "g2"))   # first two: verdicts (§5)
 TWO_ARMS = ("g2p", "rnd2p")
 SELECTED_C, SENTINEL_C, THRESHOLD_C = 2.0, -100.0, 1.0
@@ -144,10 +144,15 @@ def arm_scores(one, two, baselines=None):
     sel = lambda m: [SELECTED_C if x else SENTINEL_C for x in m]
     med = one.group_by("H_ns").agg(pl.col("trades_24h").median().alias("m"))
     liq = one.join(med, on="H_ns", how="left").select(pl.col("trades_24h") >= pl.col("m"))
+    # L17 (descriptive): the median over legs that traded at all; a leg with no 24 h trade never posts
+    medt = one.filter(pl.col("trades_24h") > 0).group_by("H_ns").agg(pl.col("trades_24h").median().alias("mt"))
+    liqt = one.join(medt, on="H_ns", how="left").select(
+        (pl.col("trades_24h") > 0) & (pl.col("trades_24h") >= pl.col("mt")).fill_null(False))
     out = {"g": dict(zip(k1, one["pred_g"].to_list())), "g2": dict(zip(k1, one["pred_g2"].to_list())),
            "rnd2": dict(zip(k1, one["rnd2_c"].to_list())), "cand": dict(zip(k1, [SELECTED_C] * len(k1))),
            "wide3": dict(zip(k1, sel((one["spread"] >= 3).to_list()))),
-           "liq": dict(zip(k1, sel(liq.to_series().to_list())))}
+           "liq": dict(zip(k1, sel(liq.to_series().to_list()))),
+           "liq_traded": dict(zip(k1, sel(liqt.to_series().to_list())))}
     if baselines:
         import train_baselines as tb
         rows = one.select(tb.numeric_feats() + ["cat"]).to_dicts()
@@ -710,6 +715,16 @@ def self_test() -> bool:
     check("arms: wide3 posts spread >= 3 only", all(v == SELECTED_C for v in sc["wide3"].values()))
     check("arms: liq posts trades_24h >= the hour's median (B has 0 < median 2.5 at H0)",
           sc["liq"][("KXT-E1-B", H0, 1)] == SENTINEL_C and sc["liq"][("KXT-E1-A", H0, 1)] == SELECTED_C)
+    zeros = pl.DataFrame([mk(f"KXT-Z{i}-A", +1, 41, H0, 40, 44, tr=0) for i in range(6)]
+                         + [mk("KXT-L-A", +1, 41, H0, 40, 44, tr=2), mk("KXT-L-B", +1, 41, H0, 40, 44, tr=10)])
+    sz = arm_scores(zeros, None)
+    check("L17: with most legs untraded, liq posts all (median 0) but liq_traded posts only the busier traded leg",
+          all(v == SELECTED_C for v in sz["liq"].values())
+          and sz["liq_traded"][("KXT-L-B", H0, 1)] == SELECTED_C and sz["liq_traded"][("KXT-L-A", H0, 1)] == SENTINEL_C
+          and sz["liq_traded"][("KXT-Z0-A", H0, 1)] == SENTINEL_C)
+    one_hour_none = pl.DataFrame([mk("KXT-Z9-A", +1, 41, H0 + 5 * H_NS, 40, 44, tr=0)])
+    check("L17: an hour where nothing traded posts nothing for liq_traded",
+          arm_scores(one_hour_none, None)["liq_traded"][("KXT-Z9-A", H0 + 5 * H_NS, 1)] == SENTINEL_C)
     # tape: a YES seller at 40 (fills the improved bid at 41) at H0+30s (before the snap) and at H0+120s
     tape = {"KXT-E1-A": (np.array([H0 + 30 * 10**9, H0 + 120 * 10**9], np.int64), np.array([40.0, 40.0]),
                          np.array([5.0, 5.0]), np.array([-1, -1]))}
