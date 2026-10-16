@@ -764,3 +764,17 @@ GitHub emails the owner, if the newest producer hour is over 150 min old or the 
 the ledger continues from its last entry (L12 host change); hours with no live snapshot stay missing (L12).
 **Restore drill (2026-10-16 03:1x UTC).** Backup cloned on the laptop: ledger chain verifies (5 entries, S = T19, head
 matches state); the newest hour's score file in the backup has the sha256 in its OpenTimestamps record.
+
+## Amendment L17 (2026-10-16, BEFORE any result of the new arm is computed; descriptive only): `liq` is degenerate live; `liq_traded` added
+
+**Finding.** In the live candidates about 80% of legs have no trade in the previous 24 h (11 Oct T15: 77%; 15 Oct T19:
+80%; the same before and after L13, so not a fetch artefact), so the hour's median `trades_24h` is 0 and `liq`
+("post iff trades_24h >= the hour's median") posts every candidate: live it is identical to `cand` (15 Oct T23: same
+2,518 fills, same capital). Offline the rule split candidates 50/50 (median 50-245 trades; 2-3% zero) because those
+tables were built from filled orders. `liq` stays exactly as pre-registered and is reported with this note.
+
+**Added (descriptive, never a verdict).** `liq_traded`: post iff `trades_24h` > 0 and `trades_24h` >= the hour's median
+over the candidates with `trades_24h` > 0 -- the more liquid half of markets that trade, the offline meaning of `liq`.
+Same fills, fees, limits and windows as every arm. It enters the ledger from the first round after deployment; the cut
+report also computes it from the paper trader's deterministic recomputation over all hours from S (L15 showed
+recomputation is exact), and reports `g2` - `liq_traded` beside `g2` - `liq`.
