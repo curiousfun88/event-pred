@@ -600,16 +600,22 @@ def fleet_body(summary: dict, site="office") -> dict:
     return {"workflow": json.dumps(wf), "site": site}
 
 
+FLEET_SITES = ("office", "home")   # 2026-10-16: office's job service down since 10-14; home accepts jobs
+
+
 def post_fleet(summary: dict, post) -> str:
-    """Submit the hour's job; never raises (a Research Fleet outage must not cost the hour). Returns the job id
-    or 'error: ...'."""
-    try:
-        r = post(fleet_body(summary))
-        if r.status_code in (200, 201, 202):
-            return r.json()["data"]["id"]
-        return f"error: HTTP {r.status_code} {r.text[:200]}"
-    except Exception as e:
-        return f"error: {e!r}"[:300]
+    """Submit the hour's job to the first site that accepts it (office, else home); never raises (a Research Fleet
+    outage must not cost the hour). Returns the job id (it names the site) or 'error: ...' listing each site."""
+    errs = []
+    for site in FLEET_SITES:
+        try:
+            r = post(fleet_body(summary, site))
+            if r.status_code in (200, 201, 202):
+                return r.json()["data"]["id"]
+            errs.append(f"{site}: HTTP {r.status_code} {r.text[:120]}")
+        except Exception as e:
+            errs.append(f"{site}: {e!r}"[:160])
+    return "error: " + " | ".join(errs)
 
 
 def hour_done(stamp, runs_path=None):
@@ -1084,7 +1090,14 @@ def self_test() -> bool:
         def __init__(self, c, j=None): self.status_code, self._j, self.text = c, j, "body"
         def json(self): return self._j
     check("fleet post: 202 -> job id", post_fleet(summ, lambda b: R(202, {"data": {"id": "office:fm:wfl-x"}})) == "office:fm:wfl-x")
-    check("fleet post: HTTP error -> 'error: ...', no exception", post_fleet(summ, lambda b: R(500)).startswith("error: HTTP 500"))
+    check("fleet post: HTTP error on both sites -> 'error: ...' naming each, no exception",
+          post_fleet(summ, lambda b: R(500)).startswith("error: office: HTTP 500") and "home: HTTP 500" in post_fleet(summ, lambda b: R(500)))
+    sites = []
+
+    def office_down(b):
+        sites.append(b["site"])
+        return R(502) if b["site"] == "office" else R(202, {"data": {"id": "home:fm:wfl-y"}})
+    check("fleet post: office down -> posted to home (2026-10-16)", post_fleet(summ, office_down) == "home:fm:wfl-y" and sites == ["office", "home"])
 
     def boom(b):
         raise TimeoutError("down")

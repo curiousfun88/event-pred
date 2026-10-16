@@ -196,9 +196,17 @@ def post_fleet(entry: dict, pat: str, url="https://lum.id/api/v1/me/fleet/jobs")
                 f"MET = json.loads({json.dumps(json.dumps(met))})\n\n\ndef main():\n    return {{'metrics': MET, 'output': OUT}}\n")
         wf = {"apiVersion": "flowmesh/v1", "kind": "Task", "metadata": {"name": f"fwdtest-pnl-{entry['H']}"},
               "spec": {"taskType": "python", "code": code}}
-        r = requests.post(url, json={"workflow": json.dumps(wf), "site": "office"},
-                          headers={"Authorization": f"Bearer {pat}"}, timeout=60)
-        return r.json()["data"]["id"] if r.status_code in (200, 201, 202) else f"error: HTTP {r.status_code}"
+        errs = []
+        for site in ("office", "home"):      # 2026-10-16: office's job service down; home accepts jobs
+            try:
+                r = requests.post(url, json={"workflow": json.dumps(wf), "site": site},
+                                  headers={"Authorization": f"Bearer {pat}"}, timeout=60)
+                if r.status_code in (200, 201, 202):
+                    return r.json()["data"]["id"]
+                errs.append(f"{site}: HTTP {r.status_code}")
+            except Exception as e:
+                errs.append(f"{site}: {e!r}"[:120])
+        return "error: " + " | ".join(errs)
     except Exception as e:
         return f"error: {e!r}"[:300]
 
