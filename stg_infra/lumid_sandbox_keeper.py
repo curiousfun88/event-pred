@@ -50,7 +50,7 @@ CFG = HOME / ".lumid"
 # 2026-10-15: office down for over a day; home added as a second host (pinned image: the venv lives in the
 # shared home and is bound to the image's Python).
 SITES = {"office": {"api": "https://lum.id/sbx/office/api", "port": "31226", "spec": {}},
-         "home": {"api": "https://lum.id/sbx/api", "port": "31223", "spec": {"image": "python:3.11"}}}
+         "home": {"api": "https://lum.id/sbx/api", "port": "31223", "spec": {"image": "python:3.11", "cpu": 4, "memory_gi": 16}}}
 
 
 def site_conf(cfg_dir: Path = CFG) -> dict:
@@ -327,7 +327,7 @@ def self_test() -> bool:
         (Path(td) / "site").write_text("home\n")
         sc = site_conf(Path(td))
         check("site file 'home' -> home API, port 31223, pinned python:3.11",
-              sc["api"] == "https://lum.id/sbx/api" and sc["port"] == "31223" and sc["spec"] == {"image": "python:3.11"})
+              sc["api"] == "https://lum.id/sbx/api" and sc["port"] == "31223" and sc["spec"] == {"image": "python:3.11", "cpu": 4, "memory_gi": 16})
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
