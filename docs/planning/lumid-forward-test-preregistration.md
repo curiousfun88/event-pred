@@ -797,3 +797,21 @@ handover prod-b -> prod-a (ledger check compares an arm from the hour it joined;
 summary). One producer at every moment. Public dashboard: https://curiousfun88.github.io/event-pred-live/ (reads the
 backup's site/summary.json). Entries 10-16 T08-T10 carry check notes on liq_traded's pre-join hours only (nothing
 recorded missing); a check artefact, not a ledger discrepancy.
+
+## Amendment L18 (2026-10-16): main result on the 23 backtested series; the full universe as a secondary test of generalisation
+
+**What changes.** The main reported result (the verdicts of §5: G2's return with the L8 one-sided bound, and G2 minus
+`rnd2`) is computed on the **23 series on which the strategy was trained and backtested** (`SERIES_A13`; the `train23`
+universe of §7), for every arm and both cuts. The full live universe (all 290 non-weather pool series plus weather) is
+reported beside it, in full and unchanged, as a **secondary test of whether the strategy's hourly quoting edge
+generalises to markets it never saw**; it was the original headline, fixed before the start. Nothing about trading, fills,
+the ledger or any other statistic changes; only which universe is presented as the main result.
+
+**Counted from.** The main result uses only live hours after this amendment is public: quoting hours from **2026-10-16 17:00 UTC** to each cut. Hours from S (2026-10-15 T19)
+to 2026-10-16 T16 are reported in full but are not part of the main result. The full-universe result covers every hour
+from S, as before. For a like-for-like comparison the full universe is also reported over the same hours as the main result
+(from 2026-10-16 17:00 UTC), descriptively, beside the full-universe result from S.
+
+**Why.** Every backtest (G's 2025 test, G2's training, the six-month walk-forward and the September validation) used the
+same 23 series, so those 23 are the scope on which the strategy was validated. The main result should test the strategy
+where it was validated; whether it carries over to other series is a separate question, which no backtest addressed.
