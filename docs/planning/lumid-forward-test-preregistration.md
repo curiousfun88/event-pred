@@ -749,3 +749,18 @@ trader. One producer at every moment; producer hours T20 (prod-a) and from T21 (
 `prod-a` (4 cores / 16 GB; paper rounds had taken ~1.9 h on 2 cores), confirmed its keeper waiting, deleted itself at
 01:49:14; 01:49:30 `prod-a` started producer and paper trader (paper round for T00-T01 restarted; no entry lost). Ledger
 S = 2026-10-15 T19 (first entry on home); entries T19-T23 written with 0 verification issues.
+
+## Amendment L16 (2026-10-16, reporting/operations only; no rule, model or statistic changes): off-site backup and stall alert
+
+**Why.** Lumid keeps each site's home folder on that site only ("not replicated, deliberately"), so the ledger, scores and
+stamps existed in one place; an outage like office's (10-14 on) would have stopped the test and cut off the ledger.
+
+**Change.** Every 10 minutes the keeper copies the run log, every hour's scores, the stamps, the ledger and the tapes to the
+repository `curiousfun88/event-pred-live` (`stg_infra/live_backup.py`; deploy key with write access to that repository only;
+commits only when something changed, about hourly; never fatal). Not copied: the trade store (rebuilt by a cold-start hour),
+signal payloads (derived from the scores), the market cache (refetched). A scheduled check in that repository fails, and
+GitHub emails the owner, if the newest producer hour is over 150 min old or the newest ledger entry over 8 h.
+**Restore rule.** If the host site is lost, the newest backup is restored on another host (laptop or another Lumid site) and
+the ledger continues from its last entry (L12 host change); hours with no live snapshot stay missing (L12).
+**Restore drill (2026-10-16 03:1x UTC).** Backup cloned on the laptop: ledger chain verifies (5 entries, S = T19, head
+matches state); the newest hour's score file in the backup has the sha256 in its OpenTimestamps record.
