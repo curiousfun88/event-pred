@@ -112,6 +112,10 @@ def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=N
         if c.returncode != 0:
             return {"ok": False, "step": "commit", "err": c.stderr[-300:]}
         if push:
+            # 2026-10-16: a commit made on GitHub (the alert workflow) left the clone behind and every push was refused
+            # for 5.5 h; take remote changes first (the backup never edits files GitHub-side commits touch)
+            br = git(clone, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or "main"
+            git(clone, "pull", "-q", "--rebase", "origin", br, key=key)
             p = git(clone, "push", "-q", "origin", "HEAD", key=key)
             if p.returncode != 0:
                 return {"ok": False, "step": "push", "err": p.stderr[-300:], "copied": copied}
@@ -158,6 +162,16 @@ def self_test() -> bool:
         check("a new hour's file is backed up", r2.get("ok") and (clone / "runs/live/scores/one_20261016T04.parquet").exists())
         r_same = run_once(repo, clone, str(remote), key=td / "nokey")
         check("nothing new -> no commit (the heartbeat is not rewritten)", r_same.get("ok") and r_same.get("changed") is False)
+        other = td / "other"                             # someone commits on the remote (as the web editor does)
+        subprocess.run(["git", "clone", "-q", str(remote), str(other)], check=True, capture_output=True)
+        (other / ".github").mkdir(); (other / ".github/alert.yml").write_text("x\n")
+        for a_ in (["config", "user.name", "u"], ["config", "user.email", "u@u"], ["add", "-A"], ["commit", "-q", "-m", "web edit"], ["push", "-q", "origin", "HEAD:main"]):
+            subprocess.run(["git", "-C", str(other), *a_], check=True, capture_output=True)
+        (repo / "runs/live/scores/one_20261016T05.parquet").write_bytes(b"r")
+        r4 = run_once(repo, clone, str(remote), key=td / "nokey")
+        log2 = subprocess.run(["git", "--git-dir", str(remote), "log", "--oneline", "main"], capture_output=True, text=True).stdout
+        check(f"a commit made on the remote does not block the next backup ({r4.get('ok')})",
+              r4.get("ok") and "web edit" in log2 and log2.splitlines()[0].split(" ", 1)[1].startswith("backup "))
         r3 = run_once(repo, clone, "does-not-matter", key=td / "nokey", push=False)
         check("an unreachable remote or failure never raises", isinstance(r3, dict))
         bad = run_once(repo, td / "clone2", str(td / "missing.git"), key=td / "nokey")
