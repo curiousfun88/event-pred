@@ -745,3 +745,7 @@ kept running. Fixed (1f2e395): no signals; the successor's keeper waits until th
 20:56:23 new keeper started in `prod-b` (waiting); 20:56:37 `prod-a` deleted (its producer, paper trader -- first
 round unfinished, no entry written -- and old keeper stopped with it); 20:56:39 `prod-b` started producer and paper
 trader. One producer at every moment; producer hours T20 (prod-a) and from T21 (prod-b).
+2026-10-16 01:48:47 keeper handover test (`--handover-now`, the code path of the automatic handover): `prod-b` created
+`prod-a` (4 cores / 16 GB; paper rounds had taken ~1.9 h on 2 cores), confirmed its keeper waiting, deleted itself at
+01:49:14; 01:49:30 `prod-a` started producer and paper trader (paper round for T00-T01 restarted; no entry lost). Ledger
+S = 2026-10-15 T19 (first entry on home); entries T19-T23 written with 0 verification issues.
