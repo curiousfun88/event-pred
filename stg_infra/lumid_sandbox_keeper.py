@@ -235,6 +235,29 @@ def hand_over(me, rows, reason):
     return True
 
 
+BACKUP_EVERY_S = 600
+BACKUP_KEY = CFG / "backup_key"
+
+
+def backup_tick(last: float, now: float = None, run_once=None) -> float:
+    """L16: off-site backup at most every BACKUP_EVERY_S (only if the deploy key is installed). Logs failures only;
+    never raises. Returns the time of the last attempt."""
+    now = time.time() if now is None else now
+    if now - last < BACKUP_EVERY_S or not BACKUP_KEY.exists():
+        return last
+    try:
+        if run_once is None:
+            sys.path.insert(0, str(REPO / "stg_infra"))
+            import live_backup
+            run_once = live_backup.run_once
+        r = run_once()
+        if not r.get("ok"):
+            log("backup failed", **{k: r.get(k) for k in ("step", "err")})
+    except Exception as e:
+        log("backup error", error=repr(e)[:300])
+    return now
+
+
 def run(wait_for=None):
     me = my_name(socket.gethostname())
     log("keeper started", sandbox=me, wait_for=wait_for)
@@ -246,6 +269,7 @@ def run(wait_for=None):
         except Exception as e:
             log("keeper error while waiting", error=repr(e)[:300])
         time.sleep(15)
+    last_backup = 0.0
     while True:
         try:
             if not producer_pids():
@@ -254,6 +278,7 @@ def run(wait_for=None):
             if PAPER_CMD_FILE.exists() and not paper_pids():
                 log("watchdog: paper trader not running; starting it")
                 start_paper()
+            last_backup = backup_tick(last_backup)
             rows = api("GET", "/sandboxes")["sandboxes"]
             mine = next((r for r in rows if r["name"] == me), None)
             if mine and mine.get("expires_at"):
@@ -315,6 +340,12 @@ def self_test() -> bool:
     check("predecessor gone: deleted, or no longer Running", predecessor_gone([{"name": "prod-b", "phase": "Running"}], "prod-a")
           and predecessor_gone([{"name": "prod-a", "phase": "Terminating"}], "prod-a")
           and not predecessor_gone([{"name": "prod-a", "phase": "Running"}], "prod-a"))
+    calls = []
+    check("backup: not again within 10 min", backup_tick(1000.0, 1000.0 + 300, run_once=lambda: calls.append(1) or {"ok": True}) == 1000.0
+          and calls == [])
+    if BACKUP_KEY.exists():
+        check("backup: due after 10 min, attempt time returned", backup_tick(0.0, 700.0, run_once=lambda: {"ok": True}) == 700.0)
+    check("backup: a crashing backup never raises", isinstance(backup_tick(0.0, 1e9, run_once=lambda: 1 / 0), float))
     import re
     pat = proc_pattern("live_signal_producer.py", "/home/u/venv/bin/python")
     check("watchdog pattern matches the producer process",
