@@ -815,3 +815,9 @@ from S, as before. For a like-for-like comparison the full universe is also repo
 **Why.** Every backtest (G's 2025 test, G2's training, the six-month walk-forward and the September validation) used the
 same 23 series, so those 23 are the scope on which the strategy was validated. The main result should test the strategy
 where it was validated; whether it carries over to other series is a separate question, which no backtest addressed.
+
+**Incident 2026-10-16/17 (L12 host log).** From 2026-10-16 T23 the producer's Kalshi requests from Lumid home's shared
+address were throttled for long stretches; with 12 retries (~5 min) per request every cycle failed, so hours
+2026-10-16 T23 and 2026-10-17 T00-T03 are missing (L12: never reconstructed; excluded from every arm alike). The backup
+heartbeat went stale and the stall alert emailed the owner (00:54 UTC). Fix d12f24b: up to 15 min of retries per request,
+honouring Retry-After, rate 3/s; handover 04:30 UTC; T04 then ran late (snapshot 04:34 UTC, decided 05:04 UTC).
