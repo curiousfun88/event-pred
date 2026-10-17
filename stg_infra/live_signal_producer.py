@@ -252,29 +252,50 @@ def envelope(rows, pat, msg_id):
 # ---------------------------------------------------------------- Kalshi client
 
 class Kalshi:
-    def __init__(self, rps=8.0):
+    def __init__(self, rps=8.0, budget_s=900.0, sleep=None, clock=None):
         import requests
         self.s = requests.Session()
         self.gap = 1.0 / rps
         self.last = 0.0
         self.calls = 0
+        self.retries = 0
+        self.budget_s = budget_s           # 2026-10-17: per-request retry budget (was 12 tries, ~5 min)
+        self.sleep = sleep or time.sleep
+        self.clock = clock or time.time
+
+    def _backoff(self, attempt, r=None):
+        """Seconds before the next try: Kalshi's Retry-After if given, else 2^attempt capped at 60 s."""
+        h = getattr(r, "headers", None) or {}
+        ra = h.get("Retry-After") if hasattr(h, "get") else None
+        try:
+            return min(max(float(ra), 1.0), 120.0) if ra is not None else min(2 ** attempt, 60)
+        except ValueError:
+            return min(2 ** attempt, 60)
 
     def get(self, path, **params):
-        for attempt in range(12):          # backoff 1, 2, 4 .. capped at 60s: rides out ~8 min of outage
-            wait = self.last + self.gap - time.time()
+        """GET with retries on 429/5xx/network errors until the per-request budget runs out. 2026-10-17: on Lumid's
+        home site the shared address is throttled for minutes at a time; 12 tries (~5 min) lost six hours in a row."""
+        t0, attempt = self.clock(), 0
+        while True:
+            wait = self.last + self.gap - self.clock()
             if wait > 0:
-                time.sleep(wait)
-            self.last = time.time()
+                self.sleep(wait)
+            self.last = self.clock()
             self.calls += 1
+            r = None
             try:
                 r = self.s.get(f"{API}/{path}", params=params, timeout=60)
             except Exception:
-                time.sleep(min(2 ** attempt, 60)); continue
-            if r.status_code == 429 or r.status_code >= 500:
-                time.sleep(min(2 ** attempt, 60)); continue
-            r.raise_for_status()
-            return r.json()
-        raise RuntimeError(f"Kalshi GET failed: {path} {params}")
+                r = None
+            if r is not None and not (r.status_code == 429 or r.status_code >= 500):
+                r.raise_for_status()
+                return r.json()
+            back = self._backoff(attempt, r)
+            if self.clock() - t0 + back > self.budget_s:
+                raise RuntimeError(f"Kalshi GET failed after {attempt + 1} tries: {path} {params}")
+            self.retries += 1
+            self.sleep(back)
+            attempt += 1
 
     def pages(self, path, key, **params):
         cur = ""
@@ -910,6 +931,22 @@ def self_test() -> bool:
     au = skip_audit(_KB(H2 + 15 * 60 * 10**9), stb, ["Y"], H2)
     check("L13: skip audit finds no missed trade when the store is complete", au == {"checked": 1, "missed_trades": 0})
     bad = {**stb, "Y": {key: v[:1] for key, v in stb["Y"].items()}}
+    # 2026-10-17: the Kalshi client rides out minutes of throttling (Retry-After honoured; 15-min budget per request)
+    class _Clock:
+        t = 0.0
+    ck = _Clock()
+    k = Kalshi(rps=1000.0, budget_s=900.0, sleep=lambda x: setattr(ck, "t", ck.t + x), clock=lambda: ck.t)
+    seq = [type("R", (), {"status_code": 429, "headers": {"Retry-After": "30"}})()] * 15 + \
+          [type("R", (), {"status_code": 200, "headers": {}, "raise_for_status": lambda self: None, "json": lambda self: {"ok": 1}})()]
+    k.s = type("S", (), {"get": lambda self, url, params, timeout: seq.pop(0)})()
+    check("Kalshi client: 15 throttled replies (Retry-After 30 s) over 7.5 min, then success", k.get("x") == {"ok": 1} and k.retries == 15)
+    k2 = Kalshi(rps=1000.0, budget_s=900.0, sleep=lambda x: setattr(ck, "t", ck.t + x), clock=lambda: ck.t)
+    k2.s = type("S", (), {"get": lambda self, url, params, timeout: type("R", (), {"status_code": 429, "headers": {}})()})()
+    try:
+        k2.get("y"); gave_up = False
+    except RuntimeError:
+        gave_up = True
+    check("Kalshi client: gives up once the 15-minute budget is spent", gave_up)
     import tempfile
     with tempfile.TemporaryDirectory() as td:
         sm = {"H": "20261015T12", "snap_ns": 1, "t_decided_ns": 2, "sha256": {"one_x.parquet": "ab"}, "models": {"g": "e3"}, "events": 9}
@@ -1128,7 +1165,7 @@ def main():
     ap.add_argument("--publish-series", nargs="*", default=[], help="series always published in addition")
     ap.add_argument("--publish-exclude-prefix", nargs="*", default=[],
                     help="never publish tickers starting with these (amendment L1: KXHIGH KXLOW)")
-    ap.add_argument("--rps", type=float, default=8.0)
+    ap.add_argument("--rps", type=float, default=3.0)   # 2026-10-17: was 8; less load on a shared, throttled address
     ap.add_argument("--fleet", action="store_true", help="post each hour's summary as a FlowMesh job to Research Fleet (L5)")
     ap.add_argument("--ots", action="store_true", help="L14: OpenTimestamps record of each hour's hashes (stamps/)")
     ap.add_argument("--bulk", action="store_true", help="L13: batch candle calls; skip trade fetches for tickers with no new volume")
