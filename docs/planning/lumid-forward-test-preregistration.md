@@ -821,3 +821,16 @@ address were throttled for long stretches; with 12 retries (~5 min) per request 
 2026-10-16 T23 and 2026-10-17 T00-T03 are missing (L12: never reconstructed; excluded from every arm alike). The backup
 heartbeat went stale and the stall alert emailed the owner (00:54 UTC). Fix d12f24b: up to 15 min of retries per request,
 honouring Retry-After, rate 3/s; handover 04:30 UTC; T04 then ran late (snapshot 04:34 UTC, decided 05:04 UTC).
+
+## Amendment L19 (2026-10-17, before the rule can fire): fallback to the 23 series if producer hours keep failing
+
+**Why.** On 2026-10-16/17 five producer hours were lost to Kalshi throttling of Lumid home's shared address (host log).
+Most of the producer's Kalshi requests serve series outside the 23 used for the main result (L18); restricting the
+producer to those 23 cuts its requests by roughly 85-90% and protects the main result.
+
+**Rule (fixed now).** Counting from quoting hour **2026-10-17 07:00 UTC**: if **3 or more producer hours fail** (no
+completed producer record for the hour) within any 24-hour window, the producer is restricted to the 23 series
+(`SERIES_A13`) from the next sandbox handover after the trigger, made at the first quiet minute. Checked with
+`stg_infra/l19_switch.py`. If it fires, the full-universe result (secondary, L18) is reported up to the switch hour and
+labelled as ended early for this operational reason, with the failed hours listed; the main result continues unchanged.
+If it never fires, nothing changes.
