@@ -839,3 +839,7 @@ labelled as ended early for this operational reason, with the failed hours liste
 this amendment is public; the switch hour is recorded in the host log. From then on every arm trades only the 23 series;
 arms whose rule uses an hourly statistic over candidates (`rnd2`'s posting share, `liq`/`liq_traded`'s medians) compute it
 over the restricted candidates. The full-universe results cover quoting hours from S to the switch.
+
+**L19 switch (host log).** 2026-10-17 05:40 UTC handover prod-a -> prod-b; from 05:41 UTC the producer runs with
+`--series` = the 23 series. Last full-universe quoting hour: 2026-10-17 T05; first restricted hour: **2026-10-17 T06**.
+Full-universe results cover quoting hours from S to T05 (L19).
