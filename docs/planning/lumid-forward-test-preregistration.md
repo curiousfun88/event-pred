@@ -833,4 +833,9 @@ completed producer record for the hour) within any 24-hour window, the producer 
 (`SERIES_A13`) from the next sandbox handover after the trigger, made at the first quiet minute. Checked with
 `stg_infra/l19_switch.py`. If it fires, the full-universe result (secondary, L18) is reported up to the switch hour and
 labelled as ended early for this operational reason, with the failed hours listed; the main result continues unchanged.
-If it never fires, nothing changes.
+
+**Applied now.** The incident of 2026-10-16/17 already meets this threshold (five failed hours, 2026-10-16 T23 and
+2026-10-17 T00-T03, within 24 hours; host log above), so the restriction is applied at the first sandbox handover after
+this amendment is public; the switch hour is recorded in the host log. From then on every arm trades only the 23 series;
+arms whose rule uses an hourly statistic over candidates (`rnd2`'s posting share, `liq`/`liq_traded`'s medians) compute it
+over the restricted candidates. The full-universe results cover quoting hours from S to the switch.
