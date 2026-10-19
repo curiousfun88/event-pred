@@ -843,3 +843,52 @@ over the restricted candidates. The full-universe results cover quoting hours fr
 **L19 switch (host log).** 2026-10-17 05:40 UTC handover prod-a -> prod-b; from 05:41 UTC the producer runs with
 `--series` = the 23 series. Last full-universe quoting hour: 2026-10-17 T05; first restricted hour: **2026-10-17 T06**.
 Full-universe results cover quoting hours from S to T05 (L19).
+
+**Incident 2026-10-18/19 (L12 host log).** Kalshi again throttled Lumid home's shared address. Producer hours
+**2026-10-18 T17 and T18 are missing** (no completed producer record; L12: never reconstructed; excluded from every arm
+alike); the producer recovered at T19 and has recorded every hour since. The paper trader's tape requests for T14-T16
+failed after 20 tries in several rounds, so the ledger stayed at 2026-10-18 T13 until the backlog was fetched; the
+round of 2026-10-19 ~04:40 UTC wrote entries T14 to 2026-10-19 T02 in order, with T17 and T18 recorded as entries with
+no fills. The stall alert (L16) failed at 2026-10-18 22:00 and 2026-10-19 00:16 UTC. No fill, decision or rule was
+changed. L19 had already applied. Operations (L16): from 2026-10-19 04:35 UTC the stall alert checks every 10 minutes
+(was 30) and fails when the newest producer hour is more than 90 minutes old (was 150).
+
+## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
+
+**What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
+trade, and those fills can have identical keys (event, ticker, side, price, contracts, fee, capital, hour). Each is a
+real fill. Every entry's `new_fills` lists all of them, and the entry hashes and OpenTimestamps proofs cover that full
+list. But `paper_ledger.recorded_fills` read the earlier entries back into a *set*, so each later round counted a
+repeated key once. That affected the `cumulative`, `main_result_l18` and `verdict` blocks stored in entries, the Research
+Fleet metrics posted from them, and the dashboard curves and cut-report risk figures built from the stored totals.
+`verify` also compared sets, so it could not see the difference. Found on 2026-10-19, when the ledger's main-result
+G2 realised P&L (+$26.59, entry 2026-10-19 T04) disagreed with the dashboard's settled table (+$28.77). That entry
+held 507 recorded main-result G2 fills, but only 431 distinct keys.
+
+**Size (entry 2026-10-19 T04, primary window, pessimistic fills, realised P&L; stored -> correct).** Main result (L18):
+G2 +$26.59 -> **+$28.77**; Random -$66.68 -> -$65.18; Quote all -$34.60 -> -$41.20; G2-W1 -$10.51 -> +$9.02. Full
+universe from S: G2 -$658.46 -> -$732.06; Random -$1,099.07 -> -$1,291.75; Quote all -$2,758.07 -> -$3,223.97. The error
+does not consistently favour any arm.
+
+**Not affected.** The record itself (`new_fills` in every entry, the hash chain and the timestamps); every decision
+and fill; and the cut report's verdict figures (net P&L, returns, event- and day-cluster CIs, one-sided bounds), which
+are computed from the recorded fill lists.
+
+**Fix (fixed now, before any cut).**
+1. `paper_ledger.py`: recorded fills are read as lists, so every repeat counts; `verify` compares counts, not only
+   distinct keys.
+2. `cut_report.py`: the hourly P&L curve (behind drawdown, daily returns and Sharpe) is recomputed from the recorded
+   fills with `paper_ledger.recount_curve`, not taken from the totals stored in entries. Hour H is valued as the
+   ledger round for H normally runs, at the end of hour H+1. Events settled by H+2h count as realised; open fills are
+   marked at the ticker's latest logged mid at or before H.
+3. Dashboard (`live_backup.py`): the curves are recomputed with the same function. The settled table now counts an
+   event only once all its legs have settled (it previously counted settled legs one by one); this is the criterion
+   used by the cut report and the ledger.
+Each change is self-tested with planted repeated fills. On the planted case the old code returns +$0.60 and 1 fill,
+where the correct figure is +$1.20 and 2 fills.
+
+**Past entries are not rewritten** (L10). Their stored summary blocks, and the Research Fleet metrics posted from
+them, are superseded by the recount; the report says so. Entries written from the deploy hour on compute their
+totals correctly; the deploy is recorded in the host log. Verified on a copy of the live record (ledger through
+2026-10-19 T04): for every arm, the recounted main-result realised P&L equals the dashboard's settled table. The cut
+report gives G2 **+$28.77, +4.04%, 21 events, 236 settled fills** on the main result, the same as the dashboard.

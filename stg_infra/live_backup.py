@@ -81,7 +81,8 @@ MAIN_FROM_NS = int(dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc).timesta
 def settled_split(repo: Path, ents) -> list:
     """L18: settled-only net P&L per strategy on the 23 training series (main result) and on the full universe (L4),
     from the ledger's recorded fills and the paper trader's settlement cache. Descriptive; the verdicts come from the
-    cut report."""
+    cut report. L20: an event counts once ALL its legs have settled (cut_report.settle_times), as in the cut report
+    and the ledger, not leg by leg."""
     import pickle
     mp_ = repo / "runs/live/paper/markets.pkl"
     if not mp_.exists() or not ents:
@@ -90,7 +91,9 @@ def settled_split(repo: Path, ents) -> list:
     sys.path.insert(0, str(repo / "stg_infra"))
     sys.path.insert(0, str(repo / "stg_infra/examples"))
     from fetch_kalshi_api_months import SERIES_A13
+    from cut_report import settle_times
     a13 = set(SERIES_A13)
+    settled_at = settle_times(markets)
     agg = {}
     for f in ents:
         e = json.loads(f.read_text())
@@ -100,7 +103,7 @@ def settled_split(repo: Path, ents) -> list:
             for r in rows:
                 ev, tk, side, price, qty, fee, cap, H = r
                 res = markets.get(tk, {}).get("result")
-                if res not in ("yes", "no"):
+                if res not in ("yes", "no") or settled_at.get(ev) is None:
                     continue
                 pay = 100 if res == "yes" else 0
                 net = ((pay - price) * qty if side > 0 else (price - pay) * qty) - fee
@@ -113,9 +116,62 @@ def settled_split(repo: Path, ents) -> list:
             for (u, a), x in sorted(agg.items())]
 
 
+RECOUNT_CACHE = "runs/live/paper/recount_l20.json"
+
+
+def recount_rows(repo: Path, ents) -> tuple:
+    """L20: the dashboard's hourly curves (rows: full universe; main_rows: L18 main result) recounted from the ledger's
+    recorded fills with paper_ledger.recount_curve, the same function the cut report uses, instead of the totals
+    stored in entries (which dropped repeated identical fills before the L20 fix). Open fills are marked at the
+    logged hourly mids (runs/live/scores). Cached per ledger head and settlement cache. Returns (rows, main_rows)."""
+    import pickle
+    import polars as pl
+    sys.path.insert(0, str(repo / "stg_infra"))
+    sys.path.insert(0, str(repo / "stg_infra/examples"))
+    import paper_ledger as pl_
+    from cut_report import settle_times
+    mp_ = repo / "runs/live/paper/markets.pkl"
+    E = [json.loads(f.read_text()) for f in ents]
+    key = f"{E[-1].get('hash')}:{mp_.stat().st_mtime_ns if mp_.exists() else 0}"
+    cp = repo / RECOUNT_CACHE
+    if cp.exists():
+        c = json.loads(cp.read_text())
+        if c.get("key") == key:
+            return c["rows"], c["main_rows"]
+    markets = pickle.loads(mp_.read_bytes()) if mp_.exists() else {}
+    results = {tk: m.get("result") for tk, m in markets.items()}
+    settled_at = settle_times(markets)
+    st = json.loads((repo / "runs/live/paper/ledger/state.json").read_text())
+    stamp = {int(e["H_ns"]): e["H"] for e in E}
+    hours, main_hours = sorted(stamp), sorted(int(e["H_ns"]) for e in E if "main_result_l18" in e)
+    fills = {}
+    for e in E:
+        for a, rows in e.get("new_fills", {}).get("primary", {}).items():
+            fills.setdefault(("primary", a), []).extend(tuple(r) for r in rows)
+    mid_tab = {}
+    for f in sorted((repo / "runs/live/scores").glob("*_*.parquet")):
+        if f.stem.split("_", 1)[1] > E[-1]["H"]:
+            continue
+        d = pl.read_parquet(f, columns=["ticker", "H_ns", "bid_c", "ask_c"])
+        for tk, H, b, a in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
+            mid_tab[(tk, int(H))] = (b + a) / 2
+    rc = pl_.recount_curve(fills, hours, results, settled_at, mid_tab, st["start_H"])
+    rm = pl_.recount_curve(fills, main_hours, results, settled_at, mid_tab, st["start_H"],
+                           keep=lambda k: pl_.in_main(pl_.as_fill(k, None)))
+    rows = [{"H": stamp[H], "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
+             "realised_usd": round(c["realised_usd"], 2), "unrealised_usd": round(c["unrealised_usd"], 2),
+             "capital_usd": round(c["capital_usd"], 2), "fills": c["fills"]} for H in hours for (_, a), c in sorted(rc[H].items())]
+    main_rows = [{"H": stamp[H], "arm": ARM_NAMES.get(a, a), "total_usd": round(c["total_usd"], 2),
+                  "realised_usd": round(c["realised_usd"], 2), "capital_usd": round(c["capital_usd"], 2)}
+                 for H in main_hours for (_, a), c in sorted(rm[H].items())]
+    tmp = cp.with_suffix(".tmp"); tmp.write_text(json.dumps({"key": key, "rows": rows, "main_rows": main_rows})); tmp.replace(cp)
+    return rows, main_rows
+
+
 def build_summary(repo: Path) -> dict:
     """The public dashboard's data (site/summary.json): every ledger entry's cumulative figures per strategy (primary
-    window, pessimistic fills) and the test's status. Read-only on the ledger."""
+    window, pessimistic fills) and the test's status. Read-only on the ledger. L20: the curves are recounted from the
+    recorded fills (recount_rows); the totals stored in entries are used only if the recount fails."""
     d = repo / "runs/live/paper/ledger"
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
     rows, main_rows, issues, prejoin, last = [], [], 0, 0, None
@@ -139,11 +195,18 @@ def build_summary(repo: Path) -> dict:
     st = json.loads((d / "state.json").read_text()) if (d / "state.json").exists() else {}
     v = (last or {}).get("verdict") or {}
     settled = settled_split(repo, ents)
+    source = "stored"
+    if ents:
+        try:
+            rows, main_rows = recount_rows(repo, ents)
+            source = "recounted from recorded fills (L20)"
+        except Exception as e:                      # never let the dashboard stop the backup
+            source = f"stored (recount failed: {e!r})"[:200]
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
             "verification_issues": issues, "late_arm_prejoin_notes": prejoin, "g2_settled_events": v.get("g2_events"),
             "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "main_rows": main_rows,
-            "rows": rows}
+            "rows": rows, "curve_source": source}
 
 
 def write_summary(repo: Path, clone: Path) -> bool:
@@ -352,6 +415,37 @@ def self_test() -> bool:
         wf = json.loads(sent[0]["workflow"])
         check("daily: posted as fwdtest-daily-20261017 to home, carrying the ledger head hash",
               jid == "home:fm:wfl-d" and wf["metadata"]["name"] == "fwdtest-daily-20261017" and "abc" in wf["spec"]["code"])
+    # L20: curves recounted from the recorded fills; an event is settled only when every leg is
+    import pickle
+    import polars as pl
+    with tempfile.TemporaryDirectory() as td3:
+        repo3 = Path(td3)
+        (repo3 / "stg_infra").symlink_to(Path(__file__).resolve().parent)
+        L = repo3 / "runs/live/paper/ledger"
+        (L / "entries").mkdir(parents=True); (repo3 / "runs/live/scores").mkdir(parents=True)
+        H = MAIN_FROM_NS; s1 = "20261016T17"
+        ev, ev2 = "KXHIGHNY-26OCT17", "KXHIGHMIA-26OCT17"
+        k = [ev, ev + "-B70", 1, 40, 1, 0.0, 40.0, H]                 # repeated: one order, two trades -> +60c each
+        k2 = [ev2, ev2 + "-B88", -1, 30, 1, 0.0, 70.0, H]            # MIA: this leg settled, another leg not yet
+        (L / "entries" / f"{s1}.json").write_text(json.dumps({"H": s1, "H_ns": H, "hash": "h1", "main_result_l18": {},
+                                                               "new_fills": {"primary": {"g2": [k, k, k2]}},
+                                                               "cumulative": {"primary": {"g2": {"total_usd": 0.6, "realised_usd": 0.6,
+                                                                              "unrealised_usd": 0.0, "capital_usd": 0.4, "fills": 1}}}}))
+        (L / "state.json").write_text(json.dumps({"start_H": H, "start_stamp": s1}))
+        (repo3 / "runs/live/paper/markets.pkl").write_bytes(pickle.dumps({
+            ev + "-B70": {"result": "yes", "settled_ns": H + 1}, ev2 + "-B88": {"result": "no", "settled_ns": H + 1},
+            ev2 + "-B90": {"result": "", "settled_ns": None}}))
+        pl.DataFrame({"ticker": [ev2 + "-B88"], "H_ns": [H], "bid_c": [20.0], "ask_c": [30.0]}).write_parquet(repo3 / f"runs/live/scores/one_{s1}.parquet")
+        sm3 = build_summary(repo3)
+        g2m = [r for r in sm3["main_rows"] if r["arm"] == "G2"][0]
+        # NY: 2 x +60c realised; MIA open (one leg unsettled), sold at 30, marked at mid 25: -1*(25-30)*1 = +5c
+        check(f"L20: dashboard curve counts the repeat and marks the open event (+$1.20 + $0.05; got {g2m['realised_usd']}, {g2m['total_usd']})",
+              sm3["curve_source"].startswith("recounted") and abs(g2m["realised_usd"] - 1.2) < 1e-9 and abs(g2m["total_usd"] - 1.25) < 1e-9)
+        t23 = [r for r in sm3["settled"] if r["universe"] == "train23" and r["arm"] == "G2"][0]
+        check(f"L20: settled table counts NY (both fills) but not MIA until all its legs settle (got {t23['net_usd']}, {t23['events']} ev)",
+              abs(t23["net_usd"] - 1.2) < 1e-9 and t23["events"] == 1 and t23["settled_fills"] == 2)
+        check("L20: the recount is cached and reused while the ledger and settlements are unchanged",
+              (repo3 / RECOUNT_CACHE).exists() and recount_rows(repo3, sorted((L / "entries").glob("*.json")))[1] == sm3["main_rows"])
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 

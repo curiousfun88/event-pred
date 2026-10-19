@@ -140,6 +140,21 @@ def peak_open_capital(keys, settled_at: dict, days) -> float:
     return best / 100
 
 
+def recounted_curve(fills, curve, results, settled_at, mid_tab, start):
+    """L20: the hourly total-P&L curve recomputed from the recorded fill keys (paper_ledger.recount_curve), on the
+    ledger's own hours. The totals stored in entries before the L20 fix dropped repeated identical fills."""
+    import paper_ledger as pl_
+    hours = [H for H, _ in curve]
+    rc = pl_.recount_curve(fills, hours, results, settled_at, mid_tab, start)
+    out = []
+    for H in hours:
+        row = {}
+        for (w, a), v in rc[H].items():
+            row.setdefault(w, {})[a] = v["total_usd"]
+        out.append((H, row))
+    return out
+
+
 def daily_series(curve, stream, arm, start, cut):
     """End-of-day total P&L (USD) per UTC day from the hourly ledger curve, live hours before the cut."""
     pts = [(H, c.get(stream, {}).get(arm)) for H, c in curve if start <= H < cut and c.get(stream, {}).get(arm) is not None]
@@ -432,6 +447,7 @@ def build(cut: str, settle_by: str, bench=True):
             for tk, H, b_, a_ in zip(d["ticker"].to_list(), d["H_ns"].to_list(), d["bid_c"].to_list(), d["ask_c"].to_list()):
                 mid_tab[(tk, int(H))] = (b_ + a_) / 2
     mid_at = lambda tk, H: mid_tab.get((tk, H))
+    curve = recounted_curve(fills, curve, results, settled_at, mid_tab, start)      # L20: not the stored totals
     spr_tab = {}
     for d in (one_all, two_all):
         if d is not None:
@@ -620,6 +636,11 @@ def self_test() -> bool:
                          lambda live, s: {}, results={})
         s0, fl, cv = read_ledger(d)
         check("ledger reader recovers the live start, fills and curve", s0 == H0 and len(fl[("primary", "g2")]) == 2 and len(cv) == 1)
+    # L20: a repeated identical fill counts twice in the recounted curve, whatever the stored total says
+    kr = ("E1", "E1-A", 1, 40, 1, 0.0, 40.0, H0)
+    rcv = recounted_curve({("primary", "g2"): [kr, kr]}, [(H0, {"primary": {"g2": 0.6}})], {"E1-A": "yes"}, {"E1": H0 + H_NS}, {}, H0)
+    check(f"L20: the curve is recounted from the fills (2 x +60c = +$1.20, not the stored +$0.60; got {rcv[0][1]['primary']['g2']})",
+          abs(rcv[0][1]["primary"]["g2"] - 1.2) < 1e-9)
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 

@@ -59,13 +59,14 @@ def load_state(d: Path) -> dict:
 
 
 def recorded_fills(d: Path) -> dict:
-    """{(window, arm): set(fill_key)} from every entry written so far."""
+    """{(window, arm): [fill_key, ...]} from every entry written so far. A LIST, not a set: one order filled by
+    several trades in its hour gives identical keys, each a real fill (L20; a set kept one of them)."""
     out = {}
     for p in sorted((d / "entries").glob("*.json")):
         e = json.loads(p.read_text())
         for w, arms in e.get("new_fills", {}).items():
             for arm, rows in arms.items():
-                out.setdefault((w, arm), set()).update(tuple(r) for r in rows)
+                out.setdefault((w, arm), []).extend(tuple(r) for r in rows)
     return out
 
 
@@ -84,14 +85,16 @@ def verify(recorded: dict, fills_by: dict, upto_H: int, events=None, start_H=Non
     """Recorded fills must equal recomputed fills for hours in [start_H, upto_H], for the events recomputed this
     round (`events`; None = all). Hours before start_H are never recorded (reference only), so they are not
     compared (2026-10-15 fix: they were, and every pre-start fill showed as 'extra'). Returns mismatches."""
+    from collections import Counter
     bad = []
     lo0 = start_H if start_H is not None else -1
     for (w, arm), rec in recorded.items():
         lo = max(lo0, (since or {}).get((w, arm), lo0))     # 2026-10-16: an arm is compared from the hour it joined
-        now = {fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if lo <= int(f[9]) <= upto_H}
-        rec_h = {r for r in rec if r[7] <= upto_H and (events is None or r[0] in events)}
-        if now != rec_h:
-            bad.append({"window": w, "arm": arm, "missing_now": len(rec_h - now), "extra_now": len(now - rec_h)})
+        now = Counter(fill_key(f) for f in fills_by.get(w, {}).get(arm, []) if lo <= int(f[9]) <= upto_H)
+        rec_h = Counter(r for r in rec if r[7] <= upto_H and (events is None or r[0] in events))
+        if now != rec_h:                                     # L20: counts compared too, not only distinct keys
+            bad.append({"window": w, "arm": arm, "missing_now": sum((rec_h - now).values()),
+                        "extra_now": sum((now - rec_h).values())})
     return bad
 
 
@@ -189,9 +192,55 @@ def round_update(d: Path, fills_by: dict, complete_H: int, settled_events: set, 
         written.append(e)
         for w, arms in new.items():                         # this hour is now recorded
             for a, fl in arms.items():
-                rec.setdefault((w, a), set()).update(fill_key(f) for f in fl)
+                rec.setdefault((w, a), []).extend(fill_key(f) for f in fl)
         last_H = H
     return written
+
+
+def recount_curve(keys_by: dict, hours, results: dict, settled_at: dict, mid_tab: dict, start_H: int,
+                  keep=None, lag=2 * H_NS) -> dict:
+    """L20: cumulative P&L per hour recomputed from the recorded fill keys (every repeat counted), instead of the
+    figures stored in the entries. Hour H is valued as the ledger round for H normally runs, at the end of hour H+1:
+    fills quoted in [start_H, H]; realised = events settled by H + lag; open fills marked at the ticker's latest
+    logged mid at or before H (none: -fee), as in pnl_state. keys_by: {(window, arm): [key]}; mid_tab: {(ticker,
+    H_ns): mid_c}; keep: optional key filter (e.g. the L18 main result). Returns {H: {(window, arm): figures}}."""
+    tick = sorted({k[1] for ks in keys_by.values() for k in ks})
+    ti = {t: i for i, t in enumerate(tick)}
+    upd = {}
+    for (t, h), m in mid_tab.items():
+        if t in ti and m is not None and m == m:
+            upd.setdefault(int(h), []).append((ti[t], float(m)))
+    arr = {}
+    for wa, ks in keys_by.items():
+        ks = [k for k in ks if int(k[7]) >= start_H and (keep is None or keep(k))]
+        if not ks:
+            continue
+        F = [as_fill(k, results.get(k[1])) for k in ks]
+        arr[wa] = {"H": np.array([int(k[7]) for k in ks]), "side": np.array([k[2] for k in ks], float),
+                   "price": np.array([k[3] for k in ks], float), "qty": np.array([k[4] for k in ks], float),
+                   "fee": np.array([k[5] for k in ks], float), "cap": np.array([k[6] for k in ks], float),
+                   "net": np.array([f[6] for f in F], float), "ti": np.array([ti[k[1]] for k in ks]),
+                   "st": np.array([settled_at[k[0]] if settled_at.get(k[0]) is not None else np.inf for k in ks], float)}
+    latest = np.full(len(tick), np.nan)
+    pending = sorted(upd)
+    out, j = {}, 0
+    for H in sorted(hours):
+        while j < len(pending) and pending[j] <= H:
+            for i, m in upd[pending[j]]:
+                latest[i] = m
+            j += 1
+        row = {}
+        for wa, a in arr.items():
+            m = a["H"] <= H
+            done = m & (a["st"] <= H + lag)
+            op = m & ~done
+            mid = latest[a["ti"][op]]
+            unreal = float(np.sum(np.where(np.isnan(mid), 0.0, a["side"][op] * (mid - a["price"][op]) * a["qty"][op]) - a["fee"][op]))
+            real = float(a["net"][done].sum())
+            row[wa] = {"realised_usd": real / 100, "unrealised_usd": unreal / 100, "total_usd": (real + unreal) / 100,
+                       "capital_usd": float(a["cap"][m].sum()) / 100, "fills": int(m.sum())}
+        out[H] = row
+    return out
 
 
 def fleet_summary(entry: dict, window="primary") -> tuple:
@@ -362,6 +411,48 @@ def self_test() -> bool:
         met, out = fleet_summary(w4[-1])
         check("fleet summary carries cumulative metrics and the entry hash",
               "g2_total_usd" in met and out["entry_hash"] == w4[-1]["hash"])
+
+    # L20: one order filled by two trades in its hour = two identical fills, both real
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        Hm, ev = MAIN_FROM_NS, "KXHIGHNY-26OCT17"                          # a main-result fill (23 series, from 16 Oct 17:00)
+        g = (ev, ev + "-B70", 1, 40, 1, 0.0, 60.0, 40.0, 0.0, Hm)          # YES bought at 40, 1 contract, settles YES: +60c
+        res = {ev + "-B70": "yes"}
+        w1 = round_update(d, {"primary": {"g2": [g, g]}}, Hm, set(), {}, stamp, vfn, results=res)
+        check("L20: both identical fills are written to the entry", len(w1[0]["new_fills"]["primary"]["g2"]) == 2)
+        check("L20: recorded_fills keeps the repeat", len(recorded_fills(d)[("primary", "g2")]) == 2)
+        w2 = round_update(d, {"primary": {"g2": [g, g]}}, Hm + H_NS, {ev}, {}, stamp, vfn, results=res)
+        c2 = w2[0]["cumulative"]["primary"]["g2"]
+        check(f"L20: a later round counts both recorded fills (realised +$1.20, 2 fills; got {c2['realised_usd']}, {c2['fills']})",
+              abs(c2["realised_usd"] - 1.2) < 1e-9 and c2["fills"] == 2 and w2[0]["verification"] == [])
+        check(f"L20: the main-result block counts both too (got {w2[0]['main_result_l18']['cumulative']['g2']['fills']})",
+              w2[0]["main_result_l18"]["cumulative"]["g2"]["fills"] == 2)
+        w3 = round_update(d, {"primary": {"g2": [g]}}, Hm + 2 * H_NS, {ev}, {}, stamp, vfn, results=res)
+        check(f"L20: verify reports a lost repeat (recorded 2, recomputed 1: {w3[0]['verification']})",
+              w3[0]["verification"] == [{"window": "primary", "arm": "g2", "missing_now": 1, "extra_now": 0}])
+
+    # L20 recount: hand-computed curve. Keys (event, ticker, side, price, qty, fee, capital, H).
+    kA = ("E1", "E1-A", 1, 40, 1, 1.0, 40.0, H0)                       # bought at 40, fee 1c; E1 settles YES at H0+3h
+    kB = ("E2", "E2-A", -1, 70, 2, 0.0, 60.0, H0 + H_NS)               # sold 2 at 70; E2 never settles
+    kC = ("X9", "X9-A", 1, 50, 1, 0.0, 50.0, H0)                       # filtered out by keep
+    keys_by = {("primary", "g2"): [kA, kA, kB, kC]}
+    mt = {("E1-A", H0): 45.0, ("E2-A", H0 + H_NS): 60.0, ("E2-A", H0 + 3 * H_NS): 80.0}
+    rc = recount_curve(keys_by, [H0, H0 + H_NS, H0 + 3 * H_NS], {"E1-A": "yes"}, {"E1": H0 + 3 * H_NS, "E2": None}, mt, H0,
+                       keep=lambda k: k[0] != "X9")
+    r0, r1, r3 = (rc[h][("primary", "g2")] for h in (H0, H0 + H_NS, H0 + 3 * H_NS))
+    # H0: two kA open, marked at 45: 2*(45-40)*1 - 2*1 = +8c; settled-by lag: E1 settles H0+3h > H0+2h -> open
+    check(f"L20 recount, H0: both repeats marked at the mid net of fees (+$0.08, 2 fills; got {r0['total_usd']}, {r0['fills']})",
+          abs(r0["total_usd"] - 0.08) < 1e-9 and r0["fills"] == 2 and r0["realised_usd"] == 0)
+    # H0+1h: E1 settled by H0+3h <= H0+1h+2h -> realised 2*(60-1) = 118c; kB open at 60: -1*(60-70)*2 = +20c
+    check(f"L20 recount, H0+1h: E1 realised within the lag (+$1.18), kB marked (+$0.20) (got {r1['realised_usd']}, {r1['unrealised_usd']})",
+          abs(r1["realised_usd"] - 1.18) < 1e-9 and abs(r1["unrealised_usd"] - 0.20) < 1e-9 and r1["fills"] == 3)
+    # H0+3h: kB re-marked at 80: -1*(80-70)*2 = -20c
+    check(f"L20 recount, H0+3h: an open fill takes the latest mid at or before the hour (-$0.20; got {r3['unrealised_usd']})",
+          abs(r3["unrealised_usd"] + 0.20) < 1e-9 and abs(r3["capital_usd"] - 1.4) < 1e-9)
+    rn = recount_curve({("primary", "g2"): [kB]}, [H0 + H_NS], {}, {}, {}, H0)[H0 + H_NS][("primary", "g2")]
+    check("L20 recount: an open fill with no logged mid carries only -fee (0 here)", rn["unrealised_usd"] == 0 and rn["fills"] == 1)
+    check("L20 recount: fills before the live start are left out",
+          ("primary", "g2") not in recount_curve({("primary", "g2"): [kA]}, [H0], {}, {}, {}, H0 + H_NS)[H0])
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 
