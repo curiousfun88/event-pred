@@ -74,7 +74,7 @@ def publish_page(repo: Path, clone: Path) -> bool:
     return True
 
 
-SPLIT_ARMS = ("g2", "lin2", "mlp2", "g", "rnd2", "cand")
+SPLIT_ARMS = tuple(ARM_NAMES)          # every ledgered arm; the page decides which it shows
 MAIN_FROM_NS = int(dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc).timestamp()) * 10**9   # L18: main result counts from here
 FULL_TO_NS = int(dt.datetime(2026, 10, 17, 5, tzinfo=dt.timezone.utc).timestamp()) * 10**9     # L19: last full-universe quoting hour
 
