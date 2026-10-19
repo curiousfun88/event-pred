@@ -100,6 +100,12 @@ footer a { color: var(--accent); }
       <div class="chart" id="chartm"></div>
       <p class="empty" id="chartmempty" hidden>Starts with the first ledger entries that record the main result.</p>
     </section>
+    <section class="card">
+      <h2>Main result: settled net P&amp;L over time</h2>
+      <p>Net P&amp;L of settled positions only (the table's Net column), at each hourly entry. It steps when events settle.</p>
+      <div class="legend" id="legendr"></div>
+      <div class="chart" id="chartr"></div>
+    </section>
   </div>
 
   <details class="card" id="secondary">
@@ -201,7 +207,7 @@ footer a { color: var(--accent); }
     tile("Events settled", mg ? mg.events.toLocaleString() : "0", mg ? mg.settled_fills.toLocaleString() + " settled fills" : "no settled fills yet", "");
     document.getElementById("t23empty").hidden = (s.settled || []).some(function (r) { return r.universe === "train23"; });
     var mrows = s.main_rows || [], mh = Array.from(new Set(mrows.map(function (r) { return r.H; }))).sort();
-    var mval = function (arm, h) { var r = mrows.find(function (q) { return q.arm === arm && q.H === h; }); return r ? r.total_usd : 0; };
+    var mval = function (arm, h, f) { var r = mrows.find(function (q) { return q.arm === arm && q.H === h; }); return r ? r[f || "total_usd"] : 0; };
     var mseries = [["G2", "--s1"], ["Linear", "--s2"], ["Random (same share)", "--s5"], ["Quote all", "--s6"]].map(function (m) {
       return { name: m[0], color: css(m[1]), w: m[0] === "G2" ? 2.6 : 1.8, pts: mh.map(function (h) { return mval(m[0], h); }) }; });
     var lgm = document.getElementById("legendm"); lgm.replaceChildren();
@@ -210,6 +216,12 @@ footer a { color: var(--accent); }
       mseries.forEach(function (sr) { var sp = document.createElement("span"); var i = document.createElement("i"); i.style.background = sr.color; sp.appendChild(i); sp.append(sr.name); lgm.appendChild(sp); });
       lineChart(document.getElementById("chartm"), mh, mseries);
     } else { document.getElementById("chartm").replaceChildren(); }
+    var rseries = mseries.map(function (sr) { return { name: sr.name, color: sr.color, w: sr.w, pts: mh.map(function (h) { return mval(sr.name, h, "realised_usd"); }) }; });
+    var lgr = document.getElementById("legendr"); lgr.replaceChildren();
+    if (mh.length) {
+      rseries.forEach(function (sr) { var sp = document.createElement("span"); var i = document.createElement("i"); i.style.background = sr.color; sp.appendChild(i); sp.append(sr.name); lgr.appendChild(sp); });
+      lineChart(document.getElementById("chartr"), mh, rseries);
+    } else { document.getElementById("chartr").replaceChildren(); }
     [["train23", "t23"], ["full", "tfull"], ["full_same", "tsame"]].forEach(function (u) {
       var body = document.querySelector("#" + u[1] + " tbody"); body.replaceChildren();
       // every strategy is listed; one with no settled position yet shows dashes (2026-10-17: a table listing only
