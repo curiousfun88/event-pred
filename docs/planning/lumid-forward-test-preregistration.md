@@ -927,3 +927,13 @@ prediction stands as written: at every alpha, `lin2`'s total net P&L over the si
 fold). Total net P&L over the six folds: alpha 0.01-100 +$1,455.04 (identical); 1e4 +$1,441.25; 1e5 +$1,301.41,
 against G2-W3's +$3,291.02. G2-W3 nets more than `lin2` in 6/6 folds at every alpha. The higher return at 1e5
 (+4.42%) comes with $154 less net P&L. Prediction's third part confirmed. Nothing adopted.
+
+**L19 reporting correction (2026-10-19; implements L19 as written, no rule changes).** L19 fixes the full-universe
+result to quoting hours S to 2026-10-17 T05, but the cut report (`headline`) and the dashboard's settled tables
+(`live_backup.settled_split`) still counted every hour from S, so from T06 they added the 23 series' later hours to
+the "full universe". Both now stop at T05 (`FULL_TO`), and the same-hours table covers 2026-10-16 T17 to 2026-10-17
+T05; the cut report's per-arm block (every live hour, so the 23 series only from T06) is labelled as such. The main
+result is unaffected. On a copy of the live record (ledger through 2026-10-19 T04), G2 settled-only: full universe
+-$732.06 (-5.67%) as previously shown -> **-$760.34 (-6.11%)**; same hours -$168.75 -> -$197.03; main result +$28.77
+both ways. The full-universe figures still change as positions from those hours settle. Self-tests cover a planted
+post-switch fill. Active on the dashboard from the deploy hour (recorded in the host log).

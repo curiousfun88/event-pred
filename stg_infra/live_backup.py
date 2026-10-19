@@ -76,13 +76,15 @@ def publish_page(repo: Path, clone: Path) -> bool:
 
 SPLIT_ARMS = ("g2", "lin2", "mlp2", "g", "rnd2", "cand")
 MAIN_FROM_NS = int(dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc).timestamp()) * 10**9   # L18: main result counts from here
+FULL_TO_NS = int(dt.datetime(2026, 10, 17, 5, tzinfo=dt.timezone.utc).timestamp()) * 10**9     # L19: last full-universe quoting hour
 
 
 def settled_split(repo: Path, ents) -> list:
     """L18: settled-only net P&L per strategy on the 23 training series (main result) and on the full universe (L4),
     from the ledger's recorded fills and the paper trader's settlement cache. Descriptive; the verdicts come from the
     cut report. L20: an event counts once ALL its legs have settled (cut_report.settle_times), as in the cut report
-    and the ledger, not leg by leg."""
+    and the ledger, not leg by leg. L19: the full universe covers quoting hours S to FULL_TO_NS (17 Oct T05); later
+    hours quote only the 23 series and count in the main result only."""
     import pickle
     mp_ = repo / "runs/live/paper/markets.pkl"
     if not mp_.exists() or not ents:
@@ -107,8 +109,9 @@ def settled_split(repo: Path, ents) -> list:
                     continue
                 pay = 100 if res == "yes" else 0
                 net = ((pay - price) * qty if side > 0 else (price - pay) * qty) - fee
-                for u in ((["train23"] if ev.split("-")[0] in a13 and H >= MAIN_FROM_NS else []) + ["full"]
-                          + (["full_same"] if H >= MAIN_FROM_NS else [])):
+                full = H <= FULL_TO_NS
+                for u in ((["train23"] if ev.split("-")[0] in a13 and H >= MAIN_FROM_NS else []) + (["full"] if full else [])
+                          + (["full_same"] if full and H >= MAIN_FROM_NS else [])):
                     x = agg.setdefault((u, a), [0.0, 0.0, 0, set()])
                     x[0] += net / 100; x[1] += cap / 100; x[2] += 1; x[3].add(ev)
     return [{"universe": u, "arm": ARM_NAMES.get(a, a), "net_usd": round(x[0], 2), "capital_usd": round(x[1], 2),
@@ -427,14 +430,16 @@ def self_test() -> bool:
         ev, ev2 = "KXHIGHNY-26OCT17", "KXHIGHMIA-26OCT17"
         k = [ev, ev + "-B70", 1, 40, 1, 0.0, 40.0, H]                 # repeated: one order, two trades -> +60c each
         k2 = [ev2, ev2 + "-B88", -1, 30, 1, 0.0, 70.0, H]            # MIA: this leg settled, another leg not yet
+        ev3 = "KXESOCCERGAME-26OCT18X"                               # not a training series, quoted after the L19 switch
+        k3 = [ev3, ev3 + "-A", 1, 40, 1, 0.0, 60.0, FULL_TO_NS + 3600 * 10**9]
         (L / "entries" / f"{s1}.json").write_text(json.dumps({"H": s1, "H_ns": H, "hash": "h1", "main_result_l18": {},
-                                                               "new_fills": {"primary": {"g2": [k, k, k2]}},
+                                                               "new_fills": {"primary": {"g2": [k, k, k2, k3]}},
                                                                "cumulative": {"primary": {"g2": {"total_usd": 0.6, "realised_usd": 0.6,
                                                                               "unrealised_usd": 0.0, "capital_usd": 0.4, "fills": 1}}}}))
         (L / "state.json").write_text(json.dumps({"start_H": H, "start_stamp": s1}))
         (repo3 / "runs/live/paper/markets.pkl").write_bytes(pickle.dumps({
             ev + "-B70": {"result": "yes", "settled_ns": H + 1}, ev2 + "-B88": {"result": "no", "settled_ns": H + 1},
-            ev2 + "-B90": {"result": "", "settled_ns": None}}))
+            ev2 + "-B90": {"result": "", "settled_ns": None}, ev3 + "-A": {"result": "yes", "settled_ns": H + 1}}))
         pl.DataFrame({"ticker": [ev2 + "-B88"], "H_ns": [H], "bid_c": [20.0], "ask_c": [30.0]}).write_parquet(repo3 / f"runs/live/scores/one_{s1}.parquet")
         sm3 = build_summary(repo3)
         g2m = [r for r in sm3["main_rows"] if r["arm"] == "G2"][0]
@@ -444,6 +449,10 @@ def self_test() -> bool:
         t23 = [r for r in sm3["settled"] if r["universe"] == "train23" and r["arm"] == "G2"][0]
         check(f"L20: settled table counts NY (both fills) but not MIA until all its legs settle (got {t23['net_usd']}, {t23['events']} ev)",
               abs(t23["net_usd"] - 1.2) < 1e-9 and t23["events"] == 1 and t23["settled_fills"] == 2)
+        fu = {r["universe"]: r for r in sm3["settled"] if r["arm"] == "G2"}
+        check(f"L19: full universe and same-hours tables stop at 17 Oct T05 (a later settled fill is excluded; got "
+              f"{fu['full']['net_usd']}, {fu['full_same']['net_usd']})",
+              abs(fu["full"]["net_usd"] - 1.2) < 1e-9 and fu["full"]["events"] == 1 and abs(fu["full_same"]["net_usd"] - 1.2) < 1e-9)
         check("L20: the recount is cached and reused while the ledger and settlements are unchanged",
               (repo3 / RECOUNT_CACHE).exists() and recount_rows(repo3, sorted((L / "entries").glob("*.json")))[1] == sm3["main_rows"])
     print("SELF-TEST", "PASSED" if ok else "FAILED")
