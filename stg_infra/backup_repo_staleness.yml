@@ -1,12 +1,12 @@
 # GitHub Actions workflow for the BACKUP repo (curiousfun88/event-pred-live), amendment L16.
 # Add it there through the GitHub web page (Add file -> Create new file -> .github/workflows/staleness.yml) so that
 # YOU are the author of the schedule: GitHub emails failed scheduled runs to the user who last changed the cron line.
-# Fails (-> email) if the newest producer hour in heartbeat.json is more than 150 min old, or the newest ledger
-# entry more than 8 h old (ledger rounds lag the producer by a few hours).
+# Fails (-> email) if the newest producer hour in heartbeat.json is more than 90 min old (was 150 until 2026-10-19), or the newest ledger
+# entry more than 8 h old (ledger rounds lag the producer by a few hours). Checked every 10 min (was 30).
 name: live-test-staleness
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 jobs:
   check:
@@ -23,7 +23,7 @@ jobs:
           p, l = age(hb["latest_producer_hour"]), age(hb["latest_ledger_entry"]) if hb.get("latest_ledger_entry") else 1e9
           print(json.dumps(hb), f"producer hour age {p:.0f} min, ledger entry age {l:.0f} min")
           bad = []
-          if p > 150: bad.append(f"no new producer hour for {p:.0f} min")
+          if p > 90: bad.append(f"no new producer hour for {p:.0f} min")
           if l > 480: bad.append(f"no new ledger entry for {l:.0f} min")
           if bad:
               print("::error::LIVE TEST STALLED: " + "; ".join(bad)); sys.exit(1)
