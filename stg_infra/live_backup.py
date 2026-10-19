@@ -255,8 +255,8 @@ def by_day(main_rows, arms=CORE) -> list:
 
 def daily_record(repo: Path, day: str) -> dict:
     """The daily Research Fleet summary for UTC day `day` (YYYYMMDD), main result first: its table (settled only, as on
-    the dashboard), G2 minus random, and settled net P&L by day; then the secondary tables (L19 hours), status, and the
-    latest ledger entry's hash, which ties it to the hourly audit trail."""
+    the dashboard), G2 minus random, and settled net P&L by day; then status and the latest ledger entry's hash, which
+    ties it to the hourly audit trail. Main result only: the full universe is on the dashboard and in the cut report."""
     sm = build_summary(repo)
     ents = sorted((repo / "runs/live/paper/ledger/entries").glob("*.json"))
     head = json.loads(ents[-1].read_text())["hash"] if ents else None
@@ -268,14 +268,10 @@ def daily_record(repo: Path, day: str) -> dict:
                             "table": main,
                             "g2_minus_random_usd": round(g2 - rnd, 2) if g2 is not None and rnd is not None else None,
                             "settled_net_usd_by_day": by_day(sm["main_rows"])},
-            "secondary_full_universe": {"what": "every series the strategy quoted, quoting hours 2026-10-15 19:00 to "
-                                                "2026-10-17 05:00 UTC (L19); settled positions only",
-                                        "table": result_table(sm["settled"], "full"),
-                                        "same_hours_as_main": result_table(sm["settled"], "full_same")},
             "status": {"generated_utc": sm["generated_utc"], "live_since": sm["live_since"], "latest_entry": sm["latest_entry"],
                        "latest_entry_hash": head, "entries": sm["entries"], "verification_issues": sm["verification_issues"],
                        "curve_source": sm.get("curve_source")},
-            "all_strategies_settled": sm["settled"]}
+            "main_result_all_strategies": [r for r in sm["settled"] if r["universe"] == "train23"]}
 
 
 def daily_body(rec: dict, site: str) -> dict:
