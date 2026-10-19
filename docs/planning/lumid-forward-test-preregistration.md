@@ -922,3 +922,8 @@ G2) is now measured: the same sweep re-run with each alpha's net P&L per fold, b
 `offline_baselines.json` (`--dollars`). Gate: alpha 1 must reproduce the stored `lin2` net P&L in every fold. The
 prediction stands as written: at every alpha, `lin2`'s total net P&L over the six folds stays below G2-W3's
 (+$3,291).
+
+**Note 7 addendum result (2026-10-19).** Both gates passed (alpha 1 reproduces `lin2`'s return and net P&L in every
+fold). Total net P&L over the six folds: alpha 0.01-100 +$1,455.04 (identical); 1e4 +$1,441.25; 1e5 +$1,301.41,
+against G2-W3's +$3,291.02. G2-W3 nets more than `lin2` in 6/6 folds at every alpha. The higher return at 1e5
+(+4.42%) comes with $154 less net P&L. Prediction's third part confirmed. Nothing adopted.

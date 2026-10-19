@@ -10,6 +10,8 @@
    "ret": 3.1308755006948417,
    "ret_all": -0.7299026110664525,
    "net_c_per_contract": 1.814248721025706,
+   "net_usd": 287.25,
+   "capital_usd": 9174.75,
    "coef_shift": 2.510609233232365e-06,
    "pick_overlap": 1.0
   },
@@ -22,6 +24,8 @@
    "ret": 3.1308755006948417,
    "ret_all": -0.7299026110664525,
    "net_c_per_contract": 1.814248721025706,
+   "net_usd": 287.25,
+   "capital_usd": 9174.75,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -34,6 +38,8 @@
    "ret": 3.1308755006948417,
    "ret_all": -0.7299026110664525,
    "net_c_per_contract": 1.814248721025706,
+   "net_usd": 287.25,
+   "capital_usd": 9174.75,
    "coef_shift": 0.00025099163357269756,
    "pick_overlap": 1.0
   },
@@ -46,6 +52,8 @@
    "ret": 3.376339383336978,
    "ret_all": -0.7299026110664525,
    "net_c_per_contract": 1.9559540050672384,
+   "net_usd": 301.08,
+   "capital_usd": 8917.35,
    "coef_shift": 0.024670223894545932,
    "pick_overlap": 0.9755671902268761
   },
@@ -58,6 +66,8 @@
    "ret": 3.6541166363934967,
    "ret_all": -0.7299026110664525,
    "net_c_per_contract": 2.059493670886076,
+   "net_usd": 260.32,
+   "capital_usd": 7124.02,
    "coef_shift": 0.198160001889259,
    "pick_overlap": 0.8023121387283237
   },
@@ -70,6 +80,8 @@
    "ret": 5.587850729578439,
    "ret_all": -0.793853071793604,
    "net_c_per_contract": 3.22406326492186,
+   "net_usd": 513.69,
+   "capital_usd": 9192.98,
    "coef_shift": 2.5819803547626855e-06,
    "pick_overlap": 1.0
   },
@@ -82,6 +94,8 @@
    "ret": 5.587850729578439,
    "ret_all": -0.793853071793604,
    "net_c_per_contract": 3.22406326492186,
+   "net_usd": 513.69,
+   "capital_usd": 9192.98,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -94,6 +108,8 @@
    "ret": 5.587850729578439,
    "ret_all": -0.793853071793604,
    "net_c_per_contract": 3.22406326492186,
+   "net_usd": 513.69,
+   "capital_usd": 9192.98,
    "coef_shift": 0.0002581098602927272,
    "pick_overlap": 1.0
   },
@@ -106,6 +122,8 @@
    "ret": 5.586688928755395,
    "ret_all": -0.793853071793604,
    "net_c_per_contract": 3.2168243416006135,
+   "net_usd": 503.24,
+   "capital_usd": 9007.84,
    "coef_shift": 0.025226221182505778,
    "pick_overlap": 0.975879104911363
   },
@@ -118,6 +136,8 @@
    "ret": 6.487225466391457,
    "ret_all": -0.793853071793604,
    "net_c_per_contract": 3.6600334315052137,
+   "net_usd": 459.81,
+   "capital_usd": 7087.93,
    "coef_shift": 0.19827108890562395,
    "pick_overlap": 0.7990110529377545
   },
@@ -130,6 +150,8 @@
    "ret": 3.7330540109033534,
    "ret_all": -0.2573445805846584,
    "net_c_per_contract": 2.145822073289374,
+   "net_usd": 198.51,
+   "capital_usd": 5317.63,
    "coef_shift": 2.420907392663722e-06,
    "pick_overlap": 1.0
   },
@@ -142,6 +164,8 @@
    "ret": 3.7330540109033534,
    "ret_all": -0.2573445805846584,
    "net_c_per_contract": 2.145822073289374,
+   "net_usd": 198.51,
+   "capital_usd": 5317.63,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -154,6 +178,8 @@
    "ret": 3.7330540109033534,
    "ret_all": -0.2573445805846584,
    "net_c_per_contract": 2.145822073289374,
+   "net_usd": 198.51,
+   "capital_usd": 5317.63,
    "coef_shift": 0.0002420097748696914,
    "pick_overlap": 1.0
   },
@@ -166,6 +192,8 @@
    "ret": 3.839227887973033,
    "ret_all": -0.2573445805846584,
    "net_c_per_contract": 2.2030216144684607,
+   "net_usd": 199.77,
+   "capital_usd": 5203.39,
    "coef_shift": 0.023671407208922617,
    "pick_overlap": 0.9775435380384968
   },
@@ -178,6 +206,8 @@
    "ret": 4.3781916096493765,
    "ret_all": -0.2573445805846584,
    "net_c_per_contract": 2.4278215223097113,
+   "net_usd": 166.5,
+   "capital_usd": 3802.94,
    "coef_shift": 0.1876725697767879,
    "pick_overlap": 0.7683873915029694
   },
@@ -190,6 +220,8 @@
    "ret": 2.839983465849685,
    "ret_all": -1.0680263710475613,
    "net_c_per_contract": 1.8497272567306,
+   "net_usd": 105.12,
+   "capital_usd": 3701.43,
    "coef_shift": 2.3904461167379826e-06,
    "pick_overlap": 1.0
   },
@@ -202,6 +234,8 @@
    "ret": 2.839983465849685,
    "ret_all": -1.0680263710475613,
    "net_c_per_contract": 1.8497272567306,
+   "net_usd": 105.12,
+   "capital_usd": 3701.43,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -214,6 +248,8 @@
    "ret": 2.839983465849685,
    "ret_all": -1.0680263710475613,
    "net_c_per_contract": 1.8497272567306,
+   "net_usd": 105.12,
+   "capital_usd": 3701.43,
    "coef_shift": 0.00023896321185010248,
    "pick_overlap": 1.0
   },
@@ -226,6 +262,8 @@
    "ret": 2.75595957376689,
    "ret_all": -1.0680263710475613,
    "net_c_per_contract": 1.7967770814682185,
+   "net_usd": 100.35,
+   "capital_usd": 3641.2,
    "coef_shift": 0.023361268356249073,
    "pick_overlap": 0.9843260188087775
   },
@@ -238,6 +276,8 @@
    "ret": 3.56529431277874,
    "ret_all": -1.0680263710475613,
    "net_c_per_contract": 2.3152225945428433,
+   "net_usd": 96.73,
+   "capital_usd": 2713.1,
    "coef_shift": 0.1849705636632968,
    "pick_overlap": 0.740625
   },
@@ -250,6 +290,8 @@
    "ret": 3.7605765025763884,
    "ret_all": -1.666181061822914,
    "net_c_per_contract": 2.284625158831004,
+   "net_usd": 197.78,
+   "capital_usd": 5259.3,
    "coef_shift": 2.255009168372317e-06,
    "pick_overlap": 1.0
   },
@@ -262,6 +304,8 @@
    "ret": 3.7605765025763884,
    "ret_all": -1.666181061822914,
    "net_c_per_contract": 2.284625158831004,
+   "net_usd": 197.78,
+   "capital_usd": 5259.3,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -274,6 +318,8 @@
    "ret": 3.7605765025763884,
    "ret_all": -1.666181061822914,
    "net_c_per_contract": 2.284625158831004,
+   "net_usd": 197.78,
+   "capital_usd": 5259.3,
    "coef_shift": 0.00022542711416243625,
    "pick_overlap": 1.0
   },
@@ -286,6 +332,8 @@
    "ret": 3.737830488369794,
    "ret_all": -1.666181061822914,
    "net_c_per_contract": 2.2709609043805936,
+   "net_usd": 192.85,
+   "capital_usd": 5159.41,
    "coef_shift": 0.022066317478107566,
    "pick_overlap": 0.9795353982300885
   },
@@ -298,6 +346,8 @@
    "ret": 4.962581514546286,
    "ret_all": -1.666181061822914,
    "net_c_per_contract": 2.931068789084707,
+   "net_usd": 206.23,
+   "capital_usd": 4155.7,
    "coef_shift": 0.17635184151740735,
    "pick_overlap": 0.8205411374930978
   },
@@ -310,6 +360,8 @@
    "ret": 3.4930991331879877,
    "ret_all": -1.449462652470798,
    "net_c_per_contract": 2.102009911894273,
+   "net_usd": 152.69,
+   "capital_usd": 4371.19,
    "coef_shift": 2.1290161889609476e-06,
    "pick_overlap": 1.0
   },
@@ -322,6 +374,8 @@
    "ret": 3.4930991331879877,
    "ret_all": -1.449462652470798,
    "net_c_per_contract": 2.102009911894273,
+   "net_usd": 152.69,
+   "capital_usd": 4371.19,
    "coef_shift": 0.0,
    "pick_overlap": 1.0
   },
@@ -334,6 +388,8 @@
    "ret": 3.4930991331879877,
    "ret_all": -1.449462652470798,
    "net_c_per_contract": 2.102009911894273,
+   "net_usd": 152.69,
+   "capital_usd": 4371.19,
    "coef_shift": 0.00021283634932125486,
    "pick_overlap": 1.0
   },
@@ -346,6 +402,8 @@
    "ret": 3.3920190005843436,
    "ret_all": -1.449462652470798,
    "net_c_per_contract": 2.033046179918091,
+   "net_usd": 143.96,
+   "capital_usd": 4244.08,
    "coef_shift": 0.02087416460912363,
    "pick_overlap": 0.9825986078886311
   },
@@ -358,6 +416,8 @@
    "ret": 3.4574665446360107,
    "ret_all": -1.449462652470798,
    "net_c_per_contract": 1.9978559942826515,
+   "net_usd": 111.82,
+   "capital_usd": 3234.16,
    "coef_shift": 0.168764760834665,
    "pick_overlap": 0.7993039443155452
   }
@@ -369,7 +429,10 @@
    "months_positive": 6,
    "mean_share": 0.05942975382664078,
    "max_coef_shift": 2.5819803547626855e-06,
-   "min_pick_overlap": 1.0
+   "min_pick_overlap": 1.0,
+   "net_usd_total": 1455.04,
+   "g2_net_usd_total": 3291.02,
+   "g2_more_net_months": 6
   },
   "alpha_1": {
    "mean_ret": 3.757573223798449,
@@ -377,7 +440,10 @@
    "months_positive": 6,
    "mean_share": 0.05942975382664078,
    "max_coef_shift": 0.0,
-   "min_pick_overlap": 1.0
+   "min_pick_overlap": 1.0,
+   "net_usd_total": 1455.04,
+   "g2_net_usd_total": 3291.02,
+   "g2_more_net_months": 6
   },
   "alpha_100": {
    "mean_ret": 3.757573223798449,
@@ -385,7 +451,10 @@
    "months_positive": 6,
    "mean_share": 0.05942975382664078,
    "max_coef_shift": 0.0002581098602927272,
-   "min_pick_overlap": 1.0
+   "min_pick_overlap": 1.0,
+   "net_usd_total": 1455.04,
+   "g2_net_usd_total": 3291.02,
+   "g2_more_net_months": 6
   },
   "alpha_10000": {
    "mean_ret": 3.7813442104644057,
@@ -393,7 +462,10 @@
    "months_positive": 6,
    "mean_share": 0.05826429089876713,
    "max_coef_shift": 0.025226221182505778,
-   "min_pick_overlap": 0.9755671902268761
+   "min_pick_overlap": 0.9755671902268761,
+   "net_usd_total": 1441.25,
+   "g2_net_usd_total": 3291.02,
+   "g2_more_net_months": 6
   },
   "alpha_100000": {
    "mean_ret": 4.417479347399228,
@@ -401,7 +473,10 @@
    "months_positive": 6,
    "mean_share": 0.047469938124669375,
    "max_coef_shift": 0.19827108890562395,
-   "min_pick_overlap": 0.740625
+   "min_pick_overlap": 0.740625,
+   "net_usd_total": 1301.41,
+   "g2_net_usd_total": 3291.02,
+   "g2_more_net_months": 6
   }
  }
 }
