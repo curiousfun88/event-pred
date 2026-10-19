@@ -506,6 +506,7 @@ def build(cut: str, settle_by: str, bench=True):
 
 
 MAIN_FROM = "20261016T17"   # L18: the main result counts quoting hours from here (after L18 was public)
+MAIN = "train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"
 FULL_TO = "20261017T05"     # L19: last full-universe quoting hour; from T06 the producer quotes only the 23 series
 FULL = "full universe (L19: quoting hours S to 2026-10-17 T05)"
 FULL_SAME = "full universe, same hours as the main result (descriptive; 2026-10-16 T17 to 2026-10-17 T05)"
@@ -532,6 +533,14 @@ def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt,
             res[uname] = {"g2": {k: mg[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills", "events",
                                                      "ci", "ci_day_clusters") if k in mg},
                           "g2_minus_rnd2": pt.paired_stats(dg, dr)}
+        # descriptive (no verdict): every arm on the main result's universe and hours, for the report's main table
+        res[MAIN]["arms"] = {}
+        for a2 in sorted(a_ for w_, a_ in fills if w_ == w):
+            ks = [k for k in fills[(w, a2)] if start <= int(k[7]) < cut_ns and is_train23_key(k) and int(k[7]) >= main_from]
+            m2 = fill_metrics(ks, results, settled_at, settle_ns, mid_next)
+            m2.pop("_done")
+            res[MAIN]["arms"][a2] = {k: m2[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills",
+                                                        "events", "ci", "ci_day_clusters") if k in m2}
         out[w] = res
     return out
 
@@ -598,9 +607,11 @@ def self_test() -> bool:
     sh = {"KXHIGHNY-26OCT20": H0 + H_NS, "KXESOCCERGAME-26OCT20X": H0 + H_NS}
     hl = headline({("primary", "g2"): kh, ("primary", "rnd2"): kh[1:]}, H0, H0 + 5 * H_NS, rh, sh, H0 + 10 * H_NS, {}, pt_h, main_from=H0, full_to=H0 + 10 * H_NS)
     P = hl["primary"]
-    t23 = P["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]; full = P[FULL]
+    t23 = P[MAIN]; full = P[FULL]
     check(f"L18 headline: train23 holds only the training series (+$7.00), the full universe both (+$7.00 - $4.00)",
           abs(t23["g2"]["net_usd"] - 7.0) < 1e-9 and abs(full["g2"]["net_usd"] - 3.0) < 1e-9 and "g2_minus_rnd2" in t23)
+    check("main result, every arm (descriptive): g2 as in the verdict block, rnd2 holds no training-series fill",
+          t23["arms"]["g2"]["net_usd"] == t23["g2"]["net_usd"] and t23["arms"]["rnd2"].get("fills", 0) == 0)
     hl2 = headline({("primary", "g2"): kh, ("primary", "rnd2"): kh[1:]}, H0, H0 + 5 * H_NS, rh, sh, H0 + 10 * H_NS, {}, pt_h, main_from=H0 + H_NS, full_to=H0 + 10 * H_NS)
     m2 = hl2["primary"]["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]["g2"]
     check("L18 main result counts only hours from its registration (a fill before it is excluded)", m2.get("fills", 0) == 0)
