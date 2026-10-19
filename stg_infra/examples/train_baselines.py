@@ -82,10 +82,13 @@ def _scaled(rows):
     return (X - mu) / sd, {"mu": mu, "sd": sd, "num": num, "cats": cats}
 
 
-def fit_lin2(rows, ys):
+def fit_lin2(rows, ys, alpha=None, scaled=None):
+    """alpha: ridge penalty override (exploratory note 7 sensitivity only; None = lin2 exactly).
+    scaled: a precomputed _scaled(rows), so a sweep builds the design matrix once."""
     from sklearn.linear_model import Ridge
-    Z, meta = _scaled(rows)
-    return {**meta, "model": Ridge(alpha=ALPHA).fit(Z, np.asarray(ys, float)), "arm": "lin2", "alpha": ALPHA,
+    a = ALPHA if alpha is None else float(alpha)
+    Z, meta = scaled if scaled is not None else _scaled(rows)
+    return {**meta, "model": Ridge(alpha=a).fit(Z, np.asarray(ys, float)), "arm": "lin2", "alpha": a,
             "y_mu": 0.0, "y_sd": 1.0}
 
 
@@ -215,6 +218,12 @@ def self_test() -> bool:
     check("NaN outside dmid_24h raises", raised)
     check("empty input -> empty prediction", predict(b, []).shape == (0,))
     check("lin2 deterministic: refit gives identical pickle", pickle.dumps(fit_lin2(rows, ys)) == pickle.dumps(b))
+    sc = _scaled(rows)
+    check("alpha override: alpha=1.0 and a precomputed design give lin2 exactly",
+          pickle.dumps(fit_lin2(rows, ys, alpha=ALPHA, scaled=sc)) == pickle.dumps(b))
+    big_a = fit_lin2(rows, ys, alpha=1e9, scaled=sc)
+    check("alpha override: alpha=1e9 shrinks every coefficient to ~0",
+          np.abs(big_a["model"].coef_).max() < 1e-3 * np.abs(b["model"].coef_).max() and big_a["alpha"] == 1e9)
 
     tr, ho = time_split(rows)
     hs = np.array([r["_H"] for r in rows])

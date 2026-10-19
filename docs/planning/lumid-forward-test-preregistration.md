@@ -892,3 +892,17 @@ them, are superseded by the recount; the report says so. Entries written from th
 totals correctly; the deploy is recorded in the host log. Verified on a copy of the live record (ledger through
 2026-10-19 T04): for every arm, the recounted main-result realised P&L equals the dashboard's settled table. The cut
 report gives G2 **+$28.77, +4.04%, 21 events, 236 settled fills** on the main result, the same as the dashboard.
+
+**Exploratory note 7 (2026-10-19, during the live test; offline only, nothing is selected or deployed).** Sensitivity
+of the linear baseline `lin2` to its one fixed setting, the ridge penalty (alpha 1.0, L3), which was never varied;
+the companion to note 3 for `mlp2` and A15 for G2. Alpha 0.01, 1, 100, 1e4 and 1e5, each a single change from
+`lin2`; same six folds as note 3 (2026-04..08 from A15's table trained on all earlier months; September trained on
+all months through 2026-08), A15's offline score, own 1c rule. Reported per alpha: every fold, mean, worst month,
+months positive, posted share, the largest coefficient change and the posted-set overlap relative to alpha 1.
+Gate: alpha 1 must reproduce `offline_baselines.json`'s `lin2` on the five A15-table folds exactly. Live P&L has
+been seen by now, but this touches no live hour; no alpha is adopted, `lin2` stays as frozen in L3 and the live
+arms are unchanged. **Prediction, written before the run:** with about 680,000 standardised training rows the
+penalty is small against the data term, so returns at alpha 0.01-100 lie within +-0.2 points of alpha 1 in every
+fold, with near-identical coefficients and posted sets; any material change appears only at alpha 1e4 or above,
+and no alpha closes the net-P&L gap to G2, which comes from `lin2` posting few orders, not from its coefficients.
+Script: `stg_infra/examples/offline_baselines.py --lin-sens` -> `results/live/lin_sensitivity.json`.

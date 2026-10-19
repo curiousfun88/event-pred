@@ -12,6 +12,7 @@ Baselines per fold (A15's offline score: kept fills' net / capital):
   liq     trades_24h >= the fold month's median (live rule: the hour's median)
   lin2    train_baselines.fit_lin2 refit on W3's window (all earlier months); September: frozen lin2
   mlp2    train_baselines.fit_mlp2 refit on W3's window; time holdout by month; September: frozen mlp2
+Sensitivity checks (nothing selected): --mlp-sens (note 3), --lin-sens (note 7, ridge alpha over LIN_GRID).
 
 USAGE (from repo root, laptop, capped):
     python stg_infra/examples/offline_baselines.py --self-test
@@ -308,6 +309,72 @@ def main_mlp_sensitivity():
     print(json.dumps(summ, indent=1))
 
 
+LIN_GRID = (0.01, 1.0, 100.0, 1e4, 1e5)          # ridge alpha; 1.0 = lin2 as frozen in L3
+LIN_SENS = _REPO / "results/live/lin_sensitivity.json"
+
+
+def coef_shift(ref, other):
+    """Largest coefficient change relative to the reference fit's largest coefficient (0 = identical)."""
+    a, b = ref["model"].coef_, other["model"].coef_
+    return float(np.abs(b - a).max() / max(np.abs(a).max(), 1e-12))
+
+
+def pick_overlap(p_ref, p_other):
+    """Jaccard overlap of the two fits' posted sets at the 1c rule (1.0 = same orders)."""
+    a, b = p_ref > 1.0, p_other > 1.0
+    u = int((a | b).sum())
+    return float((a & b).sum() / u) if u else 1.0
+
+
+def lin_summary(done, folds):
+    return {f"alpha_{a:g}": {"mean_ret": float(np.mean([done[f"{a:g}|{tm}"]["ret"] for tm in folds])),
+                             "worst_ret": float(min(done[f"{a:g}|{tm}"]["ret"] for tm in folds)),
+                             "months_positive": int(sum(done[f"{a:g}|{tm}"]["ret"] > 0 for tm in folds)),
+                             "mean_share": float(np.mean([done[f"{a:g}|{tm}"]["share"] for tm in folds])),
+                             "max_coef_shift": float(max(done[f"{a:g}|{tm}"]["coef_shift"] for tm in folds)),
+                             "min_pick_overlap": float(min(done[f"{a:g}|{tm}"]["pick_overlap"] for tm in folds))}
+            for a in LIN_GRID}
+
+
+def main_lin_sensitivity():
+    """Exploratory note 7: lin2's ridge alpha over LIN_GRID on the six L9 folds (resumable; nothing selected).
+    Gate: alpha 1.0 must reproduce offline_baselines.json's lin2 on the five A15-table folds exactly."""
+    import train_baselines as tb
+    import tune_gbm as tg
+    D = tg.load()
+    feats, cats = list(D["feats"]), list(D["cats"])
+    ref_ret = json.loads(OUT.read_text())["folds"]
+    folds = tg.TEST_MONTHS + ["2026-09-07..10-05"]
+    done = json.loads(LIN_SENS.read_text()).get("folds", {}) if LIN_SENS.exists() else {}
+    for tm in folds:
+        if all(f"{a:g}|{tm}" in done for a in LIN_GRID):
+            continue
+        if tm.startswith("2026-09"):        # as note 3: trained on every month through 2026-08
+            tr = np.ones(len(D["month"]), bool)
+            R_te, net, cap, qty = september_rows()
+        else:
+            tr, te = D["month"] < tm, D["month"] == tm
+            R_te, net, cap, qty = rows_from_X(D["X"][te], feats, cats), D["net_c"][te], D["capital_c"][te], D["qty"][te]
+        R_tr, y = rows_from_X(D["X"][tr], feats, cats), D["y"][tr]
+        sc = tb._scaled(R_tr)
+        fits = {a: tb.fit_lin2(R_tr, y, alpha=a, scaled=sc) for a in LIN_GRID}
+        preds = {a: tb.predict(b, R_te) for a, b in fits.items()}
+        for a in LIN_GRID:
+            done[f"{a:g}|{tm}"] = {"alpha": a, "fold": tm, "n_train": int(tr.sum()), **tg.score(preds[a], net, cap, qty),
+                                   "coef_shift": coef_shift(fits[1.0], fits[a]), "pick_overlap": pick_overlap(preds[1.0], preds[a])}
+            print(json.dumps(done[f"{a:g}|{tm}"], default=float), flush=True)
+        if not tm.startswith("2026-09"):
+            got, want = done[f"1|{tm}"]["ret"], ref_ret[tm]["lin2"]["ret"]
+            if abs(got - want) > 1e-9:
+                raise SystemExit(f"REPRODUCTION GATE FAILED {tm}: alpha 1.0 gives {got!r}, offline_baselines lin2 {want!r}")
+        LIN_SENS.write_text(json.dumps({"folds": done}, indent=1, default=float))
+        del R_tr, sc, fits
+    summ = lin_summary(done, folds)
+    LIN_SENS.write_text(json.dumps({"note": "exploratory note 7; nothing selected", "folds": done, "summary": summ},
+                                   indent=1, default=float))
+    print(json.dumps(summ, indent=1))
+
+
 SHARES4 = (0.02, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50)
 
 
@@ -469,6 +536,23 @@ def self_test() -> bool:
     check("dollars: kept net and capital in USD", dd == {"net_usd": 0.3, "capital_usd": 3.0, "contracts": 3, "kept": 3})
     check("top_share: posts exactly the top k by score", list(top_share(np.array([0.1, 5.0, -2.0, 3.0]), 0.5) > 1) == [False, True, False, True])
     check(f"score: kept fills' net / capital (wide3 keeps -5 and +20 -> +7.5%, got {s['ret']:+.2f})", abs(s["ret"] - 7.5) < 1e-9)
+
+    class _M:
+        def __init__(self, c):
+            self.coef_ = np.asarray(c, float)
+    shift = coef_shift({"model": _M([2.0, -4.0])}, {"model": _M([2.0, -3.0])})
+    check(f"coef_shift: largest change / largest reference coefficient (1/4, got {shift})", abs(shift - 0.25) < 1e-12)
+    check("pick_overlap: Jaccard of posted sets ({0,1} vs {1,2} -> 1/3)",
+          abs(pick_overlap(np.array([2.0, 2, 0, 0]), np.array([0.0, 2, 2, 0])) - 1 / 3) < 1e-12)
+    check("pick_overlap: neither posts anything -> 1.0", pick_overlap(np.zeros(3), np.zeros(3)) == 1.0)
+    planted = {f"{a:g}|{tm}": {"ret": r, "share": 0.1, "coef_shift": cs, "pick_overlap": po}
+               for a in LIN_GRID for tm, r, cs, po in (("f1", 2.0 if a < 1e4 else -1.0, 0.0 if a == 1.0 else 0.5, 0.9),
+                                                       ("f2", 4.0, 0.1, 0.8))}
+    ls = lin_summary(planted, ["f1", "f2"])
+    check("lin_summary: mean, worst, months positive, max shift, min overlap per alpha",
+          ls["alpha_1"] == {"mean_ret": 3.0, "worst_ret": 2.0, "months_positive": 2, "mean_share": 0.1,
+                            "max_coef_shift": 0.1, "min_pick_overlap": 0.8}
+          and ls["alpha_100000"]["mean_ret"] == 1.5 and ls["alpha_100000"]["months_positive"] == 1)
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 
@@ -480,6 +564,7 @@ def main():
     ap.add_argument("--sep-sim", action="store_true", help="September validation in the full simulator, every baseline")
     ap.add_argument("--curve", action="store_true", help="volume-matched G2-W3 vs lin2 (exploratory note 2)")
     ap.add_argument("--mlp-sens", action="store_true", help="neural-baseline sensitivity analysis (exploratory note 3)")
+    ap.add_argument("--lin-sens", action="store_true", help="linear-baseline ridge-alpha sensitivity (exploratory note 7)")
     ap.add_argument("--curves-full", action="store_true", help="volume-matched curves, both baselines, both years (note 4)")
     ap.add_argument("--overlap", action="store_true", help="pick overlap at matched shares (note 5)")
     ap.add_argument("--weather-split", action="store_true", help="L11 weather decision on the six walk-forward folds")
@@ -494,6 +579,8 @@ def main():
         main_curves_full()
     elif a.mlp_sens:
         main_mlp_sensitivity()
+    elif a.lin_sens:
+        main_lin_sensitivity()
     elif a.curve:
         main_curve()
     elif a.sep_sim:
