@@ -343,11 +343,12 @@ def main_lin_sensitivity():
     import tune_gbm as tg
     D = tg.load()
     feats, cats = list(D["feats"]), list(D["cats"])
-    ref_ret = json.loads(OUT.read_text())["folds"]
+    ref = json.loads(OUT.read_text())
+    ref_ret, ref_usd = ref["folds"], ref["dollars"]      # --dollars: G2-W3's and lin2's net P&L per fold
     folds = tg.TEST_MONTHS + ["2026-09-07..10-05"]
     done = json.loads(LIN_SENS.read_text()).get("folds", {}) if LIN_SENS.exists() else {}
     for tm in folds:
-        if all(f"{a:g}|{tm}" in done for a in LIN_GRID):
+        if all("net_usd" in done.get(f"{a:g}|{tm}", {}) for a in LIN_GRID):
             continue
         if tm.startswith("2026-09"):        # as note 3: trained on every month through 2026-08
             tr = np.ones(len(D["month"]), bool)
@@ -360,16 +361,26 @@ def main_lin_sensitivity():
         fits = {a: tb.fit_lin2(R_tr, y, alpha=a, scaled=sc) for a in LIN_GRID}
         preds = {a: tb.predict(b, R_te) for a, b in fits.items()}
         for a in LIN_GRID:
+            dl = dollars(preds[a], net, cap, qty)
             done[f"{a:g}|{tm}"] = {"alpha": a, "fold": tm, "n_train": int(tr.sum()), **tg.score(preds[a], net, cap, qty),
+                                   "net_usd": dl["net_usd"], "capital_usd": dl["capital_usd"],
                                    "coef_shift": coef_shift(fits[1.0], fits[a]), "pick_overlap": pick_overlap(preds[1.0], preds[a])}
             print(json.dumps(done[f"{a:g}|{tm}"], default=float), flush=True)
         if not tm.startswith("2026-09"):
             got, want = done[f"1|{tm}"]["ret"], ref_ret[tm]["lin2"]["ret"]
             if abs(got - want) > 1e-9:
                 raise SystemExit(f"REPRODUCTION GATE FAILED {tm}: alpha 1.0 gives {got!r}, offline_baselines lin2 {want!r}")
+        got, want = done[f"1|{tm}"]["net_usd"], ref_usd[tm]["lin2"]["net_usd"]
+        if abs(got - want) > 1e-6:
+            raise SystemExit(f"DOLLAR GATE FAILED {tm}: alpha 1.0 nets ${got!r}, offline_baselines lin2 ${want!r}")
         LIN_SENS.write_text(json.dumps({"folds": done}, indent=1, default=float))
         del R_tr, sc, fits
     summ = lin_summary(done, folds)
+    g2_usd = {tm: ref_usd[tm]["W3"]["net_usd"] for tm in folds}
+    for a in LIN_GRID:
+        lu = {tm: done[f"{a:g}|{tm}"]["net_usd"] for tm in folds}
+        summ[f"alpha_{a:g}"].update(net_usd_total=float(sum(lu.values())), g2_net_usd_total=float(sum(g2_usd.values())),
+                                    g2_more_net_months=int(sum(g2_usd[tm] > lu[tm] for tm in folds)))
     LIN_SENS.write_text(json.dumps({"note": "exploratory note 7; nothing selected", "folds": done, "summary": summ},
                                    indent=1, default=float))
     print(json.dumps(summ, indent=1))

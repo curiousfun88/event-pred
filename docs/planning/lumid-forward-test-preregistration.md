@@ -916,3 +916,9 @@ penalty pulls predictions towards the mean, so fewer clear the 1c rule, and the 
 selective. That is the posting-share effect note 2 measures, where G2-W3 leads `lin2` at every matched share.
 Prediction: the first two parts confirmed (one fold moved 0.25 points at 1e4, just outside the stated +-0.2); the
 net-P&L part was not measured by this run. Nothing adopted; `lin2` unchanged.
+
+**Note 7 addendum (2026-10-19, before the re-run).** The prediction's third part (no alpha closes the net-P&L gap to
+G2) is now measured: the same sweep re-run with each alpha's net P&L per fold, beside G2-W3's net P&L from
+`offline_baselines.json` (`--dollars`). Gate: alpha 1 must reproduce the stored `lin2` net P&L in every fold. The
+prediction stands as written: at every alpha, `lin2`'s total net P&L over the six folds stays below G2-W3's
+(+$3,291).
