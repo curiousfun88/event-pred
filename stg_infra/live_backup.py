@@ -225,25 +225,68 @@ def write_summary(repo: Path, clone: Path) -> bool:
     return True
 
 
+CORE = ("G2", "Linear", "Neural", "G", "Random (same share)", "Quote all")     # the dashboard's headline rows, in order
+CORE_KEY = {"G2": "g2", "Linear": "lin2", "Neural": "mlp2", "G": "g", "Random (same share)": "rnd2", "Quote all": "cand"}
+
+
+def result_table(settled, universe, arms=CORE) -> list:
+    """One readable row per strategy for one universe of the settled split, in the dashboard's order (no settled
+    position yet: net and return None)."""
+    have = {r["arm"]: r for r in settled if r["universe"] == universe}
+    return [{"strategy": a, "net_usd": have[a]["net_usd"] if a in have else None,
+             "return_pct": have[a]["return_pct"] if a in have else None,
+             "settled_fills": have[a]["settled_fills"] if a in have else 0, "events": have[a]["events"] if a in have else 0}
+            for a in arms]
+
+
+def by_day(main_rows, arms=CORE) -> list:
+    """The main result's settled net P&L at the last ledger entry of each UTC day: the numbers behind the dashboard's
+    settled-net chart, one row per day (Research Fleet shows no images)."""
+    last = {}
+    for r in main_rows:
+        if r["arm"] in arms:
+            last.setdefault(r["H"][:8], {}).setdefault(r["H"], {})[r["arm"]] = r["realised_usd"]
+    out = []
+    for d in sorted(last):
+        H = max(last[d])
+        out.append({"day": f"{d[:4]}-{d[4:6]}-{d[6:]}", "through_entry": H, **{a: last[d][H].get(a) for a in arms}})
+    return out
+
+
 def daily_record(repo: Path, day: str) -> dict:
-    """The daily Research Fleet summary for UTC day `day` (YYYYMMDD): the three results of L18 (settled only), status,
-    and the latest ledger entry's hash, which ties it to the hourly audit trail."""
+    """The daily Research Fleet summary for UTC day `day` (YYYYMMDD), main result first: its table (settled only, as on
+    the dashboard), G2 minus random, and settled net P&L by day; then the secondary tables (L19 hours), status, and the
+    latest ledger entry's hash, which ties it to the hourly audit trail."""
     sm = build_summary(repo)
     ents = sorted((repo / "runs/live/paper/ledger/entries").glob("*.json"))
     head = json.loads(ents[-1].read_text())["hash"] if ents else None
-    return {"day": day, "generated_utc": sm["generated_utc"], "live_since": sm["live_since"], "latest_entry": sm["latest_entry"],
-            "latest_entry_hash": head, "entries": sm["entries"], "verification_issues": sm["verification_issues"],
-            "main_result_from": "20261016T17", "settled": sm["settled"], "dashboard": "https://curiousfun88.github.io/event-pred-live/"}
+    main = result_table(sm["settled"], "train23")
+    g2, rnd = (next(r["net_usd"] for r in main if r["strategy"] == a) for a in ("G2", "Random (same share)"))
+    return {"day": day, "dashboard": "https://curiousfun88.github.io/event-pred-live/",
+            "main_result": {"what": "G2 and baselines on the 23 backtested series, quoting hours from 2026-10-16 17:00 UTC "
+                                    "(L18); settled positions only, pessimistic fills, net of fees",
+                            "table": main,
+                            "g2_minus_random_usd": round(g2 - rnd, 2) if g2 is not None and rnd is not None else None,
+                            "settled_net_usd_by_day": by_day(sm["main_rows"])},
+            "secondary_full_universe": {"what": "every series the strategy quoted, quoting hours 2026-10-15 19:00 to "
+                                                "2026-10-17 05:00 UTC (L19); settled positions only",
+                                        "table": result_table(sm["settled"], "full"),
+                                        "same_hours_as_main": result_table(sm["settled"], "full_same")},
+            "status": {"generated_utc": sm["generated_utc"], "live_since": sm["live_since"], "latest_entry": sm["latest_entry"],
+                       "latest_entry_hash": head, "entries": sm["entries"], "verification_issues": sm["verification_issues"],
+                       "curve_source": sm.get("curve_source")},
+            "all_strategies_settled": sm["settled"]}
 
 
 def daily_body(rec: dict, site: str) -> dict:
-    """FlowMesh job (same shape as the hourly records): metrics = G2 and random on each universe."""
+    """FlowMesh job (same shape as the hourly records): metrics = the main result, net and return per strategy."""
     met = {}
-    for r in rec["settled"]:
-        if r["arm"] in ("G2", "Random (same share)", "Quote all") and r["return_pct"] is not None:
-            key = {"G2": "g2", "Random (same share)": "rnd2", "Quote all": "cand"}[r["arm"]]
-            met[f"{key}_{r['universe']}_net_usd"] = r["net_usd"]
-            met[f"{key}_{r['universe']}_ret_pct"] = r["return_pct"]
+    for r in rec["main_result"]["table"]:
+        if r["return_pct"] is not None:
+            met[f"main_{CORE_KEY[r['strategy']]}_net_usd"] = r["net_usd"]
+            met[f"main_{CORE_KEY[r['strategy']]}_ret_pct"] = r["return_pct"]
+    if rec["main_result"]["g2_minus_random_usd"] is not None:
+        met["main_g2_minus_rnd2_usd"] = rec["main_result"]["g2_minus_random_usd"]
     code = (f"import json\nREC = json.loads({json.dumps(json.dumps(rec))})\nMET = json.loads({json.dumps(json.dumps(met))})\n\n\n"
             f"def main():\n    return {{'metrics': MET, 'output': REC}}\n")
     wf = {"apiVersion": "flowmesh/v1", "kind": "Task", "metadata": {"name": f"fwdtest-daily-{rec['day']}"},
@@ -418,6 +461,28 @@ def self_test() -> bool:
         wf = json.loads(sent[0]["workflow"])
         check("daily: posted as fwdtest-daily-20261017 to home, carrying the ledger head hash",
               jid == "home:fm:wfl-d" and wf["metadata"]["name"] == "fwdtest-daily-20261017" and "abc" in wf["spec"]["code"])
+    st_ = [{"universe": "train23", "arm": "G2", "net_usd": 10.0, "return_pct": 5.0, "settled_fills": 3, "events": 2},
+           {"universe": "train23", "arm": "Random (same share)", "net_usd": -4.0, "return_pct": -2.0, "settled_fills": 2, "events": 1},
+           {"universe": "full", "arm": "G2", "net_usd": -1.0, "return_pct": -1.0, "settled_fills": 1, "events": 1}]
+    tb_ = result_table(st_, "train23")
+    check("daily table: the six strategies in the dashboard's order; one with nothing settled shows None",
+          [r["strategy"] for r in tb_] == list(CORE) and tb_[0]["net_usd"] == 10.0 and tb_[1]["net_usd"] is None
+          and tb_[1]["events"] == 0 and result_table(st_, "full")[0]["net_usd"] == -1.0)
+    mr_ = [{"H": "20261017T05", "arm": "G2", "realised_usd": 1.0}, {"H": "20261017T23", "arm": "G2", "realised_usd": 2.0},
+           {"H": "20261017T23", "arm": "Linear", "realised_usd": 0.5}, {"H": "20261018T03", "arm": "G2", "realised_usd": 3.0},
+           {"H": "20261018T03", "arm": "G2 W2", "realised_usd": 9.0}]
+    bd_ = by_day(mr_)
+    check("daily by-day: the last entry of each UTC day, settled net per strategy, other arms left out",
+          [(r["day"], r["through_entry"], r["G2"], r["Linear"]) for r in bd_] == [("2026-10-17", "20261017T23", 2.0, 0.5),
+                                                                                 ("2026-10-18", "20261018T03", 3.0, None)]
+          and "G2 W2" not in bd_[0])
+    rec_ = {"day": "20261017", "main_result": {"table": tb_, "g2_minus_random_usd": 14.0}}
+    ns_ = {}
+    exec(json.loads(daily_body(rec_, "home")["workflow"])["spec"]["code"], ns_)      # the job's own code, as Fleet runs it
+    met_ = ns_["main"]()["metrics"]
+    check(f"daily metrics: main result only (settled arms' net and return, G2 minus random; nothing for unsettled arms): {met_}",
+          met_ == {"main_g2_net_usd": 10.0, "main_g2_ret_pct": 5.0, "main_rnd2_net_usd": -4.0, "main_rnd2_ret_pct": -2.0,
+                   "main_g2_minus_rnd2_usd": 14.0})
     # L20: curves recounted from the recorded fills; an event is settled only when every leg is
     import pickle
     import polars as pl
