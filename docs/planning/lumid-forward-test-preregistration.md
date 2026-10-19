@@ -906,3 +906,13 @@ penalty is small against the data term, so returns at alpha 0.01-100 lie within 
 fold, with near-identical coefficients and posted sets; any material change appears only at alpha 1e4 or above,
 and no alpha closes the net-P&L gap to G2, which comes from `lin2` posting few orders, not from its coefficients.
 Script: `stg_infra/examples/offline_baselines.py --lin-sens` -> `results/live/lin_sensitivity.json`.
+
+**Note 7 result (2026-10-19; `results/live/lin_sensitivity.json`).** Gate passed (alpha 1 reproduces `lin2` on all
+five A15-table folds exactly). Alpha 0.01, 1 and 100 give identical posted sets and returns in every fold (largest
+coefficient change 0.03% of the largest coefficient): mean +3.76%, worst +2.84%, 6/6 months positive. Alpha 1e4:
+mean +3.78% (fold changes -0.10 to +0.25 points, posted sets 98% the same). Alpha 1e5: mean +4.42%, worst +3.46%,
+6/6 positive, but the posted share falls from 5.9% to 4.7% and a quarter of the posted set changes: the stronger
+penalty pulls predictions towards the mean, so fewer clear the 1c rule, and the return rises as `lin2` becomes more
+selective. That is the posting-share effect note 2 measures, where G2-W3 leads `lin2` at every matched share.
+Prediction: the first two parts confirmed (one fold moved 0.25 points at 1e4, just outside the stated +-0.2); the
+net-P&L part was not measured by this run. Nothing adopted; `lin2` unchanged.
