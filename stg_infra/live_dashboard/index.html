@@ -208,7 +208,7 @@ footer a { color: var(--accent); }
     document.getElementById("t23empty").hidden = (s.settled || []).some(function (r) { return r.universe === "train23"; });
     var mrows = s.main_rows || [], mh = Array.from(new Set(mrows.map(function (r) { return r.H; }))).sort();
     var mval = function (arm, h, f) { var r = mrows.find(function (q) { return q.arm === arm && q.H === h; }); return r ? r[f || "total_usd"] : 0; };
-    var mseries = [["G2", "--s1"], ["Linear", "--s2"], ["Random (same share)", "--s5"], ["Quote all", "--s6"]].map(function (m) {
+    var mseries = [["G2", "--s1"], ["Linear", "--s2"], ["Neural", "--s3"], ["Random (same share)", "--s5"], ["Quote all", "--s6"]].map(function (m) {
       return { name: m[0], color: css(m[1]), w: m[0] === "G2" ? 2.6 : 1.8, pts: mh.map(function (h) { return mval(m[0], h); }) }; });
     var lgm = document.getElementById("legendm"); lgm.replaceChildren();
     document.getElementById("chartmempty").hidden = mh.length > 0;
