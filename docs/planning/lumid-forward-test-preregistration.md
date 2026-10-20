@@ -874,6 +874,14 @@ before the active-events filter (self-tested with a planted hour whose busy even
 flags in entries before 2026-10-21 T00 as explained notes, apart from issues (as the 2026-10-16 pre-join flags); a
 flag on any arm in any later entry counts as an issue. Active from the next sandbox handover.
 
+**Research Fleet hourly metrics trimmed (2026-10-20, L12 host log; display only, no rule, fill, ledger or verdict
+changes).** The hourly post's metrics listed full-universe running totals (every hour since S, including the throttled
+hours after the L19 cut-off), mark-to-market totals, and verdict statistics computed on the full universe, which read
+as if they were the main result. `paper_ledger.fleet_summary` now posts only the main result's settled net P&L per arm,
+`main_<arm>_net_usd`, and `main_g2_minus_rnd2_usd`, the names the daily record uses. The post's output still carries
+the entry hash and the full cumulative breakdown and verdict; the ledger entries are unchanged. Self-tested. Active
+from the first handover after the file is copied.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per

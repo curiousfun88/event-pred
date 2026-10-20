@@ -244,22 +244,15 @@ def recount_curve(keys_by: dict, hours, results: dict, settled_at: dict, mid_tab
 
 
 def fleet_summary(entry: dict, window="primary") -> tuple:
-    """(metrics, output) for the Research Fleet post: cumulative P&L of the main arms plus the entry hash."""
+    """(metrics, output) for the Research Fleet post. Metrics: the main result's settled net P&L per arm and G2 minus
+    random, named as in the daily record (main_<arm>_net_usd). Full-universe totals, mark-to-market and the verdict
+    statistics (computed on the full universe) stay in the output, with the entry hash."""
     cum = entry["cumulative"].get(window, {})
-    met = {}
-    for a in MAIN_ARMS:
-        if a in cum:
-            met[f"{a}_total_usd"] = round(cum[a]["total_usd"], 2)
-            met[f"{a}_realised_usd"] = round(cum[a]["realised_usd"], 2)
-    mr = (entry.get("main_result_l18") or {}).get("cumulative", {})
-    for a in MAIN_ARMS:
-        if a in mr:
-            met[f"{a}_main_total_usd"] = round(mr[a]["total_usd"], 2)
-            met[f"{a}_main_realised_usd"] = round(mr[a]["realised_usd"], 2)
     v = entry.get("verdict", {})
-    for k in ("g2_lo_one_sided", "g2_minus_rnd2_lo_one_sided", "g2_return_settled_pct"):
-        if isinstance(v.get(k), (int, float)) and v.get(k) == v.get(k):
-            met[k] = round(float(v[k]), 4)
+    mr = (entry.get("main_result_l18") or {}).get("cumulative", {})
+    met = {f"main_{a}_net_usd": round(mr[a]["realised_usd"], 2) for a in MAIN_ARMS if a in mr}
+    if "g2" in mr and "rnd2" in mr:
+        met["main_g2_minus_rnd2_usd"] = round(mr["g2"]["realised_usd"] - mr["rnd2"]["realised_usd"], 2)
     out = {"H": entry["H"], "live_start": entry["live_start"], "entry_hash": entry["hash"], "prev_hash": entry["prev_hash"],
            "cumulative_primary": cum, "main_result_l18": entry.get("main_result_l18"), "verdict": v, "settlements": len(entry["settlements"]),
            "verification_issues": entry["verification"]}
@@ -341,7 +334,13 @@ def self_test() -> bool:
                                "cumulative": {"g2": {"total_usd": 3.0, "realised_usd": 2.5, "unrealised_usd": 0.5, "capital_usd": 4.0}}}}
     met, outd = fleet_summary(ent)
     check("L18 main result carried in the Research Fleet record (metrics and output)",
-          met.get("g2_main_total_usd") == 3.0 and met.get("g2_total_usd") == -1.0 and outd["main_result_l18"]["from"] == "20261016T17")
+          met.get("main_g2_net_usd") == 2.5 and outd["main_result_l18"]["from"] == "20261016T17")
+    check("Fleet metrics: main-result settled net only (no full-universe, mark-to-market or verdict metrics)",
+          met == {"main_g2_net_usd": 2.5} and outd["cumulative_primary"]["g2"]["total_usd"] == -1.0)
+    ent2 = dict(ent, main_result_l18={"cumulative": {"g2": {"realised_usd": 2.5, "total_usd": 3.0},
+                                                     "rnd2": {"realised_usd": -1.25, "total_usd": -1.0}}})
+    check("Fleet metrics: G2 minus random from the settled main result (+$3.75)",
+          fleet_summary(ent2)[0] == {"main_g2_net_usd": 2.5, "main_rnd2_net_usd": -1.25, "main_g2_minus_rnd2_usd": 3.75})
     k_late = ("E", "T", 1, 40, 10, 0.0, 400.0, 300)
     rec2 = {("primary", "new_arm"): {k_late}}
     check("verify: an arm that joined later is not compared on hours before it joined",
@@ -409,8 +408,8 @@ def self_test() -> bool:
         check("as_fill values a settled key with the simulator's formula (YES sold at 70, settles NO: +$7.00 - fee)",
               as_fill(("E", "T", -1, 70, 10, 5.0, 300.0, 0), "no")[6] == 695.0 and as_fill(("E", "T", 1, 40, 10, 0.0, 400.0, 0), None)[6] == 0.0)
         met, out = fleet_summary(w4[-1])
-        check("fleet summary carries cumulative metrics and the entry hash",
-              "g2_total_usd" in met and out["entry_hash"] == w4[-1]["hash"])
+        check("fleet summary carries the cumulative breakdown and the entry hash",
+              "g2" in out["cumulative_primary"] and out["entry_hash"] == w4[-1]["hash"])
 
     # L20: one order filled by two trades in its hour = two identical fills, both real
     with tempfile.TemporaryDirectory() as td:
