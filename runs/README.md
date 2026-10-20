@@ -130,8 +130,11 @@ Logs: `logs/v2_forecast/forecast_mece_causal_s*.log` and `score_causal_s*{,_lega
 
 ## Bid-side re-score of the causal checkpoints (pre-registered 2026-09-27, before any result)
 
-The 0.909x is measured against last-print basket sums, and about 92.5% of
-last-print basket deviation is the bid/ask overround. This re-score asks
+The 0.909x is measured against last-print basket sums, which sit above $1 in
+92.5% of baskets because prints carry the bid/ask overround (corrected wording
+2026-10-20: 92.5% is a share of baskets; the print side's share of the
+deviation, measured later with quotes, is 54% pooled and 87% in two-sided
+baskets). This re-score asks
 whether the forecast still beats the oracle when the target is the
 **bid-side** basket sum, the side a basket seller would actually trade at.
 It is a re-score, not a retrain: the same four `best.pt`, `cache_causal/`,

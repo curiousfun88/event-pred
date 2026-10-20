@@ -174,7 +174,7 @@ Results on the 5-month pilot:
 |---|---|
 | [`3-economics/settlement-arbitrage-result.md`](3-economics/settlement-arbitrage-result.md) | The hold-to-settlement reframe. Wording about "measured per-leg spreads" is corrected by the two documents below |
 | [`3-economics/settlement-pnl-robustness.md`](3-economics/settlement-pnl-robustness.md) | Filter sweep, the wrong-spread-table discovery, and a retraction of "the model worsens the profitable rule" |
-| [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md) | **The central result.** 92.5% of the deviation is the overround; the executable edge is one tick; the profitability claim is withdrawn |
+| [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md) | **The central result.** 92.5% of baskets sum above $1 at last prints, the overround pattern (the share of the deviation the print side carries was measured later with quotes: §7); the executable edge is one tick; the profitability claim is withdrawn |
 | [`4-data/mece-population-composition.md`](4-data/mece-population-composition.md) | The opportunity population is ~58% weather and ~24% sports above 5c, across four structurally distinct partition types. Not the 93% weather an earlier window suggested |
 | [`4-data/data-window-liquidity-regime.md`](4-data/data-window-liquidity-regime.md) | Platform notional grew 369x across the archive. The binding constraint on the window is liquidity stationarity, not calendar availability |
 | [`4-data/mece-yield-by-month.md`](4-data/mece-yield-by-month.md) | Usable basket-days per month across all 54 months. Two dense blocks around a 23-month trough whose apparent deviations are staleness |
@@ -482,6 +482,29 @@ realistic tapes, and the student should judge which pathways are worth pursuing.
   where an edge exists, not whether it can be captured. Next step: a
   pre-registered, tape-driven maker fill simulator with optimistic and
   pessimistic queue bounds, on months after June 2025.
+
+### 7a. Wording of the "92.5%" figure (correction, 2026-10-20)
+
+**What was measured.** `spread-artefact-finding.md` (§2): over 4,891 last-print basket-days (Feb–Nov 2025) the mean
+sum was $1.0525 (+5.25c against +6.3c predicted), and **92.5% of baskets summed above $1** (4.9% below, 2.6% exactly
+$1; recomputed from `results/mece/mece_spread_artefact_check.parquet` on 2026-10-20). 92.5% is a share of *baskets*:
+the evidence that the deviation is one-sided, as an overround is and mispricing is not.
+
+**How it drifted.** It was soon restated as "92.5% of the apparent deviation is the overround", a share of the
+*deviation*, which was never computed from trades (a trade-based mid is contaminated; the finding's bug 3). The §7
+quote revision then measured that share for the first time, 54% pooled and 87% (val 82%) in two-sided baskets, but
+its note "'92.5%' applies to two-sided baskets only (82–87%)" read 92.5% as a deviation share too.
+
+**Correct statement.** 92.5% of baskets sum above $1 at last prints; with quoted books the print side carries 54% of
+the mean deviation pooled and 87% in two-sided baskets (69% of baskets), and one-sided books most of the rest. No
+conclusion changes: two-sided baskets are coherent at mid (+0.34c) and nothing survives fees at executable prices.
+
+**Where the drifted wording was.** Corrected on 2026-10-20 in `CLAUDE.md`, `README.md`, `docs/SCRIPTS.md`,
+`runs/README.md`, the index row above and `stg_infra/score_mece_bidside.py`. Left as written, read with this entry:
+the dated findings in `docs/1-detection/`, `2-model/`, `3-economics/`, `4-data/` and `5-literature/`,
+`docs/superseded-findings-summary.md`, `docs/planning/four-week-plan-and-reframe.md`, and two documents already sent
+to the supervisor: `docs/reports/2026-10-12_week09_progress_report.tex` and `docs/reports/data_window_memo.tex`
+(line 71; its line 366 states the figure correctly). The final report uses the correct statement.
 
 ### 8. Still open
 

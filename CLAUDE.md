@@ -57,10 +57,15 @@ Deadline: late Oct 2026.
   0.950x single-alpha, 0.781x persistence.
 
 **Established (negative, and the central contribution)**
-- **92.5% of apparent basket deviation is the overround, not mispricing.**
+- **The apparent basket deviation is the overround, not mispricing.**
   68.7% of trade prints are ask-side; with half-spread 2.8c that predicts
   +6.3c signed mean on a 6-leg basket. *Predicted before measured.*
-  Measured +5.25c.
+  Measured +5.25c, with **92.5% of 4,891 baskets summing above $1** (4.9%
+  below): the one-sided overround pattern. 92.5% is a share of BASKETS, not
+  of the deviation. The share of the deviation carried by the print side was
+  measured later with quotes: 54% pooled, 87% (val 82%) in two-sided
+  baskets; the rest is one-sided-book artefact (correction: RESEARCH_LOG,
+  2026-10-20).
 - **Quoted top of book (2026-09-27; RESEARCH_LOG §7 end).** Hourly best
   bid/ask for 10,981 legs, `data/quotes/`. With direct quotes, two-sided
   baskets sum to **$1 within +0.34c at mid** (test). In those baskets the

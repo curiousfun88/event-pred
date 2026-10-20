@@ -7,8 +7,8 @@ Protocol: runs/README.md, "Bid-side re-score of the causal checkpoints",
 pre-registered before any result. Read it before changing anything here.
 
 WHY. score_forecast.py's MECE term scores the basket sum of mixed LAST
-PRINTS. ~92.5% of last-print basket deviation is the bid/ask overround
-(68.7% of prints are ask-side), so beating the oracle there may be
+PRINTS, which sit above $1 in 92.5% of baskets because of the bid/ask
+overround (68.7% of prints are ask-side), so beating the oracle there may be
 forecasting which side the next print lands on, not where the partition is
 priced. The seller of a basket trades at the bid, so the bid-side sum is the
 executable target.

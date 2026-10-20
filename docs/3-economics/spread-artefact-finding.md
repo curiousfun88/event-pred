@@ -1,5 +1,9 @@
 # The MECE deviation is largely a spread artefact
 
+> **Correction (2026-10-20, RESEARCH_LOG §7a).** "92.5%" (§2) is the share of *baskets* summing above $1. Where this
+> document or later ones say "~92.5% of the deviation is overround" (e.g. §4 below), read: the print side's share of
+> the deviation, measured later with quotes, is 54% pooled and 87% in two-sided baskets (RESEARCH_LOG §7).
+
 **Provisional but serious.** Established below with no model and no mid
 estimate. Bears directly on the settlement PnL headline. Produced by
 `stg_infra/examples/mece_spread_artefact_check.py` (27 self-tests).

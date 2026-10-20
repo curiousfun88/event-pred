@@ -17,7 +17,9 @@ Paths below are relative to `stg_infra/` unless they start with `scripts/`.
 
 Every PnL figure below is computed from **last trade prints**, which sit at the
 bid or the ask and never at mid. `spread-artefact-finding.md` measured that
-~92.5% of apparent MECE basket deviation is that overround. **Read every dollar
+92.5% of baskets sum above $1 at last prints (the overround pattern); with
+quotes, the print side carries 54% of the deviation pooled and 87% in two-sided
+baskets, one-sided books most of the rest (RESEARCH_LOG §7). **Read every dollar
 figure below as a backtest artefact, not as realisable profit.**
 
 ## Data acquisition — `scripts/`
