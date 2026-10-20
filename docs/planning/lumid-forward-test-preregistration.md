@@ -864,6 +864,16 @@ Ledger verification has flagged the descriptive L17 arm `liq_traded` in entries 
 and extra fills on re-derivation, every window); the first two were written before the deploy. No verdict arm is
 affected; the cause is under investigation and is recorded here when found.
 
+**`liq_traded` check flags: cause and fix (2026-10-20, L12 host log; no rule, fill or verdict changes).** Cause: a
+ledger round re-derives recent hours after filtering the candidates to events active in the last four days, and
+`liq_traded`'s rule uses the hour's median `trades_24h`, which over that subset differs from the median over the
+hour's full candidate set that the recorded fills used. Checked on 2026-10-19 T19: the subset re-derivation differs
+from the recorded picks by 16; with the full hour's median, by 0. The recorded fills follow the L17 rule; only the
+check was wrong, and no other arm uses a population statistic. Fix: `paper_trader.hour_medians` computes the medians
+before the active-events filter (self-tested with a planted hour whose busy event drops out). The dashboard counts the
+flags in entries before 2026-10-21 T00 as explained notes, apart from issues (as the 2026-10-16 pre-join flags); a
+flag on any arm in any later entry counts as an issue. Active from the next sandbox handover.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per

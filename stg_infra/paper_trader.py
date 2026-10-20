@@ -136,16 +136,26 @@ def cut_times_all(one, runs_lines):
 
 # ---------------------------------------------------------------- arms
 
-def arm_scores(one, two, baselines=None):
+def hour_medians(one):
+    """Each hour's median trades_24h over all its candidates (liq) and over those that traded (liq_traded, L17).
+    Computed on the hour's FULL candidate set: a ledger round later filters to active events, and a median over that
+    subset would re-derive different liq_traded picks than were recorded (2026-10-20 host log)."""
+    import polars as pl
+    med = one.group_by("H_ns").agg(pl.col("trades_24h").median().alias("m"))
+    medt = one.filter(pl.col("trades_24h") > 0).group_by("H_ns").agg(pl.col("trades_24h").median().alias("mt"))
+    return med, medt
+
+
+def arm_scores(one, two, baselines=None, medians=None):
     """{arm: policy_scores} from the logged candidates. One-level keys (ticker, H, side); two-level keys
-    (ticker, H, side, price). Score > THRESHOLD_C posts."""
+    (ticker, H, side, price). Score > THRESHOLD_C posts. medians: hour_medians() of the unfiltered candidates (None:
+    computed from `one`, correct when `one` holds every candidate of its hours)."""
     import polars as pl
     k1 = list(zip(one["ticker"].to_list(), one["H_ns"].to_list(), [int(x) for x in one["side"].to_list()]))
     sel = lambda m: [SELECTED_C if x else SENTINEL_C for x in m]
-    med = one.group_by("H_ns").agg(pl.col("trades_24h").median().alias("m"))
+    med, medt = medians if medians is not None else hour_medians(one)
     liq = one.join(med, on="H_ns", how="left").select(pl.col("trades_24h") >= pl.col("m"))
     # L17 (descriptive): the median over legs that traded at all; a leg with no 24 h trade never posts
-    medt = one.filter(pl.col("trades_24h") > 0).group_by("H_ns").agg(pl.col("trades_24h").median().alias("mt"))
     liqt = one.join(medt, on="H_ns", how="left").select(
         (pl.col("trades_24h") > 0) & (pl.col("trades_24h") >= pl.col("mt")).fill_null(False))
     out = {"g": dict(zip(k1, one["pred_g"].to_list())), "g2": dict(zip(k1, one["pred_g2"].to_list())),
@@ -533,6 +543,7 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     if not hours:
         print("no hours with tape yet"); return None
     one, two = load_scores(hours)
+    medians = hour_medians(one)          # before the active-events filter (liq/liq_traded medians are per full hour)
     active = None
     if ledger and (Path(ledger_dir) if ledger_dir else PAPER / "ledger").joinpath("state.json").exists():
         import polars as pl
@@ -593,7 +604,7 @@ def cmd_run(since, rps, write=True, check_only=False, ledger=False, pat=None, le
     if missing:
         raise SystemExit(f"missing model files for arms {missing}: every pre-registered arm must run (copy them first)")
     base = {a: pickle.loads(pth.read_bytes()) for a, pth in paths.items()}
-    scores = arm_scores(one, two, base)
+    scores = arm_scores(one, two, base, medians)
     pool = json.loads(POOL.read_text())
     cat_of = {x["series"]: x["cat"] for x in pool["series"]}
     for se, c in zip([e.split("-")[0] for e in one["event"].to_list()], one["cat"].to_list()):
@@ -777,6 +788,18 @@ def self_test() -> bool:
           all(v == SELECTED_C for v in sz["liq"].values())
           and sz["liq_traded"][("KXT-L-B", H0, 1)] == SELECTED_C and sz["liq_traded"][("KXT-L-A", H0, 1)] == SENTINEL_C
           and sz["liq_traded"][("KXT-Z0-A", H0, 1)] == SENTINEL_C)
+    # 2026-10-20: a later round filters to active events; with the full hour's medians it re-derives the same picks.
+    # Hour H0: busy event KXT-L (legs trade 10 and 12) and KXT-M (one leg trades 5). Full traded median 10 -> M not
+    # posted (as recorded); once KXT-L leaves the active window the subset median is 5 -> M would be posted.
+    hr = pl.DataFrame([mk("KXT-L-A", +1, 41, H0, 40, 44, tr=10), mk("KXT-L-B", +1, 41, H0, 40, 44, tr=12),
+                       mk("KXT-M-A", +1, 41, H0, 40, 44, tr=5)]).with_columns(
+        pl.col("ticker").str.replace(r"-[AB]$", "").alias("event"))
+    sub = hr.filter(pl.col("event") != "KXT-L")
+    check("re-derivation: with the full hour's medians a filtered round keeps the recorded liq_traded pick",
+          arm_scores(hr, None)["liq_traded"][("KXT-M-A", H0, 1)] == SENTINEL_C
+          and arm_scores(sub, None, medians=hour_medians(hr))["liq_traded"][("KXT-M-A", H0, 1)] == SENTINEL_C)
+    check("re-derivation: the median over the filtered subset alone would flip it (the bug this fixes)",
+          arm_scores(sub, None)["liq_traded"][("KXT-M-A", H0, 1)] == SELECTED_C)
     one_hour_none = pl.DataFrame([mk("KXT-Z9-A", +1, 41, H0 + 5 * H_NS, 40, 44, tr=0)])
     check("L17: an hour where nothing traded posts nothing for liq_traded",
           arm_scores(one_hour_none, None)["liq_traded"][("KXT-Z9-A", H0 + 5 * H_NS, 1)] == SENTINEL_C)

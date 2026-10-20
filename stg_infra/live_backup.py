@@ -76,6 +76,10 @@ def publish_page(repo: Path, clone: Path) -> bool:
 
 SPLIT_ARMS = tuple(ARM_NAMES)          # every ledgered arm; the page decides which it shows
 MAIN_FROM_NS = int(dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc).timestamp()) * 10**9   # L18: main result counts from here
+# liq_traded re-derivation flags in entries before the median fix (paper_trader.hour_medians; deployed at the handover
+# after 2026-10-20 ~16:00 UTC): a later round's check used a median over the active-events subset (host log 2026-10-20).
+# The recorded fills are right; the flags are counted apart, never as issues. Entries from this hour on count in full.
+LIQT_KNOWN_BEFORE = "20261021T00"
 FULL_TO_NS = int(dt.datetime(2026, 10, 17, 5, tzinfo=dt.timezone.utc).timestamp()) * 10**9     # L19: last full-universe quoting hour
 
 
@@ -177,7 +181,7 @@ def build_summary(repo: Path) -> dict:
     recorded fills (recount_rows); the totals stored in entries are used only if the recount fails."""
     d = repo / "runs/live/paper/ledger"
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
-    rows, main_rows, issues, prejoin, last = [], [], 0, 0, None
+    rows, main_rows, issues, prejoin, rederive, last = [], [], 0, 0, 0, None
     for f in ents:
         e = json.loads(f.read_text())
         for x in e.get("verification") or []:
@@ -185,6 +189,8 @@ def build_summary(repo: Path) -> dict:
             # recorded was missing (missing_now 0). A check artefact, fixed in paper_ledger.verify; counted apart.
             if x.get("arm") == "liq_traded" and x.get("missing_now") == 0:
                 prejoin += 1
+            elif x.get("arm") == "liq_traded" and str(e.get("H", f.stem)) < LIQT_KNOWN_BEFORE:
+                rederive += 1
             else:
                 issues += 1
         last = e
@@ -207,7 +213,8 @@ def build_summary(repo: Path) -> dict:
             source = f"stored (recount failed: {e!r})"[:200]
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
-            "verification_issues": issues, "late_arm_prejoin_notes": prejoin, "g2_settled_events": v.get("g2_events"),
+            "verification_issues": issues, "late_arm_prejoin_notes": prejoin,
+            "liq_traded_rederivation_notes": rederive, "g2_settled_events": v.get("g2_events"),
             "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "main_rows": main_rows,
             "rows": rows, "curve_source": source}
 
@@ -516,6 +523,17 @@ def self_test() -> bool:
               abs(fu["full"]["net_usd"] - 1.2) < 1e-9 and fu["full"]["events"] == 1 and abs(fu["full_same"]["net_usd"] - 1.2) < 1e-9)
         check("L20: the recount is cached and reused while the ledger and settlements are unchanged",
               (repo3 / RECOUNT_CACHE).exists() and recount_rows(repo3, sorted((L / "entries").glob("*.json")))[1] == sm3["main_rows"])
+    with tempfile.TemporaryDirectory() as td4:
+        repo4 = Path(td4)
+        E4 = repo4 / "runs/live/paper/ledger/entries"; E4.mkdir(parents=True)
+        fl = lambda arm, miss: {"window": "primary", "arm": arm, "missing_now": miss, "extra_now": 1}
+        for stamp, v in (("20261016T08", [fl("liq_traded", 0)]), ("20261019T19", [fl("liq_traded", 3)]),
+                         ("20261021T02", [fl("liq_traded", 2)]), ("20261019T20", [fl("g2", 1)])):
+            (E4 / f"{stamp}.json").write_text(json.dumps({"H": stamp, "verification": v, "new_fills": {}}))
+        sm4 = build_summary(repo4)
+        check(f"check notes: pre-join and pre-fix liq_traded flags counted apart; g2 and post-fix flags are issues "
+              f"(got {sm4['verification_issues']}, {sm4['late_arm_prejoin_notes']}, {sm4['liq_traded_rederivation_notes']})",
+              (sm4["verification_issues"], sm4["late_arm_prejoin_notes"], sm4["liq_traded_rederivation_notes"]) == (2, 1, 1))
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
