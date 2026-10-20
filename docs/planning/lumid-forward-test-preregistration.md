@@ -853,6 +853,17 @@ no fills. The stall alert (L16) failed at 2026-10-18 22:00 and 2026-10-19 00:16 
 changed. L19 had already applied. Operations (L16): from 2026-10-19 04:35 UTC the stall alert checks every 10 minutes
 (was 30) and fails when the newest producer hour is more than 90 minutes old (was 150).
 
+**Deploy 2026-10-19 (L12 host log).** Files copied to the production sandbox 2026-10-19 ~15:50 UTC (sha256 prefixes:
+`paper_ledger.py` 8db076f40b2e, `cut_report.py` c37b9fc64776, `live_backup.py` f581aad23c18, dashboard page
+2a0f1b5df0e5; code at event-pred c0810c2); running processes keep their loaded code, so they took effect at the handover
+**2026-10-19 23:40 UTC** (prod-b -> prod-a): the L20 fix (first entries written under it: 2026-10-19 T22 and T23, at
+2026-10-20 00:39 UTC), the L19 reporting correction, the dashboard changes and the main-result-only daily Research
+Fleet record (first: 2026-10-20 02:01 UTC, day 20261019). Checked after the handover: dashboard curve source
+"recounted from recorded fills (L20)"; G2 main result settled +$105.56 identical on the dashboard and in the daily record.
+Ledger verification has flagged the descriptive L17 arm `liq_traded` in entries 2026-10-19 T19, T20 and T22 (missing
+and extra fills on re-derivation, every window); the first two were written before the deploy. No verdict arm is
+affected; the cause is under investigation and is recorded here when found.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
