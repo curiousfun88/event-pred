@@ -879,8 +879,8 @@ changes).** The hourly post's metrics listed full-universe running totals (every
 hours after the L19 cut-off), mark-to-market totals, and verdict statistics computed on the full universe, which read
 as if they were the main result. `paper_ledger.fleet_summary` now posts only the main result's settled net P&L per arm,
 `main_<arm>_net_usd`, and `main_g2_minus_rnd2_usd`, the names the daily record uses. The post's output still carries
-the entry hash and the full cumulative breakdown and verdict; the ledger entries are unchanged. Self-tested. Active
-from the first handover after the file is copied.
+the entry hash and the full cumulative breakdown and verdict; the ledger entries are unchanged. Self-tested. Copied to the
+production sandbox 2026-10-20 (sha256 e4cab5e30d56; self-test 38/38 there); active from the ~23:40 UTC handover.
 
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
