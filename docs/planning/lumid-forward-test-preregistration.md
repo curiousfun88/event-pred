@@ -975,6 +975,26 @@ fold). Total net P&L over the six folds: alpha 0.01-100 +$1,455.04 (identical); 
 against G2-W3's +$3,291.02. G2-W3 nets more than `lin2` in 6/6 folds at every alpha. The higher return at 1e5
 (+4.42%) comes with $154 less net P&L. Prediction's third part confirmed. Nothing adopted.
 
+**Exploratory note 8 (2026-10-21, during the live test; offline only, nothing is selected or deployed).** Risk
+metrics for G2's 2026 walk-forward (L9 / A15 folds, test months 2026-04..08, G2-W3's recipe), which until now had
+monthly returns only: the walk-forward table keeps each fill's month but not its hour. `stg_infra/examples/
+wf_risk_2026.py` rebuilds the API-month fills exactly as `tune_gbm.build()` did, keeping each fill's quoting hour, and
+computes the 2025 A16 addendum's metrics with `cut_report`'s functions: trade-date daily series, peak open capital,
+Sharpe over the 3-month T-bill, maximum drawdown, correlation with the S&P 500; random selection of the same number of
+fills per month (5 seeds) as the control. Gates: the rebuilt rows equal the table's rows for every test month (count,
+features, net) and each refitted month reproduces the recorded return. A first run was made in a scratch script the
+same day and its results seen before this script was written and committed; the committed run reproduces it exactly.
+Descriptive only: no setting, window or arm changes.
+
+**Note 8 result (2026-10-21; `results/live/wf_risk_2026.json`, `logs/v2_forecast/wf_risk_2026.log`).** Gates passed
+(372,702 rebuilt fills; every month reproduces +1.95/+2.30/+3.26/+3.46/+2.59%). Pooled over 153 days: G2 +$2,962.91
+(+2.63%), Sharpe 7.33, maximum drawdown $266.95 (7.8% of $3,433 peak open capital), 66% profitable days, correlation
+with S&P daily returns 0.18. Random at the same share: net -$207 to -$991, Sharpe -0.85 to -3.95, drawdown $445 to
+$1,004 (22-48%), 41-47% profitable days. Benchmarks 2026-04-01..08-31: S&P 500 +16.9% (FRED price index; the Stooq
+SPY download failed), 3-month T-bill +1.5% (3.67% a year). Against 2025 (A16: G, Sharpe 11.7, drawdown $103 = 4.2%,
+73% profitable days, correlation 0.12), 2026 is weaker on every measure, consistent with quote-everything losing more
+in 2026. The Sharpe is for comparing strategies only (simulated fills, small fast-recycling capital, annualised).
+
 **L19 reporting correction (2026-10-19; implements L19 as written, no rule changes).** L19 fixes the full-universe
 result to quoting hours S to 2026-10-17 T05, but the cut report (`headline`) and the dashboard's settled tables
 (`live_backup.settled_split`) still counted every hour from S, so from T06 they added the 23 series' later hours to
