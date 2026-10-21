@@ -106,18 +106,21 @@ Field & Example & Meaning \\
 \job{H} & 20261021T02 & The quoting hour: 21 October 2026, 02:00 UTC \\
 \job{events} & 162 & Open baskets (mutually exclusive events) scanned in the 23 series \\
 \job{legs} & 779 & Contracts in those baskets \\
-\job{cand\_one} & 598 & Candidate maker quotes, one price per side of each contract \\
-\job{cand\_two} & 982 & Candidate quotes for the two-price variant (at the best price or 1\cent{} inside it) \\
+\job{cand\_one} & 598 & Candidate maker quotes this hour: the quotes the backtest's quoting rules allow, at one price
+  per side \\
+\job{cand\_two} & 982 & The same for the two-price variant, which may also quote 1\cent{} inside the best price \\
 \job{share\_g2} & 0.3729 & G2 posted 37.3\% of the candidates (predicted net profit above 1\cent). Random quoting
   posts the same share \\
 \job{share\_g}, \job{share\_g2p} & 0.2642, 0.2281 & The same for the original 2025 model G and the two-price
   variant \\
-\job{signal\_rows} & 6080 & Decision rows written, every strategy's choice for every candidate \\
+\job{signal\_rows} & 6080 & Decision rows written: each strategy's score for each side of each candidate contract,
+  plus closing rows for contracts dropped since the last hour \\
 \job{snap\_ns}, \job{t\_decided\_ns} & 02:09:43, 02:19:11 UTC & When the market snapshot was taken and when the
-  decisions were fixed, in nanoseconds since 1970 \\
-\job{secs} & 1077.9 & The hour's cycle took 18 minutes, mostly fetching data from Kalshi \\
+  cycle ended, with the decisions written, in nanoseconds since 1970 \\
+\job{secs} & 1077.9 & The hour's cycle took 18 minutes, longer than the usual 2.5 to 4.5 minutes \\
 \job{api\_calls}, \job{bulk} & 115, true & Calls to Kalshi's public API this hour, fetched in bulk \\
-\job{hist\_legs}, \job{trade\_legs} & 299, 422 & Contracts whose price history and trades were fetched \\
+\job{hist\_legs}, \job{trade\_legs} & 299, 422 & Candidate contracts whose hourly price history was loaded,
+  and contracts with trade data (this hour's and earlier fetches) \\
 \job{skip\_audit} & 30 checked, 0 missed & A spot check of 30 contracts the hour skipped found no trades missing
   from the data \\
 \job{models} & g2: de87439617ba9476 & Fingerprints of the frozen models: unchanged hour to hour, so no model was
