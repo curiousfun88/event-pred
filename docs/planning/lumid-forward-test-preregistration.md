@@ -906,7 +906,8 @@ and the verdict statistics computed on them beside the main result, which a read
 for the result. `paper_ledger.fleet_summary` now posts only the entry and previous hashes, the main result's block,
 the settlement count and the verification issues. The full-universe figures are unchanged and stay in the ledger
 entries themselves, the dashboard's secondary line and the cut report; jobs already posted keep them. Self-tested.
-Active from the first handover after the file is copied.
+Copied 2026-10-21 08:46 UTC (paper_ledger f69da79a1d21, self-tests pass on the sandbox); re-posts use it at once, live
+posts from the next handover.
 
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
