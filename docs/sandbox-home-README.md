@@ -37,7 +37,8 @@ The same results are posted as jobs on Research Fleet:
   `main_<strategy>_ret_pct`, `main_g2_minus_rnd2_usd`). Read this one for the result.
 - `fwdtest-pnl-<YYYYMMDDTHH>`: every hour, the main result's settled net P&L as recorded when that hour's ledger
   entry was written (entries before 19 Oct 2026 undercount repeated fills, amendment L20). For the result, use the
-  daily record.
+  daily record. Jobs posted up to 21 Oct 2026 also carry full-universe figures
+  (`cumulative_primary`, `verdict`), which are not the main result.
 - `fwdtest-hour-<YYYYMMDDTHH>`: every hour, what was decided (markets scanned, quotes considered, share posted).
   A health check, with no P&L.
 

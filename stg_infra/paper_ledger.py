@@ -244,17 +244,17 @@ def recount_curve(keys_by: dict, hours, results: dict, settled_at: dict, mid_tab
 
 
 def fleet_summary(entry: dict, window="primary") -> tuple:
-    """(metrics, output) for the Research Fleet post. Metrics: the main result's settled net P&L per arm and G2 minus
-    random, named as in the daily record (main_<arm>_net_usd). Full-universe totals, mark-to-market and the verdict
-    statistics (computed on the full universe) stay in the output, with the entry hash."""
-    cum = entry["cumulative"].get(window, {})
-    v = entry.get("verdict", {})
+    """(metrics, output) for the Research Fleet post: the main result only. Metrics: the main result's settled net P&L
+    per arm and G2 minus random, named as in the daily record (main_<arm>_net_usd). Output: the entry hash and the
+    previous hash, the main result's block, the settlement count and the verification issues. The full-universe totals
+    and the verdict statistics computed on them (2026-10-21: no longer posted, to keep them out of the evaluation view)
+    stay in the ledger entry itself, the dashboard and the cut report. `window` is kept for callers; unused."""
     mr = (entry.get("main_result_l18") or {}).get("cumulative", {})
     met = {f"main_{a}_net_usd": round(mr[a]["realised_usd"], 2) for a in MAIN_ARMS if a in mr}
     if "g2" in mr and "rnd2" in mr:
         met["main_g2_minus_rnd2_usd"] = round(mr["g2"]["realised_usd"] - mr["rnd2"]["realised_usd"], 2)
     out = {"H": entry["H"], "live_start": entry["live_start"], "entry_hash": entry["hash"], "prev_hash": entry["prev_hash"],
-           "cumulative_primary": cum, "main_result_l18": entry.get("main_result_l18"), "verdict": v, "settlements": len(entry["settlements"]),
+           "main_result_l18": entry.get("main_result_l18"), "settlements": len(entry["settlements"]),
            "verification_issues": entry["verification"]}
     return met, out
 
@@ -339,7 +339,10 @@ def self_test() -> bool:
     check("L18 main result carried in the Research Fleet record (metrics and output)",
           met.get("main_g2_net_usd") == 2.5 and outd["main_result_l18"]["from"] == "20261016T17")
     check("Fleet metrics: main-result settled net only (no full-universe, mark-to-market or verdict metrics)",
-          met == {"main_g2_net_usd": 2.5} and outd["cumulative_primary"]["g2"]["total_usd"] == -1.0)
+          met == {"main_g2_net_usd": 2.5})
+    check("Fleet output: main result, hashes and checks only; no full-universe block or verdict (2026-10-21)",
+          set(outd) == {"H", "live_start", "entry_hash", "prev_hash", "main_result_l18", "settlements",
+                        "verification_issues"} and "cumulative_primary" not in outd and "verdict" not in outd)
     ent2 = dict(ent, main_result_l18={"cumulative": {"g2": {"realised_usd": 2.5, "total_usd": 3.0},
                                                      "rnd2": {"realised_usd": -1.25, "total_usd": -1.0}}})
     import types
@@ -428,8 +431,8 @@ def self_test() -> bool:
         check("as_fill values a settled key with the simulator's formula (YES sold at 70, settles NO: +$7.00 - fee)",
               as_fill(("E", "T", -1, 70, 10, 5.0, 300.0, 0), "no")[6] == 695.0 and as_fill(("E", "T", 1, 40, 10, 0.0, 400.0, 0), None)[6] == 0.0)
         met, out = fleet_summary(w4[-1])
-        check("fleet summary carries the cumulative breakdown and the entry hash",
-              "g2" in out["cumulative_primary"] and out["entry_hash"] == w4[-1]["hash"])
+        check("fleet summary carries the main result block and the entry hash",
+              out["main_result_l18"] == w4[-1].get("main_result_l18") and out["entry_hash"] == w4[-1]["hash"])
 
     # L20: one order filled by two trades in its hour = two identical fills, both real
     with tempfile.TemporaryDirectory() as td:

@@ -900,6 +900,14 @@ it cannot read (since a4d0cd6). Jobs already on office stay there. Self-tested (
 switch at the next handover after the files are copied. Copied 2026-10-21 02:59 UTC (live_signal_producer 284f3842a2f2,
 paper_ledger e331c320e2cc; self-tests on the sandbox: 55, 39 and 6 passed).
 
+**Research Fleet hourly P&L output: main result only (2026-10-21, L12 host log; display only, no rule, fill, ledger
+or verdict changes).** The `fwdtest-pnl` job's output carried the full-universe running totals (`cumulative_primary`)
+and the verdict statistics computed on them beside the main result, which a reader of the evaluation view could take
+for the result. `paper_ledger.fleet_summary` now posts only the entry and previous hashes, the main result's block,
+the settlement count and the verification issues. The full-universe figures are unchanged and stay in the ledger
+entries themselves, the dashboard's secondary line and the cut report; jobs already posted keep them. Self-tested.
+Active from the first handover after the file is copied.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
