@@ -39,6 +39,9 @@ The same results are posted as jobs on Research Fleet:
 - `fwdtest-hour-<YYYYMMDDTHH>`: every hour, what was decided (markets scanned, quotes considered, share posted).
   A health check, with no P&L.
 
+Open a job and choose Result to see its metrics. Jobs go to the home site, with office as the backup. Hourly jobs
+from 18 to 21 Oct 2026 are on the office site.
+
 ## Strategy codes
 
 | Code | Strategy |
