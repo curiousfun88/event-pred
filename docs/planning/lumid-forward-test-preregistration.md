@@ -886,7 +886,8 @@ production sandbox 2026-10-20 (sha256 e4cab5e30d56; self-test 38/38 there); acti
 changes).** The collapsible full-universe section (two tables) is replaced by one line that states the secondary
 result, its window (quoting hours 15 Oct 19:00 to 17 Oct 05:00 UTC, L19) and G2's and random's settled net and
 return, read live from the same summary file. The full tables stay in the cut report and the report's appendix; the
-ledger and summary file are unchanged. Active from the first backup run after the file is copied.
+ledger and summary file are unchanged. Copied to the production sandbox 2026-10-21 02:22 UTC (sha256 a34c97eaedb6); active
+from the next backup run.
 
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
