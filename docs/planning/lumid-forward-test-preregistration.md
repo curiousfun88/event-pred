@@ -890,6 +890,15 @@ return, read live from the same summary file. The full tables stay in the cut re
 ledger and summary file are unchanged. Copied to the production sandbox 2026-10-21 02:22 UTC (sha256 a34c97eaedb6); active
 from the next backup run.
 
+**Research Fleet posts: home site first (2026-10-21, L12 host log; routing only, no rule, fill, ledger or verdict
+changes).** The hourly posts (`fwdtest-hour`, `fwdtest-pnl`) tried the office site first and home only if office
+refused; since office's job service returned (2026-10-18) they all landed on office, which the account's Research
+Fleet view does not show. They now try home first and office as the backup, as the daily record already did. Home
+accepted and then lost some jobs on 2026-10-16; the hourly re-post step reads every posted job back and re-sends any
+it cannot read (since a4d0cd6). Jobs already on office stay there. Self-tested (producer, ledger, re-post step).
+`fleet_backfill.py` loads the files on each run, so re-posts switch at once; the live producer and paper trader
+switch at the next handover after the files are copied.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per

@@ -610,7 +610,7 @@ def file_hashes(paths) -> dict:
     return {Path(f).name: hashlib.sha256(Path(f).read_bytes()).hexdigest() for f in paths if Path(f).exists()}
 
 
-def fleet_body(summary: dict, site="office") -> dict:
+def fleet_body(summary: dict, site="home") -> dict:
     """One FlowMesh job per hour (amendment L5): the hour's summary, incl. the sha256 audit record, embedded in a
     Python step that returns it; Research Fleet stores it with its own created_at. JSON is valid YAML."""
     met = {k: float(summary[k]) for k in FLEET_METRICS if isinstance(summary.get(k), (int, float))}
@@ -621,11 +621,11 @@ def fleet_body(summary: dict, site="office") -> dict:
     return {"workflow": json.dumps(wf), "site": site}
 
 
-FLEET_SITES = ("office", "home")   # 2026-10-16: office's job service down since 10-14; home accepts jobs
+FLEET_SITES = ("home", "office")   # 2026-10-21: home first, the site the account's Research Fleet view shows; office as backup
 
 
 def post_fleet(summary: dict, post) -> str:
-    """Submit the hour's job to the first site that accepts it (office, else home); never raises (a Research Fleet
+    """Submit the hour's job to the first site that accepts it (home, else office); never raises (a Research Fleet
     outage must not cost the hour). Returns the job id (it names the site) or 'error: ...' listing each site."""
     errs = []
     for site in FLEET_SITES:
@@ -1117,9 +1117,9 @@ def self_test() -> bool:
     ns = {}
     exec(wf["spec"]["code"], ns)
     res = ns["main"]()
-    check("fleet job: flowmesh/v1 python Task with code at spec level, site office",
+    check("fleet job: flowmesh/v1 python Task with code at spec level, site home",
           wf["apiVersion"] == "flowmesh/v1" and wf["spec"]["taskType"] == "python" and "python" not in wf["spec"]
-          and body["site"] == "office" and wf["metadata"]["name"] == "fwdtest-hour-20261013T05")
+          and body["site"] == "home" and wf["metadata"]["name"] == "fwdtest-hour-20261013T05")
     check("fleet job: returns the summary exactly, numeric fields as metrics",
           res["output"] == summ and res["metrics"] == {"events": 10.0, "cand_one": 7.0, "share_g2": 0.5, "secs": 61.5})
 
@@ -1128,13 +1128,14 @@ def self_test() -> bool:
         def json(self): return self._j
     check("fleet post: 202 -> job id", post_fleet(summ, lambda b: R(202, {"data": {"id": "office:fm:wfl-x"}})) == "office:fm:wfl-x")
     check("fleet post: HTTP error on both sites -> 'error: ...' naming each, no exception",
-          post_fleet(summ, lambda b: R(500)).startswith("error: office: HTTP 500") and "home: HTTP 500" in post_fleet(summ, lambda b: R(500)))
+          post_fleet(summ, lambda b: R(500)).startswith("error: home: HTTP 500") and "office: HTTP 500" in post_fleet(summ, lambda b: R(500)))
     sites = []
 
-    def office_down(b):
+    def home_down(b):
         sites.append(b["site"])
-        return R(502) if b["site"] == "office" else R(202, {"data": {"id": "home:fm:wfl-y"}})
-    check("fleet post: office down -> posted to home (2026-10-16)", post_fleet(summ, office_down) == "home:fm:wfl-y" and sites == ["office", "home"])
+        return R(502) if b["site"] == "home" else R(202, {"data": {"id": "office:fm:wfl-y"}})
+    check("fleet post: home tried first; home down -> posted to office (2026-10-21)",
+          post_fleet(summ, home_down) == "office:fm:wfl-y" and sites == ["home", "office"])
 
     def boom(b):
         raise TimeoutError("down")

@@ -259,6 +259,9 @@ def fleet_summary(entry: dict, window="primary") -> tuple:
     return met, out
 
 
+FLEET_SITES = ("home", "office")   # 2026-10-21: home first, the site the account's Research Fleet view shows
+
+
 def post_fleet(entry: dict, pat: str, url="https://lum.id/api/v1/me/fleet/jobs") -> str:
     """Submit the round's summary as a FlowMesh job (Research Fleet stamps created_at). Never raises."""
     try:
@@ -269,7 +272,7 @@ def post_fleet(entry: dict, pat: str, url="https://lum.id/api/v1/me/fleet/jobs")
         wf = {"apiVersion": "flowmesh/v1", "kind": "Task", "metadata": {"name": f"fwdtest-pnl-{entry['H']}"},
               "spec": {"taskType": "python", "code": code}}
         errs = []
-        for site in ("office", "home"):      # 2026-10-16: office's job service down; home accepts jobs
+        for site in FLEET_SITES:
             try:
                 r = requests.post(url, json={"workflow": json.dumps(wf), "site": site},
                                   headers={"Authorization": f"Bearer {pat}"}, timeout=60)
@@ -339,6 +342,23 @@ def self_test() -> bool:
           met == {"main_g2_net_usd": 2.5} and outd["cumulative_primary"]["g2"]["total_usd"] == -1.0)
     ent2 = dict(ent, main_result_l18={"cumulative": {"g2": {"realised_usd": 2.5, "total_usd": 3.0},
                                                      "rnd2": {"realised_usd": -1.25, "total_usd": -1.0}}})
+    import types
+    tried = []
+
+    def fake_post(url, json=None, headers=None, timeout=None):
+        tried.append(json["site"])
+        return types.SimpleNamespace(status_code=502 if json["site"] == "home" else 202,
+                                     json=lambda: {"data": {"id": "office:fm:wfl-z"}})
+    real_requests = sys.modules.get("requests")
+    sys.modules["requests"] = types.SimpleNamespace(post=fake_post)
+    try:
+        jid = post_fleet(ent, "pat")
+    finally:
+        if real_requests is not None:
+            sys.modules["requests"] = real_requests
+        else:
+            del sys.modules["requests"]
+    check("Fleet post: home tried first, office as backup (2026-10-21)", tried == ["home", "office"] and jid == "office:fm:wfl-z")
     check("Fleet metrics: G2 minus random from the settled main result (+$3.75)",
           fleet_summary(ent2)[0] == {"main_g2_net_usd": 2.5, "main_rnd2_net_usd": -1.25, "main_g2_minus_rnd2_usd": 3.75})
     k_late = ("E", "T", 1, 40, 10, 0.0, 400.0, 300)
