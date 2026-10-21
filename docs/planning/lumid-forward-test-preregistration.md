@@ -882,6 +882,12 @@ as if they were the main result. `paper_ledger.fleet_summary` now posts only the
 the entry hash and the full cumulative breakdown and verdict; the ledger entries are unchanged. Self-tested. Copied to the
 production sandbox 2026-10-20 (sha256 e4cab5e30d56; self-test 38/38 there); active from the ~23:40 UTC handover.
 
+**Dashboard: secondary result shown as one line (2026-10-21, L12 host log; display only, no rule, fill, ledger or verdict
+changes).** The collapsible full-universe section (two tables) is replaced by one line that states the secondary
+result, its window (quoting hours 15 Oct 19:00 to 17 Oct 05:00 UTC, L19) and G2's and random's settled net and
+return, read live from the same summary file. The full tables stay in the cut report and the report's appendix; the
+ledger and summary file are unchanged. Active from the first backup run after the file is copied.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
