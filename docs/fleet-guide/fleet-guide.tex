@@ -1,0 +1,176 @@
+% Reading the live test on Research Fleet: a guide for the supervisor.
+% Standalone; compiles on Overleaf with pdfLaTeX (standard packages only).
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xltabular}   % the long field table can break across pages
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage[hyphens]{url}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlength{\emergencystretch}{3em}   % lets lines with long job and metric names wrap inside the margin
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\job}[1]{\texttt{#1}}
+\newcommand{\cent}{\textcent}
+
+\title{Reading the Live Test on Research Fleet}
+\date{21 October 2026}
+\author{}
+
+\begin{document}
+\maketitle
+\vspace{-2.5em}
+
+The live test posts three kinds of job to Research Fleet. For the result, read the daily record
+(\job{fwdtest-daily}): it carries the main result, settled net P\&L per strategy. The full picture is on the
+\href{https://curiousfun88.github.io/event-pred-live/}{live dashboard}.
+
+\section*{The three jobs}
+
+Each job's name says which kind it is. Open a job and choose Result to see its metrics. Jobs are posted to the home
+site, with office as the backup. Hourly jobs from 18 to 21 October 2026 are on the office site, so switch the site
+selector to office to see those.
+
+\begin{tabularx}{\textwidth}{@{}P{4.3cm} P{3.3cm} L P{2.9cm}@{}}
+\toprule
+Job name & Posted & What it shows & Read it for \\
+\midrule
+\job{fwdtest-daily-}\newline\job{YYYYMMDD} & Once a day, about 02:00 UTC, for the previous day
+  & The main result: settled net P\&L and return per strategy & \textbf{The result} \\
+\job{fwdtest-pnl-}\newline\job{YYYYMMDDTHH} & Every hour, one per ledger entry
+  & The main result's settled net P\&L per strategy at that hour & Tracking the result through the day \\
+\job{fwdtest-hour-}\newline\job{YYYYMMDDTHH} & Every hour
+  & What the strategy decided that hour: markets scanned, quotes considered, share posted
+  & Checking the system runs, not the result \\
+\bottomrule
+\end{tabularx}
+
+\section*{Daily record (\job{fwdtest-daily})}
+
+The metrics are the main result: G2 and five baselines on the 23 series G2 was trained and backtested on, counting
+quoting hours from 16 October 2026 17:00 UTC. Every figure is settled positions only, with pessimistic fills, net of
+Kalshi's fees.
+
+\begin{tabularx}{\textwidth}{@{}P{5.6cm} L@{}}
+\toprule
+Metric & Meaning \\
+\midrule
+\job{main\_g2\_net\_usd} & G2's settled net P\&L, in US dollars \\
+\job{main\_g2\_ret\_pct} & G2's net P\&L as a percentage of the capital its settled positions committed \\
+\job{main\_g2\_minus\_rnd2\_usd} & G2's net P\&L minus that of random quoting at G2's posting share: the headline
+  comparison \\
+\job{main\_<code>\_net\_usd}, \job{main\_<code>\_ret\_pct} & The same two figures for each baseline (codes below) \\
+\bottomrule
+\end{tabularx}
+
+As of 21 October 2026 01:00 UTC, for example, G2 had +\$115.23 (+7.3\%) over 40 settled events, against
+$-$\$181.59 ($-$6.7\%) for random quoting at the same share: G2 minus random +\$296.82. A strategy with no settled
+position yet has no metric. The job's output also carries the full table, net P\&L by day, and the hash of the
+latest ledger entry, which ties the record to the hourly audit trail. In \job{settled\_net\_usd\_by\_day} each value
+is the running total at the end of that day, not the day's own P\&L.
+
+\section*{Hourly P\&L (\job{fwdtest-pnl})}
+
+One job per hourly ledger entry. Its metrics are the main result's settled net P\&L at that hour, with the same names
+as the daily record. Each strategy has \job{main\_<code>\_net\_usd}, and the headline comparison is
+\job{main\_g2\_minus\_rnd2\_usd}. The hour in
+the job name is the quoting hour. The job is posted a few hours later, once that hour's trades have been fetched and
+matched.
+
+Jobs posted before 20 October 2026 20:41 UTC use an older format, which also lists the full universe of markets,
+positions still open, and test statistics on the full universe. In those, read only the names with
+\job{\_main\_realised\_usd}: \job{g2\_main\_realised\_usd} is the same figure as \job{main\_g2\_net\_usd}.
+
+The output holds the ledger entry's hash and the previous entry's hash, so each post can be checked against the
+public ledger.
+
+\section*{Hourly decisions (\job{fwdtest-hour})}
+
+This job records what the strategy decided in one hour. It has no P\&L: fills and profit are worked out later, in the
+\job{fwdtest-pnl} job for the same hour. The example is \job{fwdtest-hour-20261021T02}.
+
+\begin{xltabular}{\textwidth}{@{}P{3.9cm} P{3.4cm} L@{}}
+\toprule
+Field & Example & Meaning \\
+\midrule
+\endhead
+\job{H} & 20261021T02 & The quoting hour: 21 October 2026, 02:00 UTC \\
+\job{events} & 162 & Open baskets (mutually exclusive events) scanned in the 23 series \\
+\job{legs} & 779 & Contracts in those baskets \\
+\job{cand\_one} & 598 & Candidate maker quotes, one price per side of each contract \\
+\job{cand\_two} & 982 & Candidate quotes for the two-price variant (at the best price or 1\cent{} inside it) \\
+\job{share\_g2} & 0.3729 & G2 posted 37.3\% of the candidates (predicted net profit above 1\cent). Random quoting
+  posts the same share \\
+\job{share\_g}, \job{share\_g2p} & 0.2642, 0.2281 & The same for the original 2025 model G and the two-price
+  variant \\
+\job{signal\_rows} & 6080 & Decision rows written, every strategy's choice for every candidate \\
+\job{snap\_ns}, \job{t\_decided\_ns} & 02:09:43, 02:19:11 UTC & When the market snapshot was taken and when the
+  decisions were fixed, in nanoseconds since 1970 \\
+\job{secs} & 1077.9 & The hour's cycle took 18 minutes, mostly fetching data from Kalshi \\
+\job{api\_calls}, \job{bulk} & 115, true & Calls to Kalshi's public API this hour, fetched in bulk \\
+\job{hist\_legs}, \job{trade\_legs} & 299, 422 & Contracts whose price history and trades were fetched \\
+\job{skip\_audit} & 30 checked, 0 missed & A spot check of 30 contracts the hour skipped found no trades missing
+  from the data \\
+\job{models} & g2: de87439617ba9476 & Fingerprints of the frozen models: unchanged hour to hour, so no model was
+  altered \\
+\job{sha256} & three hashes & Fingerprints of the hour's decision files \\
+\job{ots} & ok & The decision record was timestamped with OpenTimestamps, proving it existed at that time \\
+\job{published} & dry-run & Nothing was sent to Lumid's signal service: the test is paper trading, and the decisions
+  are recorded, not executed \\
+\bottomrule
+\end{xltabular}
+
+Read it as a health check: the cycle ran, the models were unchanged, the record was hashed and timestamped, and no
+trades were missed.
+
+\section*{Strategy codes}
+
+The first six are the main comparison. The rest are variants and rule baselines, reported as descriptive.
+
+\begin{tabularx}{\textwidth}{@{}P{3.2cm} L@{}}
+\toprule
+Code & Strategy \\
+\midrule
+\job{g2} & \textbf{G2}, the strategy under test: gradient-boosted trees retrained on all history to August 2026, posting
+  quotes it predicts will net more than 1\cent \\
+\job{rnd2} & Random quoting at G2's posting share, the main control \\
+\job{lin2} & Linear model on G2's inputs \\
+\job{mlp2} & Neural network on G2's inputs \\
+\job{g} & G, the original model trained on 2025 data and never retrained \\
+\job{cand} & Quote every candidate \\
+\midrule
+\job{g2w1}, \job{g2w2} & G2 trained on the last 3 or 6 months instead of all history \\
+\job{g2p}, \job{rnd2p} & Two-price variant of G2, and its random control \\
+\job{wide3}, \job{liq} & Rules: quote only wide spreads, or only liquid markets \\
+\job{g2\_sel} & G2 restricted to selected categories \\
+\bottomrule
+\end{tabularx}
+
+\section*{What is final and what is not}
+
+\begin{itemize}[leftmargin=*,itemsep=3pt]
+  \item \textbf{Settled positions are final.} A position counts once every contract in its event has settled at \$1
+  or \$0. Positions still open are left out of every figure above, so the totals step up or down as events settle.
+  \item \textbf{The verdict comes at the cuts.} The pre-registered tests are computed on settled events at the
+  interim cut (28 October 2026, positions settled by 30 October) and the final cut (11 November 2026). Until then the
+  figures are provisional and can move a lot.
+  \item \textbf{Job ID prefixes name the Lumid site that accepted the post} (\job{home:} or \job{office:}), not where
+  the strategy runs. A post that a site rejects is re-sent within the hour, so a missing hour usually appears later.
+  Some hours then appear twice, with identical figures.
+  \item \textbf{The secondary result} (the full universe of markets, 15 to 17 October) is not in these jobs. It is a
+  single line on the dashboard and is reported in the cut report.
+\end{itemize}
+
+The rules, dated amendments and host log are in the
+\href{https://github.com/curiousfun88/event-pred/blob/fix/post-close-carry-forward/docs/planning/lumid-forward-test-preregistration.md}{pre-registration}.
+
+\end{document}
