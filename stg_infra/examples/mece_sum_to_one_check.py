@@ -28,8 +28,8 @@ Method
    assumption about quote/trade timing, same as §4.2.
 2. Exclude anything that's actually a threshold ladder (same title-template
    homogeneity test used in pairwise_monotonicity_check.py) -- a ladder can
-   incidentally resolve with n_yes == 1 if settlement landed below every
-   strike, but it isn't a MECE categorical event and shouldn't be counted
+   incidentally resolve with n_yes == 1 when only one of its thresholds is
+   crossed (for an 'above' ladder, an outcome between its two lowest strikes), but it isn't a MECE categorical event and shouldn't be counted
    as one here.
 3. For the surviving candidates, check trades data for how many days (if
    any) have EVERY leg of the event trading -- the full-basket requirement
