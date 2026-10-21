@@ -109,7 +109,8 @@ positions still open, and test statistics on the full universe. In those, read o
 The job's output holds the ledger entry's hash and the previous entry's hash, so each post can be checked against
 the public ledger, and two blocks of figures per strategy. \job{main\_result\_l18} is the main result.
 \job{cumulative\_primary} is the full universe of markets since the live start on 15 October, including hours after
-17 October when only the 23 series were quoted: it is not the main result and should not be read as one. In both
+17 October when only the 23 series were quoted: it is not the main result and should not be read as one. The \job{verdict} block's test
+statistics are computed on that full universe too. In both
 blocks, \job{realised\_usd} is settled net P\&L, \job{unrealised\_usd} values open positions at the latest mid,
 \job{total\_usd} is the two together, \job{capital\_usd} is the capital committed, \job{return\_settled\_pct} is settled
 P\&L over the capital of settled positions, and \job{fills} and \job{contracts} count the trades.
