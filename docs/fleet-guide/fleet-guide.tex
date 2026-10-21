@@ -3,9 +3,10 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[a4paper,margin=2cm,top=1.8cm,bottom=2cm]{geometry}
+\usepackage[a4paper,margin=2cm,top=1.6cm,bottom=1.7cm]{geometry}
 \usepackage{times}
 \usepackage{textcomp}
+\usepackage[table]{xcolor}
 \usepackage{booktabs}
 \usepackage{tabularx}
 \usepackage{xltabular}   % the long field table can break across pages
@@ -14,13 +15,15 @@
 \usepackage[hyphens]{url}
 \usepackage[colorlinks=true,linkcolor=black,urlcolor=blue]{hyperref}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{6pt}
+\setlength{\parskip}{4pt}
 \setlength{\emergencystretch}{3em}   % lets lines with long job and metric names wrap inside the margin
 \renewcommand{\arraystretch}{1.15}
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcommand{\job}[1]{\texttt{#1}}
 \newcommand{\cent}{\textcent}
+\definecolor{keybg}{HTML}{E7F1FB}
+\definecolor{keyrule}{HTML}{3B6EA8}
 
 \title{Reading the Live Test on Lumid Research Fleet\\[6pt]\large FYP: Learned Market Making on Kalshi Event Contracts}
 \date{21 October 2026}
@@ -30,8 +33,18 @@
 \maketitle
 \vspace{-1.5em}
 
-The live test posts three kinds of job to Research Fleet. For the result, read the daily
-record, \job{fwdtest-daily}, which carries the main result: settled net P\&L per strategy. The full picture is on the
+\noindent\fcolorbox{keyrule}{keybg}{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule}{\vspace{1pt}
+\textbf{For evaluation, read the daily record.} On Research Fleet, open the latest \job{fwdtest-daily-<date>} job and
+choose Result. Three metrics carry the result:
+\begin{itemize}[leftmargin=1.5em,itemsep=0pt,topsep=2pt]
+  \item \job{main\_g2\_net\_usd}: G2's settled net P\&L after fees, in US dollars
+  \item \job{main\_g2\_ret\_pct}: the same as a return on the capital committed
+  \item \job{main\_g2\_minus\_rnd2\_usd}: G2 against random quoting at the same share, the headline comparison
+\end{itemize}
+The other jobs are for tracking and health checks.\vspace{1pt}}}
+\vspace{4pt}
+
+The live test posts three kinds of job to Research Fleet, described below. The full picture, with charts, is on the
 \href{https://curiousfun88.github.io/event-pred-live/}{live dashboard}.
 
 \section*{The three jobs}
@@ -44,7 +57,7 @@ so switch the site selector to office to see those.
 \toprule
 Job name & Posted & What it shows & Read it for \\
 \midrule
-\job{fwdtest-daily-}\newline\job{YYYYMMDD} & Once a day, about 02:00 UTC, for the previous day
+\rowcolor{keybg}\job{fwdtest-daily-}\newline\job{YYYYMMDD} & Once a day, about 02:00 UTC, for the previous day
   & The main result: settled net P\&L and return per strategy & \textbf{The result} \\
 \job{fwdtest-pnl-}\newline\job{YYYYMMDDTHH} & Every hour, one per ledger entry
   & The main result's settled net P\&L per strategy at that hour & Tracking the result through the day \\
@@ -101,6 +114,7 @@ public ledger.
 This job records what the strategy decided in one hour. It has no P\&L: fills and profit are worked out later, in the
 \job{fwdtest-pnl} job for the same hour. The example is \job{fwdtest-hour-20261021T02}.
 
+{\small
 \begin{xltabular}{\textwidth}{@{}P{3.9cm} P{3.4cm} L@{}}
 \toprule
 Field & Example & Meaning \\
@@ -134,6 +148,7 @@ Field & Example & Meaning \\
   are recorded, not executed \\
 \bottomrule
 \end{xltabular}
+}
 
 Read it as a health check: the cycle ran, the models were unchanged, the record was hashed and timestamped, and no
 trades were missed.
@@ -142,6 +157,7 @@ trades were missed.
 
 The first six are the main comparison. The rest are variants and rule baselines, reported as descriptive.
 
+{\small
 \begin{tabularx}{\textwidth}{@{}P{3.2cm} L@{}}
 \toprule
 Code & Strategy \\
@@ -161,6 +177,7 @@ Code & Strategy \\
 \job{g2\_sel} & G2 restricted to selected categories \\
 \bottomrule
 \end{tabularx}
+}
 
 \section*{What is final and what is not}
 
