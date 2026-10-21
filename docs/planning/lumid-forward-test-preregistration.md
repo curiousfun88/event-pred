@@ -880,7 +880,8 @@ hours after the L19 cut-off), mark-to-market totals, and verdict statistics comp
 as if they were the main result. `paper_ledger.fleet_summary` now posts only the main result's settled net P&L per arm,
 `main_<arm>_net_usd`, and `main_g2_minus_rnd2_usd`, the names the daily record uses. The post's output still carries
 the entry hash and the full cumulative breakdown and verdict; the ledger entries are unchanged. Self-tested. Copied to the
-production sandbox 2026-10-20 (sha256 e4cab5e30d56; self-test 38/38 there); active from the ~23:40 UTC handover.
+production sandbox 2026-10-20 (sha256 e4cab5e30d56; self-test 38/38 there); active from the handover at 20:41 UTC
+(sbx_keeper.log; the ~23:40 estimate was wrong).
 
 **Dashboard: secondary result shown as one line (2026-10-21, L12 host log; display only, no rule, fill, ledger or verdict
 changes).** The collapsible full-universe section (two tables) is replaced by one line that states the secondary
