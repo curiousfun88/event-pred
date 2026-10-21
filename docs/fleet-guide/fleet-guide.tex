@@ -89,7 +89,7 @@ daily record recalculate past hours from all recorded fills, so an hourly job ca
 entries written before the fix of 19 October (amendment L20) undercount repeated fills. For the result, use the daily
 record.
 
-Jobs posted before 20 October 2026 20:41 UTC use an older format, which also lists the full universe of markets,
+Jobs posted up to 20 October 2026 may use an older format, which also lists the full universe of markets,
 positions still open, and test statistics on the full universe. In those, read only the names with
 \job{\_main\_realised\_usd}: \job{g2\_main\_realised\_usd} is the same figure as \job{main\_g2\_net\_usd}.
 
@@ -114,7 +114,7 @@ Field & Example & Meaning \\
 \job{cand\_two} & 982 & The same for the two-price variant, which may also quote 1\cent{} inside the best price \\
 \job{share\_g2} & 0.3729 & G2 posted 37.3\% of the candidates (predicted net profit above 1\cent). Random quoting
   posts the same share \\
-\job{share\_g}, \job{share\_g2p} & 0.2642, 0.2281 & The same for the original 2025 model G and the two-price
+\job{share\_g}, \job{share\_g2p} & 0.2642, 0.2281 & The same for the original model G and the two-price
   variant \\
 \job{signal\_rows} & 6080 & Decision rows written: each strategy's score for each side of each candidate contract,
   plus closing rows for contracts dropped since the last hour \\

@@ -51,7 +51,7 @@ from 18 Oct to the evening of 21 Oct 2026 are on the office site.
 | g2 | G2, the strategy under test: gradient-boosted trees, posting quotes it predicts will net more than 1 cent |
 | rnd2 | Random quoting at G2's posting share, the main control |
 | lin2, mlp2 | Linear model and neural network on G2's inputs |
-| g | G, the original 2025 model, never retrained |
+| g | G, the original model, trained on November 2024 to May 2025, never retrained |
 | cand | Quote every candidate |
 | g2w1, g2w2 | G2 trained on the last 3 or 6 months instead of all history |
 | g2p, rnd2p | Two-price variant of G2, and its random control |
