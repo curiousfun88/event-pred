@@ -897,7 +897,8 @@ Fleet view does not show. They now try home first and office as the backup, as t
 accepted and then lost some jobs on 2026-10-16; the hourly re-post step reads every posted job back and re-sends any
 it cannot read (since a4d0cd6). Jobs already on office stay there. Self-tested (producer, ledger, re-post step).
 `fleet_backfill.py` loads the files on each run, so re-posts switch at once; the live producer and paper trader
-switch at the next handover after the files are copied.
+switch at the next handover after the files are copied. Copied 2026-10-21 02:59 UTC (live_signal_producer 284f3842a2f2,
+paper_ledger e331c320e2cc; self-tests on the sandbox: 55, 39 and 6 passed).
 
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
