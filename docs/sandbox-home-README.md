@@ -35,12 +35,14 @@ The same results are posted as jobs on Research Fleet:
 
 - `fwdtest-daily-<YYYYMMDD>`: once a day, the main result per strategy (`main_<strategy>_net_usd`,
   `main_<strategy>_ret_pct`, `main_g2_minus_rnd2_usd`). Read this one for the result.
-- `fwdtest-pnl-<YYYYMMDDTHH>`: every hour, the main result's settled net P&L at that hour.
+- `fwdtest-pnl-<YYYYMMDDTHH>`: every hour, the main result's settled net P&L as recorded when that hour's ledger
+  entry was written (entries before 19 Oct 2026 undercount repeated fills, amendment L20). For the result, use the
+  daily record.
 - `fwdtest-hour-<YYYYMMDDTHH>`: every hour, what was decided (markets scanned, quotes considered, share posted).
   A health check, with no P&L.
 
 Open a job and choose Result to see its metrics. Jobs go to the home site, with office as the backup. Hourly jobs
-from 18 to 21 Oct 2026 are on the office site.
+from 18 Oct to the evening of 21 Oct 2026 are on the office site.
 
 ## Strategy codes
 
