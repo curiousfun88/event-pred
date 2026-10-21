@@ -14,12 +14,12 @@ The pre-registered verdicts are computed on settled events at the interim cut (2
 
 | What | Path (under /home/curiouslearner842) | Updated |
 |---|---|---|
-| The dashboard's data: every strategy's settled net P&L and return, and P&L over time | `live-backup/site/summary.json` | every 10 minutes |
+| The dashboard's data: every strategy's settled net P&L and return, and P&L over time | `live-backup/site/summary.json` | rebuilt when new data arrives, roughly hourly |
 | The hash-chained ledger, one entry per quoting hour | `event-pred/runs/live/paper/ledger/entries/<YYYYMMDDTHH>.json` | hourly |
 | OpenTimestamps receipts for the hourly decisions and ledger entries | `event-pred/runs/live/stamps/`, `event-pred/runs/live/paper/ledger/stamps/` | hourly |
 | Each hour's decisions: every candidate quote, its inputs and every strategy's choice | `event-pred/runs/live/scores/one_<H>.parquet`, `two_<H>.parquet` | hourly |
 | One line per hour of the decision cycle (the same as the Research Fleet `fwdtest-hour` job) | `event-pred/runs/live/runs.jsonl` | hourly |
-| Simulated fills per strategy, under each fill model | `event-pred/runs/live/paper/fills_primary_<strategy>.parquet` (pessimistic, the reported one), `_opt_` (optimistic), `_strict_` | each ledger round |
+| Simulated fills per strategy, under each fill model | `event-pred/runs/live/paper/fills_primary_<strategy>.parquet` (pessimistic, the reported one), `fills_primary_opt_<strategy>.parquet` (optimistic), `fills_primary_strict_<strategy>.parquet` (strict) | each ledger round |
 | Offline results fixed before going live (baselines, training-window choice, sensitivity checks) | `event-pred/results/live/*.json` | fixed |
 | Cut reports (interim and final) | `results/cuts/` | added at each cut |
 | Logs | `event-pred/logs/` (`sbx_keeper.log`: handovers and backups) | continuous |
@@ -55,7 +55,7 @@ from 18 Oct to the evening of 21 Oct 2026 are on the office site.
 | cand | Quote every candidate |
 | g2w1, g2w2 | G2 trained on the last 3 or 6 months instead of all history |
 | g2p, rnd2p | Two-price variant of G2, and its random control |
-| wide3, liq, liq_traded | Rules: wide spreads only, liquid markets only |
+| wide3, liq, liq_traded | Rules: quote only where the spread is 3 cents or more (wide3), or only contracts whose trades in the last 24 hours are at or above that hour's median (liq, and liq_traded with the median taken over contracts that traded) |
 | g2_sel | G2 restricted to selected categories |
 
 ## Please do not change
@@ -63,5 +63,5 @@ from 18 Oct to the evening of 21 Oct 2026 are on the office site.
 Everything under `event-pred/runs/live/` and `live-backup/` is written by the running test. Read freely, but do
 not edit, move or delete files there. `.lumid/` holds the account's access token and is not part of the results.
 
-Code and rules: https://github.com/curiousfun88/event-pred (pre-registration:
-`docs/planning/lumid-forward-test-preregistration.md`).
+Code and rules: https://github.com/curiousfun88/event-pred/tree/fix/post-close-carry-forward (pre-registration:
+`docs/planning/lumid-forward-test-preregistration.md` on that branch).
