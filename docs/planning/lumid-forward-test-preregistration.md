@@ -909,6 +909,21 @@ entries themselves, the dashboard's secondary line and the cut report; jobs alre
 Copied 2026-10-21 08:46 UTC (paper_ledger f69da79a1d21, self-tests pass on the sandbox); re-posts use it at once, live
 posts from the next handover.
 
+**Outage 2026-10-21/22 (L12 host log; no rule changes).** Timeline (UTC): 21 Oct 05:29-05:44 three 502 errors from
+Lumid's sandbox API; 15:16 the keeper on prod-b could not reach lum.id ("certificate is not valid for 'lum.id'");
+15:21 last backup (producer hour 15, ledger entry 14); prod-b then disappeared and, with Lumid unreachable, no
+successor was created (no sandbox on either site at 00:24 on 22 Oct; the staleness check failed at 19:29, 22:38 and
+00:53). 22 Oct 00:26 a new prod-a was created by hand and the keeper started at 00:35; its network to Lumid, Kalshi and
+GitHub worked, but processes reading the home volume hung in uninterruptible I/O (state D): the keeper logged at 00:37
+and started the producer (00:38) and paper trader (00:39), which then stalled; by 02:10 no producer hour had
+completed. Probable cause: Lumid's home-volume storage (to be reported to Lumid). 02:14 prod-a deleted by API
+(home volume kept) so its producer cannot resume beside another; 02:16 the producer started on the laptop under the L12
+fallback (`stg_infra/laptop_fallback.sh`, command restricted to the 23 series as L19). **Lost producer hours (L12: never
+reconstructed): 2026-10-21 T16 to 2026-10-22 T01** (and any hour the laptop's first, cold cycle misses; final list when
+the sandbox resumes). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
+settle on Kalshi regardless and are booked when the paper trader resumes.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
