@@ -44,6 +44,16 @@ if [ ! -f "$L/runs.jsonl" ] || [ "$(wc -l < "$B")" -gt "$(wc -l < "$L/runs.jsonl
 fi
 [ -f event-pred/logs/sbx_keeper.log ] || cp live-backup/logs/sbx_keeper.log event-pred/logs/sbx_keeper.log
 echo "   producer record to $(tail -1 "$L/runs.jsonl" | cut -c1-24), ledger to $(ls "$L/paper/ledger/entries" | tail -1)"
+# the settlement cache (backed up as text since 2026-10-22): without it every settled event counts as open
+if [ ! -f "$L/paper/markets.pkl" ] && [ -f "$L/paper/markets.jsonl" ]; then
+    (cd event-pred && "$PY" -c "import pickle, sys; sys.path.insert(0, 'stg_infra'); from pathlib import Path; import live_backup as b
+Path(b.MARKETS_PKL).write_bytes(pickle.dumps(b.import_markets(Path(b.MARKETS_TXT))))")
+fi
+if [ -f "$L/paper/markets.pkl" ]; then
+    echo "   settlement cache: $("$PY" -c "import pickle; print(len(pickle.load(open('$L/paper/markets.pkl', 'rb'))))") markets"
+else
+    echo "   settlement cache: MISSING (run stg_infra/rebuild_markets_cache.py before starting the paper trader)"
+fi
 
 echo "3. Research Fleet posted list (not in the backup): mark every hour and entry already on record as posted"
 "$PY" - "$L" <<'EOF'

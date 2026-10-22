@@ -355,6 +355,35 @@ def git(clone: Path, *args, key=None, timeout=120):
                           env=ssh_env(key) if key else None)
 
 
+MARKETS_PKL, MARKETS_TXT = "runs/live/paper/markets.pkl", "runs/live/paper/markets.jsonl"
+
+
+def export_markets(repo: Path, clone: Path) -> int:
+    """2026-10-22: the paper trader's settlement cache, which a restore needs (without it every settled event counts
+    as open), as one sorted JSON line per ticker so git stores only changed lines. Returns the number of tickers."""
+    src = repo / MARKETS_PKL
+    if not src.exists():
+        return 0
+    import pickle
+    m = pickle.loads(src.read_bytes())
+    dst = clone / MARKETS_TXT
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    text = "".join(json.dumps({"ticker": t, **m[t]}, sort_keys=True) + "\n" for t in sorted(m))
+    if not dst.exists() or dst.read_text() != text:
+        dst.write_text(text)
+    return len(m)
+
+
+def import_markets(txt: Path) -> dict:
+    """The inverse of export_markets: {ticker: row}."""
+    out = {}
+    for line in txt.read_text().splitlines():
+        if line.strip():
+            r = json.loads(line)
+            out[r.pop("ticker")] = r
+    return out
+
+
 def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=None, push=True) -> dict:
     """One backup: clone if needed, sync, write heartbeat, commit if changed, push. Returns a status dict."""
     key = key or (CFG / "backup_key")
@@ -367,6 +396,7 @@ def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=N
             git(clone, "config", "user.name", "event-pred live backup")
             git(clone, "config", "user.email", "live-backup@users.noreply.github.com")
         copied = sync(repo, clone)
+        export_markets(repo, clone)
         write_summary(repo, clone)                       # the public dashboard's data (site/)
         publish_page(repo, clone)
         hb = heartbeat(repo)
@@ -534,6 +564,21 @@ def self_test() -> bool:
         check(f"check notes: pre-join and pre-fix liq_traded flags counted apart; g2 and post-fix flags are issues "
               f"(got {sm4['verification_issues']}, {sm4['late_arm_prejoin_notes']}, {sm4['liq_traded_rederivation_notes']})",
               (sm4["verification_issues"], sm4["late_arm_prejoin_notes"], sm4["liq_traded_rederivation_notes"]) == (2, 1, 1))
+    import pickle
+    with tempfile.TemporaryDirectory() as td3:
+        r3, c3 = Path(td3) / "repo", Path(td3) / "clone"
+        (r3 / "runs/live/paper").mkdir(parents=True)
+        check("markets export: nothing to export without a cache", export_markets(r3, c3) == 0)
+        m = {"EV-B-2": {"result": "", "status": "active", "close_ns": 5, "settled_ns": None},
+             "EV-A-1": {"result": "yes", "status": "finalized", "close_ns": 3, "settled_ns": 4}}
+        (r3 / MARKETS_PKL).write_bytes(pickle.dumps(m))
+        n = export_markets(r3, c3)
+        lines = (c3 / MARKETS_TXT).read_text().splitlines()
+        check("markets export: one sorted line per ticker", n == 2 and lines[0].startswith('{"close_ns": 3') and "EV-A-1" in lines[0])
+        check("markets export round-trips exactly", import_markets(c3 / MARKETS_TXT) == m)
+        t0 = (c3 / MARKETS_TXT).stat().st_mtime_ns
+        export_markets(r3, c3)
+        check("markets export: unchanged cache leaves the file untouched", (c3 / MARKETS_TXT).stat().st_mtime_ns == t0)
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
