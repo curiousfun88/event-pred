@@ -3,7 +3,7 @@ report_figures_ch4.py
 
 Figures for Chapter 4 of the report (measuring apparent mispricing), written as PDFs into the report's figures/.
 
-  fig_basket_sums.pdf   basket sums at last print, mid, bid and ask, two-sided vs one-sided baskets
+  fig_basket_sums.pdf   basket deviations d = sum - $1 (cents) at last print, mid, bid and ask, two-sided vs one-sided baskets
                         (quoted top of book, test month Sep 2025 of the Jul-Sep fetch; data from
                         diagnose_quote_candles.py --split test --save-baskets results/mece/quote_basket_sums_test.parquet)
   fig_overround.pdf     measured mean last-print deviation by number of legs, with the order-flow prediction
@@ -117,18 +117,18 @@ def fig_basket_sums(out_dir: Path):
     fig, axes = plt.subplots(1, 2, figsize=(TEXT_W, 2.6), sharey=True)
     cols = (("sum_bid", "bid", "#2471a3"), ("sum_mid", "mid", "black"), ("sum_last", "last print", "#7f8c8d"),
             ("sum_ask", "ask", "#c0392b"))
-    bins = np.arange(0.70, 1.40 + 1e-9, 0.01)
+    bins = np.arange(-30, 40 + 1e-9, 1.0)                # deviation d = sum - $1, cents (2026-10-23: was sums in $)
     for ax, (flag, title) in zip(axes, ((True, "every leg two-sided"), (False, "some leg one-sided"))):
         sub = q.filter(pl.col("two_sided") == flag)
         for col, lab, c in cols:
-            raw = sub[col].to_numpy()
+            raw = 100.0 * (sub[col].to_numpy() - 1.0)
             v = np.clip(raw, bins[0], bins[-1] - 1e-9)          # values beyond the axis land in the end bins
             w = np.full(len(v), 100.0 / len(v))
             ax.hist(v, bins=bins, weights=w, histtype="step", color=c, lw=1.4 if lab == "mid" else 1.0,
-                    label=f"{lab} (mean \\${raw.mean():.3f})")    # mean of the raw sums, not the clipped ones
-        ax.axvline(1.0, color="grey", lw=0.8, ls="--")
+                    label=f"{lab} (mean " + f"{raw.mean():+.2f}".replace("-", "\u2212") + "\u00a2)")    # mean of the raw deviations, not the clipped ones
+        ax.axvline(0.0, color="grey", lw=0.8, ls="--")
         ax.set_title(f"{title} (n={sub.height:,})")
-        ax.set_xlabel("basket sum (\\$)")
+        ax.set_xlabel("basket deviation $d$ (cents)")
         ax.legend(frameon=False, loc="upper right", fontsize=7)
     axes[0].set_ylabel("share of basket-snapshots (%)")
     fig.tight_layout()
