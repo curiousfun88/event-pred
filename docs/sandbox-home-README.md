@@ -1,7 +1,9 @@
 # Live forward test: files on this sandbox
 
 This folder holds the live paper-trading test of G2, a learned market-making strategy on Kalshi event contracts.
-It runs every hour on Lumid sandboxes and persists across the daily sandbox handovers.
+It runs every hour on Lumid sandboxes and persists across the daily sandbox handovers. Since 22 Oct 2026 it runs on
+Lumid's **office** site (this folder). Before that it ran on the home site, which developed a storage fault on
+21 Oct 2026. The move is recorded in the pre-registration's host log.
 
 **For the result, start with the dashboard: https://curiousfun88.github.io/event-pred-live/**
 It shows the main result: G2 and its baselines on the 23 series G2 was trained and backtested on, counting quoting
@@ -21,13 +23,16 @@ The pre-registered verdicts are computed on settled events at the interim cut (2
 | One line per hour of the decision cycle (the same as the Research Fleet `fwdtest-hour` job) | `event-pred/runs/live/runs.jsonl` | hourly |
 | Simulated fills per strategy, under each fill model | `event-pred/runs/live/paper/fills_primary_<strategy>.parquet` (pessimistic, the reported one), `fills_primary_opt_<strategy>.parquet` (optimistic), `fills_primary_strict_<strategy>.parquet` (strict) | each ledger round |
 | Offline results fixed before going live (baselines, training-window choice, sensitivity checks) | `event-pred/results/live/*.json` | fixed |
+| Corrections to sealed ledger entries (append-only and timestamped. The entries themselves are never edited) | `event-pred/runs/live/paper/ledger/corrections/` | when needed |
 | Cut reports (interim and final) | `results/cuts/` | added at each cut |
 | Logs | `event-pred/logs/` (`sbx_keeper.log`: handovers and backups) | continuous |
 
 In a ledger entry, `new_fills` and `settlements` are what happened in that hour, `hash` and `prev_hash` chain the
 entries, and `verification` lists any mismatch found when the hour's fills were re-derived from scratch. For P&L
 use `summary.json` or the dashboard: they recount the fills (amendment L20), while the entries' own running totals
-undercount repeated identical fills.
+undercount repeated identical fills. Until about 26 Oct 2026, the first entry of each ledger round flags strategy
+`g2_sel` (8 fills omitted from the entries of 21 Oct 15:00 to 22 Oct 05:00 UTC after the move). These flags are the
+known gap listed in `corrections/correction_g2_sel_20261022.json`, not new mismatches. No other strategy is affected.
 
 ## Research Fleet
 
@@ -43,7 +48,8 @@ The same results are posted as jobs on Research Fleet:
   A health check, with no P&L.
 
 Open a job and choose Result to see its metrics. Jobs go to the home site, with office as the backup. Hourly jobs
-from 18 Oct to the evening of 21 Oct 2026 are on the office site.
+from 18 Oct to the evening of 21 Oct 2026 are on the office site. There are no decision jobs for 21 Oct 16:00 to
+22 Oct 01:00 UTC: those ten hours were lost in the home site's outage and are not reconstructed (rule L12).
 
 ## Strategy codes
 
