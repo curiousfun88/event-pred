@@ -943,7 +943,24 @@ next entry would have valued every settled event as open. No entry was written: 
 (14,671 markets, 12,427 settled, 566 s), and the settled figures on the same 140 entries matched the last pre-outage
 dashboard except for events settled since (counts only rose; arms without new settlements identical to the cent; G2
 +$117.53 on 48 events -> +$118.30 on 51). The paper trader restarted at 04:45:49. From the next keeper start the backup
-also stores the cache as text (`markets.jsonl`, 582d019) and the restore rebuilds it. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+also stores the cache as text (`markets.jsonl`, 582d019) and the restore rebuilds it.
+**G2 selected categories after the restore (2026-10-22; L4/L7 arm `g2_sel` only).** The L7 selection for 18-25 Oct
+reads g2's fills from 11-18 Oct in the L10 archive (`runs/live/paper/g2_archive.json`); neither the archive nor the
+settlements of events from before the ledger's start were in the backup. On office the selection therefore came out
+empty: the ledger check flagged g2_sel in entry 20261021T15 (missing_now 420/499/310/420 in the four windows, extra_now
+0) and the entries 20261021T15..20261022T05 recorded no g2_sel fills. Recovery: home's archive (7,523 fills, last written
+2026-10-21 15:19:21) was read from the slow home volume and merged with office's (7,539 fills; office added 16), and the
+373 archive events missing from the settlement cache were fetched (cache 14,857 -> 18,155 markets), each with the paper
+trader stopped. The selection then came out as home's: `?` and Climate and Weather (21 events; `?` = series not quoted
+in the last 4 days, whose category the round cannot look up; it adds no fills). Entry 20261022T06's check: missing_now 0
+in every window, extra_now 8/12/6/10, equal to an independent count from the same entries' recorded g2 fills in the
+selected categories. **Correction (append-only, entries unchanged):**
+`runs/live/paper/ledger/corrections/correction_g2_sel_20261022.json` (sha256 65b15e629c5bf973..., OpenTimestamps
+receipt alongside) lists those fills (primary: 8 fills in KXHIGHDEN/KXHIGHPHIL 21-22 Oct and KXHMONTHRANGE, unsettled
+when written); the cut report adds them to g2_sel. Until their events leave the 4-day recompute window (about
+2026-10-26) the first entry of each round repeats the same extra_now flag for g2_sel, so the dashboard's check-issue
+count rises; these flags are the correction, not new mismatches. No other arm was affected (all other checks empty).
+Backup and restore cover the archive from 3dd22be; rebuild_markets_cache fetches archive events from f5c8ee0. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
