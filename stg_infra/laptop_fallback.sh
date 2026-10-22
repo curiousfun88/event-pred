@@ -1,5 +1,6 @@
 #!/bin/bash
-# Laptop fallback for the live producer while the Lumid office sandbox service is down (2026-10-15).
+# Laptop fallback for the live producer while the Lumid sandbox cannot run it (2026-10-15 office outage; 2026-10-22
+# home-volume hang). Since L19 the producer quotes only the 23 series (SERIES_A13), as the sandbox's producer_cmd does.
 # Points the (disabled) laptop service maker-producer at the current producer command -- hourly
 # Research Fleet records (L5), no Lumid publishing -- with CPU/memory caps, and starts it.
 #
@@ -24,7 +25,7 @@ After=network-online.target
 [Service]
 WorkingDirectory=$REPO
 Environment=OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2
-ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --bulk --ots --pat-file /root/.lumid_pat >> logs/v2_forecast/live_producer_service.log 2>&1'
+ExecStart=/bin/bash -c 'exec nice -n 5 $REPO/.venv/bin/python stg_infra/live_signal_producer.py --loop --fleet --bulk --ots --pat-file /root/.lumid_pat --series KXAPRPOTUS KXBUNDESLIGAGAME KXEPLGAME KXEURUSD KXF1RACE KXFEAR KXFEDDECISION KXHIGHAUS KXHIGHCHI KXHIGHDEN KXHIGHLAX KXHIGHMIA KXHIGHNY KXHIGHPHIL KXHMONTHRANGE KXINX KXLAGODAYS KXLALIGAGAME KXLIGUE1GAME KXLLM1 KXMLSGAME KXNASCARRACE KXNASDAQ100 >> logs/v2_forecast/live_producer_service.log 2>&1'
 Restart=always
 RestartSec=60
 MemoryMax=3500M
