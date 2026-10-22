@@ -49,7 +49,8 @@ CFG = HOME / ".lumid"
 # Each site has its own shared home, so ~/.lumid/site names the site this keeper runs on (default office).
 # 2026-10-15: office down for over a day; home added as a second host (pinned image: the venv lives in the
 # shared home and is bound to the image's Python).
-SITES = {"office": {"api": "https://lum.id/sbx/office/api", "port": "31226", "spec": {}},
+SITES = {"office": {"api": "https://lum.id/sbx/office/api", "port": "31226",          # 2026-10-22: 4 cores, as home
+                    "spec": {"image": "python:3.11", "cpu": 4, "memory_gi": 16}},
          "home": {"api": "https://lum.id/sbx/api", "port": "31223", "spec": {"image": "python:3.11", "cpu": 4, "memory_gi": 16}}}
 
 
