@@ -2,7 +2,7 @@
 rebuild_markets_cache.py
 
 Rebuild the paper trader's settlement cache (runs/live/paper/markets.pkl, markets_full.pkl) for every event the ledger
-has a fill in (2026-10-22). The cache was not in the GitHub backup, so a sandbox restored from it starts empty; the
+has a fill in, and every event in the L10 g2 archive (2026-10-22). The cache was not in the GitHub backup, so a sandbox restored from it starts empty; the
 paper trader then refetches only the events still being quoted, and every older event with fills would count as
 unsettled in the ledger's cumulative figures and on the dashboard. Run with the paper trader STOPPED, on the sandbox:
 
@@ -34,6 +34,13 @@ def ledger_events(entries_dir: Path) -> set:
             for rows in arms.values():
                 evs.update(r[0] for r in rows)
     return evs
+
+
+def archive_events(archive: Path) -> set:
+    """Every event in the L10 g2 archive (2026-10-22: the L7 selection reads fills from before the ledger started,
+    whose events are not in the ledger; a rebuild from the ledger alone left 373 of them unsettled and emptied the
+    18-25 Oct selection)."""
+    return {r[0] for r in json.loads(archive.read_text())} if archive.exists() else set()
 
 
 def rebuild(events, cache: dict, full: dict, fetch, row, now_ns: int, say=print) -> tuple[dict, dict]:
@@ -73,6 +80,9 @@ def self_test() -> bool:
     check("a fresh fetch replaces an existing row", cache["EV-B-Y"] == {"result": ""})
     check("rows of other events are kept", cache["OTHER-1"] == {"result": "no"})
     check("full: every fetched event stamped", full == {"EV-A": 7, "EV-B": 7, "EV-C": 7})
+    (d / "arch.json").write_text(json.dumps([["EV-OLD", "EV-OLD-1", 1, 5, 1, 0, 5, 0], ["EV-A", "EV-A-X", 1, 40, 1, 0, 40, 0]]))
+    check("archive events: every event in the g2 archive, incl. ones before the ledger", archive_events(d / "arch.json") == {"EV-OLD", "EV-A"})
+    check("archive events: none without an archive", archive_events(d / "absent.json") == set())
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 
@@ -92,7 +102,10 @@ def main():
     cache = pickle.loads(mp.read_bytes()) if mp.exists() else {}
     full = pickle.loads(fp.read_bytes()) if fp.exists() else {}
     evs = ledger_events(PAPER / "ledger/entries")
-    print(json.dumps({"ledger_events": len(evs), "cached_tickers_before": len(cache)}), flush=True)
+    arch = archive_events(PAPER / "g2_archive.json")
+    print(json.dumps({"archive_only_events": len(arch - evs)}), flush=True)
+    evs |= arch
+    print(json.dumps({"events": len(evs), "cached_tickers_before": len(cache)}), flush=True)
     k = lp.Kalshi()
     t0 = time.time()
     cache, full = rebuild(evs, cache, full, lambda ev: list(k.pages("markets", "markets", event_ticker=ev, limit=1000)),
