@@ -922,7 +922,20 @@ fallback (`stg_infra/laptop_fallback.sh`, command restricted to the 23 series as
 reconstructed): 2026-10-21 T16 to 2026-10-22 T01** (final list when the sandbox resumes: the volume may hold hours
 produced after the last backup). The laptop's first hour, 2026-10-22 T02, completed at 02:17 (snapshot 16 minutes late,
 73 s cycle, Research Fleet job on home). A test sandbox at 02:18-02:27 (no keeper started) still read the home volume
-about a thousand times slower than normal (5 KB file 15 s, directory listing 29 s, Python start-up over 45 s); deleted. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+about a thousand times slower than normal (5 KB file 15 s, directory listing 29 s, Python start-up over 45 s); deleted.
+
+**Move to the office site (2026-10-22, L12 host log; no rule changes).** The office site's sandboxes read their own
+home volume normally (2 ms per file; same library versions as home), reach Kalshi unthrottled and reach GitHub. 03:38
+office `prod-a` created (4 cores, 16 GB, 24 h); `stg_infra/restore_on_site.sh office` rebuilt the setup from GitHub (code
+and models at 466dda2 from event-pred, model fingerprints identical to the live ones; live state from the
+event-pred-live backup: producer record to 2026-10-21 T15, ledger to T14; Research Fleet posted list rebuilt so nothing is
+re-posted; 23-series producer command; self-tests pass) and the backup key was copied in. The laptop producer's 04:00
+cycle failed at 04:15 (the laptop could no longer reach Kalshi's API at all); it was stopped,
+`stg_infra/send_laptop_hours.sh` sent its hours T02 and T03 to office, and the office keeper started at 04:20:11. Office
+produced T04 late (snapshot 04:20, 33 s, 90 API calls, Research Fleet job on home) and the backup resumed at 04:20:16.
+The ledger continues from its entry T14 on office (catch-up in progress). **Lost producer hours: 2026-10-21 T16 to
+2026-10-22 T01** (ten hours, L12: never reconstructed); T02 and T03 come from the laptop and T04 ran late. The live test
+stays on office until it ends; office sandboxes are sized as home's (4 cores, 16 GB, keeper change 466dda2). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
