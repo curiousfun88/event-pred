@@ -184,7 +184,7 @@ Code & Strategy \\
 
 \section*{What is final and what is not}
 
-\begin{itemize}[leftmargin=*,itemsep=3pt]
+\begin{itemize}[leftmargin=*,itemsep=1pt]
   \item \textbf{Settled positions are final.} A position counts once every contract in its event has settled at \$1
   or \$0. Positions still open are left out of every figure above, so the totals step up or down as events settle.
   \item \textbf{The verdict comes at the cuts.} The pre-registered tests are computed on settled events at the
@@ -193,6 +193,10 @@ Code & Strategy \\
   \item \textbf{Job ID prefixes name the Lumid site that accepted the post} (\job{home:} or \job{office:}), not where
   the strategy runs. A post that a site rejects is re-sent within the hour, so a missing hour usually appears later.
   Some hours then appear twice, with identical figures.
+  \item \textbf{Ten hours are missing} (21 October 16:00 to 22 October 01:00 UTC), lost to a storage fault on the home
+  site and not reconstructed (rule L12). Since 22 October the test runs on the office site, restored from its backup.
+  \item \textbf{Ledger check flags for \job{g2\_sel} until about 26 October} are a known gap of 8 fills, listed in an
+  append-only correction file. No other strategy is affected.
   \item \textbf{The secondary result} (the full universe of markets, 15 to 17 October) is not in these jobs. It is a
   single line on the dashboard and is reported in the cut report.
 \end{itemize}
