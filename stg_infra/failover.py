@@ -16,7 +16,7 @@ Steps, each checked before the next; any failure stops the run and says what is 
   3. health: time a file read, a directory listing and a Python start-up on the target's home volume, and reach Kalshi
      and GitHub from it. On failure delete the sandbox and stop (this is the check that would have caught the hung home
      volume of 2026-10-22).
-  4. keys: copy sbx_pat, sbx_key, lumid_pat and backup_key from the laptop into ~/.lumid (never via GitHub).
+  4. keys: copy sbx_pat, sbx_key, lumid_pat, backup_key and hc_ping_url from the laptop into ~/.lumid (never via GitHub).
   5. restore: run stg_infra/restore_on_site.sh <target> in the sandbox (code and models from event-pred, live state from
      the event-pred-live backup, posted list, commands, self-tests).
   6. start the keeper (lumid_start.sh) and wait until the producer and paper trader are running.
@@ -39,7 +39,8 @@ SPEC = {"name": "prod-a", "image": "python:3.11", "cpu": 4, "memory_gi": 16, "tt
 U = "curiouslearner842"
 HOME = f"/home/{U}"
 KEYS = {"sbx_pat": Path.home() / ".lumid_sbx_pat", "sbx_key": Path.home() / ".ssh/lumid_sbx_ed25519",
-        "lumid_pat": Path.home() / ".lumid_pat", "backup_key": Path.home() / ".ssh/event_pred_live_backup"}
+        "lumid_pat": Path.home() / ".lumid_pat", "backup_key": Path.home() / ".ssh/event_pred_live_backup",
+        "hc_ping_url": Path.home() / ".lumid_hc_ping_url"}
 SSH_KEY = Path.home() / ".ssh/lumid_sbx_ed25519"
 # health limits: a healthy volume reads a small file in ~2 ms and starts Python with numpy in ~3.5 s
 READ_MAX_MS, LIST_MAX_MS, PY_MAX_MS = 2000, 2000, 30000
@@ -164,7 +165,7 @@ def run(to, failed_unreachable_ok=False, dry=False, api_=api, ssh_=ssh, sleep=ti
                            f"chmod 600 {HOME}/.lumid/{name} && echo ok", stdin=Path(path).read_bytes(), timeout=60)
         if "ok" not in out:
             raise Stop(f"4. could not copy the key {name} (rc {rc})")
-    say("4. keys copied (sbx_pat, sbx_key, lumid_pat, backup_key)")
+    say("4. keys copied (sbx_pat, sbx_key, lumid_pat, backup_key, hc_ping_url)")
 
     # 5. restore
     script = (REPO / "stg_infra/restore_on_site.sh").read_bytes()

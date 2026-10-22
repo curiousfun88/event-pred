@@ -3,7 +3,7 @@
 #
 #   code and models   github.com/curiousfun88/event-pred (branch below; the live models are committed in runs/maker)
 #   live state        github.com/curiousfun88/event-pred-live (ledger, decisions, tape, runs.jsonl, stamps, keeper log)
-#   secrets           NOT on GitHub: copy into ~/.lumid by hand (sbx_pat, sbx_key, lumid_pat, backup_key, known_hosts)
+#   secrets           NOT on GitHub: copy into ~/.lumid by hand (sbx_pat, sbx_key, lumid_pat, backup_key, known_hosts, hc_ping_url)
 #
 # Run INSIDE the sandbox, from anywhere:   bash restore_on_site.sh <office|home>
 # It starts nothing: the keeper is started afterwards with stg_infra/lumid_start.sh, once the laptop producer (if any)
@@ -104,7 +104,7 @@ for f in live_signal_producer paper_ledger paper_trader lumid_sandbox_keeper; do
 done
 echo "   models: $(sha1sum runs/maker/policy_G_model.pkl runs/maker/policy_G2_W3_model.pkl runs/maker/policy_G2P_W3_model.pkl | cut -c1-16 | tr '\n' ' ')"
 echo "   (live fingerprints: e39cc4ca97bbebd4 de87439617ba9476 fcad35080c11d957)"
-for s in sbx_pat sbx_key lumid_pat backup_key known_hosts; do
+for s in sbx_pat sbx_key lumid_pat backup_key known_hosts hc_ping_url; do
     [ -s "$H/.lumid/$s" ] && echo "   secret $s: present" || echo "   secret $s: MISSING (copy it into $H/.lumid/)"
 done
 echo "restore done; start nothing yet"
