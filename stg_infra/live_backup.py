@@ -407,6 +407,32 @@ def import_markets(txt: Path) -> dict:
     return out
 
 
+HC_URL_FILE = CFG / "hc_ping_url"     # 2026-10-22: Healthchecks.io dead man's switch (URL kept off GitHub)
+HC_FRESH_MIN = 65                    # ping only while the producer's latest hour started at most this long ago
+
+
+def health_ping(hb: dict, url_file: Path = HC_URL_FILE, get=None, now=None) -> str:
+    """Ping the Healthchecks URL iff the producer's latest hour is fresh, so pings stop when the producer stops even
+    while the keeper (and this backup) still run. Never raises. Returns what happened."""
+    try:
+        if not url_file.exists():
+            return "no url"
+        H = hb.get("latest_producer_hour")
+        if not H:
+            return "no producer hour"
+        now = now or dt.datetime.now(dt.timezone.utc)
+        age = (now - dt.datetime.strptime(H, "%Y%m%dT%H").replace(tzinfo=dt.timezone.utc)).total_seconds() / 60
+        if age > HC_FRESH_MIN:
+            return f"stale ({age:.0f} min): not pinged"
+        if get is None:
+            import urllib.request
+            get = lambda u: urllib.request.urlopen(u, timeout=10).status
+        status = get(url_file.read_text().strip())
+        return f"pinged ({status})"
+    except Exception as e:
+        return f"ping failed: {e!r}"[:120]
+
+
 def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=None, push=True) -> dict:
     """One backup: clone if needed, sync, write heartbeat, commit if changed, push. Returns a status dict."""
     key = key or (CFG / "backup_key")
@@ -424,6 +450,7 @@ def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=N
         write_summary(repo, clone)                       # the public dashboard's data (site/)
         publish_page(repo, clone)
         hb = heartbeat(repo)
+        health_ping(hb)
         hbp = clone / "heartbeat.json"
         old = json.loads(hbp.read_text()) if hbp.exists() else {}
         keys = ("latest_producer_hour", "latest_ledger_entry", "ledger_entries", "host")
@@ -614,6 +641,19 @@ def self_test() -> bool:
         check("g2 archive export: one line per fill, round-trips to the file paper_trader writes",
               n == 2 and len((c4 / G2_ARCHIVE_TXT).read_text().splitlines()) == 2
               and json.dumps(back) == (r4 / G2_ARCHIVE).read_text())
+    with tempfile.TemporaryDirectory() as td5:
+        uf = Path(td5) / "hc_ping_url"
+        now5 = dt.datetime(2026, 10, 22, 7, 5, tzinfo=dt.timezone.utc)
+        got = []
+        get = lambda u: got.append(u) or 200
+        check("health ping: no URL file, no ping", health_ping({"latest_producer_hour": "20261022T07"}, uf, get, now5) == "no url" and not got)
+        uf.write_text("https://hc-ping.com/test-uuid\n")
+        check("health ping: fresh producer hour pings the stored URL",
+              health_ping({"latest_producer_hour": "20261022T06"}, uf, get, now5) == "pinged (200)" and got == ["https://hc-ping.com/test-uuid"])
+        check("health ping: producer 2 h behind, no ping (the switch then fires)",
+              health_ping({"latest_producer_hour": "20261022T05"}, uf, get, now5).startswith("stale") and len(got) == 1)
+        def boom(u): raise OSError("network down")
+        check("health ping: a network error never raises", health_ping({"latest_producer_hour": "20261022T07"}, uf, boom, now5).startswith("ping failed"))
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 
