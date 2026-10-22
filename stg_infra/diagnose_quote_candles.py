@@ -156,6 +156,12 @@ def run(args) -> int:
     print(f"4. spread   : two-sided legs {len(sp) / max(n_hit, 1):.1%}; quoted spread median {np.median(sp):.2f}c, "
           f"mean {sp.mean():.2f}c, p90 {np.percentile(sp, 90):.1f}c  (trade-based estimates: 4.68-5.61c)")
     b = np.asarray(bk)
+    if args.save_baskets:                 # 2026-10-22: per-snapshot sums for the report's Figure 4.x (off by default)
+        out = _REPO_ROOT / args.save_baskets
+        out.parent.mkdir(parents=True, exist_ok=True)
+        pl.DataFrame({"sum_last": b[:, 0], "sum_bid": b[:, 1], "sum_ask": b[:, 2], "sum_mid": b[:, 3],
+                      "n_legs": b[:, 4].astype(int), "two_sided": b[:, 5] == 1.0}).write_parquet(out)
+        print(f"saved {len(b):,} basket-snapshots to {args.save_baskets}")
     print(f"5. baskets  (n={len(b):,}, median legs {np.median(b[:, 4]):.0f}):")
     for j, name in ((0, "last prints"), (1, "bids"), (2, "asks"), (3, "mids")):
         dv = c(b[:, j] - 1.0)
@@ -185,6 +191,7 @@ def main():
     ap.add_argument("--split", choices=["val", "test"], default="test")
     ap.add_argument("--cache", default="cache_causal")
     ap.add_argument("--quotes", default="data/quotes/candles_1h_2025-07_09.parquet")
+    ap.add_argument("--save-baskets", default="", help="write per-snapshot basket sums (parquet) here")
     args = ap.parse_args()
     return self_test() if args.self_test else run(args)
 
