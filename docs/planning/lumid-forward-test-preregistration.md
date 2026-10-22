@@ -921,7 +921,8 @@ completed. Probable cause: Lumid's home-volume storage (to be reported to Lumid)
 fallback (`stg_infra/laptop_fallback.sh`, command restricted to the 23 series as L19). **Lost producer hours (L12: never
 reconstructed): 2026-10-21 T16 to 2026-10-22 T01** (final list when the sandbox resumes: the volume may hold hours
 produced after the last backup). The laptop's first hour, 2026-10-22 T02, completed at 02:17 (snapshot 16 minutes late,
-73 s cycle, Research Fleet job on home). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+73 s cycle, Research Fleet job on home). A test sandbox at 02:18-02:27 (no keeper started) still read the home volume
+about a thousand times slower than normal (5 KB file 15 s, directory listing 29 s, Python start-up over 45 s); deleted. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
