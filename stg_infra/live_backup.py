@@ -374,6 +374,29 @@ def export_markets(repo: Path, clone: Path) -> int:
     return len(m)
 
 
+G2_ARCHIVE, G2_ARCHIVE_TXT = "runs/live/paper/g2_archive.json", "runs/live/paper/g2_archive.jsonl"
+
+
+def export_g2_archive(repo: Path, clone: Path) -> int:
+    """2026-10-22: the L10 archive of g2's fills, which the L7 category selection reads (without it the selection
+    sees only recent weeks), as one sorted JSON line per fill. Returns the number of fills."""
+    src = repo / G2_ARCHIVE
+    if not src.exists():
+        return 0
+    rows = sorted(tuple(r) for r in json.loads(src.read_text()))
+    dst = clone / G2_ARCHIVE_TXT
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    text = "".join(json.dumps(list(r)) + "\n" for r in rows)
+    if not dst.exists() or dst.read_text() != text:
+        dst.write_text(text)
+    return len(rows)
+
+
+def import_g2_archive(txt: Path) -> list:
+    """The inverse of export_g2_archive: the archive as paper_trader writes it."""
+    return [json.loads(l) for l in txt.read_text().splitlines() if l.strip()]
+
+
 def import_markets(txt: Path) -> dict:
     """The inverse of export_markets: {ticker: row}."""
     out = {}
@@ -397,6 +420,7 @@ def run_once(repo: Path = REPO, clone: Path = CLONE, remote: str = REMOTE, key=N
             git(clone, "config", "user.email", "live-backup@users.noreply.github.com")
         copied = sync(repo, clone)
         export_markets(repo, clone)
+        export_g2_archive(repo, clone)
         write_summary(repo, clone)                       # the public dashboard's data (site/)
         publish_page(repo, clone)
         hb = heartbeat(repo)
@@ -579,6 +603,17 @@ def self_test() -> bool:
         t0 = (c3 / MARKETS_TXT).stat().st_mtime_ns
         export_markets(r3, c3)
         check("markets export: unchanged cache leaves the file untouched", (c3 / MARKETS_TXT).stat().st_mtime_ns == t0)
+    with tempfile.TemporaryDirectory() as td4:
+        r4, c4 = Path(td4) / "repo", Path(td4) / "clone"
+        (r4 / "runs/live/paper").mkdir(parents=True)
+        check("g2 archive export: nothing without an archive", export_g2_archive(r4, c4) == 0)
+        arch = [["EV-B", "EV-B-1", -1, 60, 2, 1, 40, 9], ["EV-A", "EV-A-1", 1, 40, 1, 0, 40, 5]]
+        (r4 / G2_ARCHIVE).write_text(json.dumps(sorted(arch)))
+        n = export_g2_archive(r4, c4)
+        back = import_g2_archive(c4 / G2_ARCHIVE_TXT)
+        check("g2 archive export: one line per fill, round-trips to the file paper_trader writes",
+              n == 2 and len((c4 / G2_ARCHIVE_TXT).read_text().splitlines()) == 2
+              and json.dumps(back) == (r4 / G2_ARCHIVE).read_text())
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 

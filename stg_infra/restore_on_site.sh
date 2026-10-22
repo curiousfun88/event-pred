@@ -54,6 +54,16 @@ if [ -f "$L/paper/markets.pkl" ]; then
 else
     echo "   settlement cache: MISSING (run stg_infra/rebuild_markets_cache.py before starting the paper trader)"
 fi
+# the L10 g2 fill archive that the L7 category selection reads (backed up as text since 2026-10-22)
+if [ ! -f "$L/paper/g2_archive.json" ] && [ -f "$L/paper/g2_archive.jsonl" ]; then
+    (cd event-pred && "$PY" -c "import json, sys; sys.path.insert(0, 'stg_infra'); from pathlib import Path; import live_backup as b
+Path(b.G2_ARCHIVE).write_text(json.dumps(b.import_g2_archive(Path(b.G2_ARCHIVE_TXT))))")
+fi
+if [ -f "$L/paper/g2_archive.json" ]; then
+    echo "   g2 selection archive: $("$PY" -c "import json; print(len(json.load(open('$L/paper/g2_archive.json'))))") fills"
+else
+    echo "   g2 selection archive: MISSING (the L7 selection would see only recent weeks: recover it before starting the paper trader)"
+fi
 
 echo "3. Research Fleet posted list (not in the backup): mark every hour and entry already on record as posted"
 "$PY" - "$L" <<'EOF'
