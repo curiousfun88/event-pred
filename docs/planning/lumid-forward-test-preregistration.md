@@ -935,7 +935,15 @@ cycle failed at 04:15 (the laptop could no longer reach Kalshi's API at all); it
 produced T04 late (snapshot 04:20, 33 s, 90 API calls, Research Fleet job on home) and the backup resumed at 04:20:16.
 The ledger continues from its entry T14 on office (catch-up in progress). **Lost producer hours: 2026-10-21 T16 to
 2026-10-22 T01** (ten hours, L12: never reconstructed); T02 and T03 come from the laptop and T04 ran late. The live test
-stays on office until it ends; office sandboxes are sized as home's (4 cores, 16 GB, keeper change 466dda2). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+stays on office until it ends; office sandboxes are sized as home's (4 cores, 16 GB, keeper change 466dda2).
+**Settlement cache after the restore (2026-10-22).** The paper trader's settlement cache (`runs/live/paper/markets.pkl`)
+was not in the backup, so office started with none; the dashboard then counted no event as settled, and the ledger's
+next entry would have valued every settled event as open. No entry was written: the paper trader was stopped at 04:29
+(ledger still ending at 20261021T14), `stg_infra/rebuild_markets_cache.py` refetched all 1,880 events with ledger fills
+(14,671 markets, 12,427 settled, 566 s), and the settled figures on the same 140 entries matched the last pre-outage
+dashboard except for events settled since (counts only rose; arms without new settlements identical to the cent; G2
++$117.53 on 48 events -> +$118.30 on 51). The paper trader restarted at 04:45:49. From the next keeper start the backup
+also stores the cache as text (`markets.jsonl`, 582d019) and the restore rebuilds it. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
