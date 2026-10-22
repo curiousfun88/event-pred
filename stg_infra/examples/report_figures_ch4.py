@@ -4,7 +4,7 @@ report_figures_ch4.py
 Figures for Chapter 4 of the report (measuring apparent mispricing), written as PDFs into the report's figures/.
 
   fig_basket_sums.pdf   basket sums at last print, mid, bid and ask, two-sided vs one-sided baskets
-                        (quoted top of book, test snapshots Jul-Sep 2025; data from
+                        (quoted top of book, test month Sep 2025 of the Jul-Sep fetch; data from
                         diagnose_quote_candles.py --split test --save-baskets results/mece/quote_basket_sums_test.parquet)
   fig_overround.pdf     measured mean last-print deviation by number of legs, with the order-flow prediction
                         N x h(2p-1) (h = 2.8c, p = 0.687) stated before measuring
