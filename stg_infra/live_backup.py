@@ -175,16 +175,49 @@ def recount_rows(repo: Path, ents) -> tuple:
     return rows, main_rows
 
 
+def load_corrections(ledger_dir: Path) -> list:
+    """Append-only corrections (ledger/corrections/correction_<arm>_<date>.json): [(arm, first H, last H,
+    {window: number of corrected fills})]. 2026-10-23."""
+    out = []
+    for p in sorted((ledger_dir / "corrections").glob("correction_*.json")) if (ledger_dir / "corrections").exists() else []:
+        try:
+            doc = json.loads(p.read_text())
+            arm = p.stem[len("correction_"):].rsplit("_", 1)[0]
+            lo, hi = doc["entries"]
+            out.append((arm, lo, hi, {w: len(v) for w, v in doc["fills_by_window"].items()}))
+        except Exception:
+            continue
+    return out
+
+
+def covered_by_correction(flag: dict, H: str, corrections: list) -> bool:
+    """A check flag is a known, corrected gap (not a new issue) iff it is on a corrected arm and either sits in the
+    corrected entries themselves, or reports nothing missing and EXACTLY the corrected number of extra fills for its
+    window. Any other flag on that arm (a different count, anything missing later) stays an issue."""
+    for arm, lo, hi, n in corrections:
+        if flag.get("arm") != arm:
+            continue
+        if lo <= H <= hi:
+            return True
+        if flag.get("missing_now") == 0 and flag.get("extra_now") == n.get(flag.get("window")):
+            return True
+    return False
+
+
 def build_summary(repo: Path) -> dict:
     """The public dashboard's data (site/summary.json): every ledger entry's cumulative figures per strategy (primary
     window, pessimistic fills) and the test's status. Read-only on the ledger. L20: the curves are recounted from the
     recorded fills (recount_rows); the totals stored in entries are used only if the recount fails."""
     d = repo / "runs/live/paper/ledger"
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
-    rows, main_rows, issues, prejoin, rederive, last = [], [], 0, 0, 0, None
+    rows, main_rows, issues, prejoin, rederive, covered, last = [], [], 0, 0, 0, 0, None
+    corrections = load_corrections(d)
     for f in ents:
         e = json.loads(f.read_text())
         for x in e.get("verification") or []:
+            if covered_by_correction(x, str(e.get("H", f.stem)), corrections):
+                covered += 1
+                continue
             # entries 10-16 T08-T10: liq_traded (L17, joined at T06) was compared on hours before it joined; nothing
             # recorded was missing (missing_now 0). A check artefact, fixed in paper_ledger.verify; counted apart.
             if x.get("arm") == "liq_traded" and x.get("missing_now") == 0:
@@ -214,7 +247,8 @@ def build_summary(repo: Path) -> dict:
     return {"generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "live_since": st.get("start_stamp"), "latest_entry": ents[-1].stem if ents else None, "entries": len(ents),
             "verification_issues": issues, "late_arm_prejoin_notes": prejoin,
-            "liq_traded_rederivation_notes": rederive, "g2_settled_events": v.get("g2_events"),
+            "liq_traded_rederivation_notes": rederive, "correction_covered_notes": covered,
+            "g2_settled_events": v.get("g2_events"),
             "latest_producer_hour": heartbeat(repo)["latest_producer_hour"], "settled": settled, "main_rows": main_rows,
             "rows": rows, "curve_source": source}
 
@@ -654,6 +688,22 @@ def self_test() -> bool:
               health_ping({"latest_producer_hour": "20261022T05"}, uf, get, now5).startswith("stale") and len(got) == 1)
         def boom(u): raise OSError("network down")
         check("health ping: a network error never raises", health_ping({"latest_producer_hour": "20261022T07"}, uf, boom, now5).startswith("ping failed"))
+    with tempfile.TemporaryDirectory() as td6:
+        L6 = Path(td6) / "runs/live/paper/ledger"; (L6 / "entries").mkdir(parents=True); (L6 / "corrections").mkdir()
+        (L6 / "corrections/correction_g2_sel_20261022.json").write_text(json.dumps(
+            {"entries": ["20261021T15", "20261022T05"], "fills_by_window": {"primary": [[1]] * 8, "primary_opt": [[1]] * 12}}))
+        fg = lambda w, m, x: {"window": w, "arm": "g2_sel", "missing_now": m, "extra_now": x}
+        for stamp, v in (("20261021T15", [fg("primary", 420, 0)]),        # inside the corrected entries: covered
+                         ("20261022T06", [fg("primary", 0, 8), fg("primary_opt", 0, 12)]),   # exact re-checks: covered
+                         ("20261023T01", [fg("primary", 0, 9)]),          # a different count: still an issue
+                         ("20261023T02", [fg("primary", 3, 8)]),          # something missing: still an issue
+                         ("20261023T03", [{"window": "primary", "arm": "g2", "missing_now": 0, "extra_now": 8}])):  # other arm
+            (L6 / "entries" / f"{stamp}.json").write_text(json.dumps({"H": stamp, "verification": v, "new_fills": {}}))
+        sm6 = build_summary(Path(td6))
+        check(f"corrections: exact re-checks of a corrected gap are notes, any deviation or other arm stays an issue "
+              f"(got covered {sm6['correction_covered_notes']}, issues {sm6['verification_issues']})",
+              sm6["correction_covered_notes"] == 3 and sm6["verification_issues"] == 3)
+        check("corrections: no corrections folder means nothing is covered", load_corrections(Path(td6) / "nope") == [])
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 

@@ -968,7 +968,14 @@ running totals, and `fwdtest-daily-20261022` (home:fm:wfl-6309924a-01a5-49b3-bcd
 02:01) matches the dashboard (G2 +$113.34, +5.25%, G2 minus random +$289.45). Noted in the Fleet guide and the
 sandbox README. The restore now rebuilds the cache before the keeper starts (582d019), so a future move cannot
 repeat this. First handover on office: 2026-10-23 00:43-00:44 (prod-a to prod-b), clean, with the 370d673 code
-(Healthchecks ping, markets.jsonl and g2_archive.jsonl in the backup, both confirmed on GitHub). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+(Healthchecks ping, markets.jsonl and g2_archive.jsonl in the backup, both confirmed on GitHub).
+**Dashboard: re-checks of a corrected gap (2026-10-23).** Every ledger round re-flags the 8 g2_sel fills listed in
+`correction_g2_sel_20261022.json` until their events leave the 4-day window (about 2026-10-26), so the dashboard's
+"ledger check issues" rose by about one an hour (68 at 2026-10-23 10:00 UTC). From the next keeper start the backup
+counts a flag as a re-check of a corrected gap only if it is on the corrected arm and either lies in the corrected
+entries or reports nothing missing and exactly the corrected number of extra fills for its window (8/12/6/10). Any
+other flag stays an issue. On the ledger at 2026-10-23 10:00 UTC: 68 covered, 0 issues remaining. Shown as its own
+dashboard chip. Display only: no ledger entry, fill or figure changes. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
