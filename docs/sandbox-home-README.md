@@ -50,6 +50,8 @@ The same results are posted as jobs on Research Fleet:
 Open a job and choose Result to see its metrics. Jobs go to the home site, with office as the backup. Hourly jobs
 from 18 Oct to the evening of 21 Oct 2026 are on the office site. There are no decision jobs for 21 Oct 16:00 to
 22 Oct 01:00 UTC: those ten hours were lost in the home site's outage and are not reconstructed (rule L12).
+The daily record for 21 Oct 2026 was posted during the move, before the settled data was restored, and is empty.
+Daily records are running totals, so the 22 Oct record covers it.
 
 ## Strategy codes
 

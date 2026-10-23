@@ -960,7 +960,15 @@ receipt alongside) lists those fills (primary: 8 fills in KXHIGHDEN/KXHIGHPHIL 2
 when written); the cut report adds them to g2_sel. Until their events leave the 4-day recompute window (about
 2026-10-26) the first entry of each round repeats the same extra_now flag for g2_sel, so the dashboard's check-issue
 count rises; these flags are the correction, not new mismatches. No other arm was affected (all other checks empty).
-Backup and restore cover the archive from 3dd22be; rebuild_markets_cache fetches archive events from f5c8ee0. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+Backup and restore cover the archive from 3dd22be; rebuild_markets_cache fetches archive events from f5c8ee0.
+**Empty daily record for 21 Oct (found 2026-10-23).** The office keeper's first daily tick (2026-10-22 04:20:25,
+seconds after it started) posted `fwdtest-daily-20261021` (home:fm:wfl-85f6142d-7dac-4e0a-a4ae-0b62a9215213) while the
+settlement cache was still empty: its metrics are empty and its by-day rows zero. Not re-posted: daily records are
+running totals, and `fwdtest-daily-20261022` (home:fm:wfl-6309924a-01a5-49b3-bcd3-c16e4e9c1e55, posted 2026-10-23
+02:01) matches the dashboard (G2 +$113.34, +5.25%, G2 minus random +$289.45). Noted in the Fleet guide and the
+sandbox README. The restore now rebuilds the cache before the keeper starts (582d019), so a future move cannot
+repeat this. First handover on office: 2026-10-23 00:43-00:44 (prod-a to prod-b), clean, with the 370d673 code
+(Healthchecks ping, markets.jsonl and g2_archive.jsonl in the backup, both confirmed on GitHub). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 

@@ -26,7 +26,7 @@
 \definecolor{keyrule}{HTML}{3B6EA8}
 
 \title{Reading the Live Test on Lumid Research Fleet\\[6pt]\large FYP: Learned Market Making on Kalshi Event Contracts}
-\date{21 October 2026}
+\date{23 October 2026}
 \author{Justyn}
 
 \begin{document}
@@ -85,8 +85,8 @@ Metric & Meaning \\
 \bottomrule
 \end{tabularx}
 
-In the record for 20 October 2026 (latest ledger entry 23:00 UTC), for example, G2 had +\$115.23 (+7.3\%) over 40 settled events, against
-$-$\$181.59 ($-$6.7\%) for random quoting at the same share: G2 minus random +\$296.82. A strategy with no settled
+In the record for 22 October 2026 (latest ledger entry 23:00 UTC), for example, G2 had +\$113.34 (+5.25\%) over 58 settled events, against
+$-$\$176.11 ($-$5.44\%) for random quoting at the same share: G2 minus random +\$289.45. A strategy with no settled
 position yet has no metric. The job's output also carries the full table, net P\&L by day, and the hash of the
 latest ledger entry, which ties the record to the hourly audit trail. In \job{settled\_net\_usd\_by\_day} each value
 is the running total at the end of that day, not the day's own P\&L.
@@ -102,8 +102,8 @@ daily record recalculate past hours from all recorded fills, so an hourly job ca
 entries written before the fix of 19 October (amendment L20) undercount repeated fills. For the result, use the daily
 record.
 
-Jobs posted up to 20 October 2026 may use an older format, which also lists the full universe of markets,
-positions still open, and test statistics on the full universe. In those, read only the names with
+Jobs posted up to 20 October 2026 may use an older format that also covers the full universe. In those, read only
+the names with
 \job{\_main\_realised\_usd}: \job{g2\_main\_realised\_usd} is the same figure as \job{main\_g2\_net\_usd}.
 
 The job's output holds the ledger entry's hash and the previous entry's hash, so each post can be checked against
@@ -194,11 +194,11 @@ Code & Strategy \\
   the strategy runs. A post that a site rejects is re-sent within the hour, so a missing hour usually appears later.
   Some hours then appear twice, with identical figures.
   \item \textbf{Ten hours are missing} (21 October 16:00 to 22 October 01:00 UTC), lost to a storage fault on the home
-  site and not reconstructed (rule L12). Since 22 October the test runs on the office site, restored from its backup.
+  site (rule L12: not reconstructed). Since 22 October the test runs on the office site. The daily record for
+  21 October, posted during the move, is empty. Records are running totals, so the 22 October record covers it.
   \item \textbf{Ledger check flags for \job{g2\_sel} until about 26 October} are a known gap of 8 fills, listed in an
   append-only correction file. No other strategy is affected.
-  \item \textbf{The secondary result} (the full universe of markets, 15 to 17 October) is not in these jobs. It is a
-  single line on the dashboard and is reported in the cut report.
+  \item \textbf{The secondary result} (full universe, 15 to 17 October) is on the dashboard and in the cut report only.
 \end{itemize}
 
 The rules, dated amendments and host log are in the
