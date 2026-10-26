@@ -12,6 +12,8 @@ Macros (all from the cut report's headline block; `primary` = pessimistic fills,
                   Field: Net Return Events SettledFills CILo CIHi EventClusters DayCILo DayCIHi DayClusters
   G2 verdicts     \\Main<Stream>GTwoOneSided \\Main<Stream>GTwoDayOneSided
   G2 - random     \\Main<Stream>GTwoMinusRandom{,Lo,Hi,OneSided,DayLo,DayHi,DayOneSided}   (return points)
+  main risk       \\MainRisk<Arm><Field> (pessimistic): Sharpe MaxDrawdown MaxDrawdownPct ProfitableDays TopTenShare
+                  PeakCapital Days; \\BenchIndexReturn \\BenchTBillReturn \\BenchIndexSource (main result's dates)
   full universe   \\Full<Stream>GTwo<Field>, \\Full<Stream>GTwoMinusRandom...  (L19 hours), and \\FullSame... (same
                   hours as the main result)
 Stream: '' (pessimistic), Strict, Opt, Sens (as-executed order window). Money '+\\$1,234.56', returns '+9.3\\%',
@@ -87,6 +89,17 @@ def diff_fields(d: dict) -> dict:
             "DayLo": pts(y.get("lo95")), "DayHi": pts(y.get("hi95")), "DayOneSided": pts(y.get("lo_one_sided"))}
 
 
+def risk_fields(r: dict) -> dict:
+    sh = r.get("sharpe")
+    share = lambda v: "n/a" if _bad(v) else f"{100 * v:.0f}\\%"
+    return {"Sharpe": "n/a" if _bad(sh) else (("\\(-\\)" if sh < 0 else "") + f"{abs(sh):.1f}"),
+            "MaxDrawdown": "n/a" if _bad(r.get("max_drawdown_usd")) else f"\\${r['max_drawdown_usd']:,.2f}",
+            "MaxDrawdownPct": share(None if _bad(r.get("max_drawdown_pct_of_peak_capital")) else r["max_drawdown_pct_of_peak_capital"] / 100),
+            "ProfitableDays": share(r.get("profitable_days_share")), "TopTenShare": share(r.get("top10_event_share")),
+            "PeakCapital": "n/a" if _bad(r.get("peak_open_capital_usd")) else f"\\${r['peak_open_capital_usd']:,.2f}",
+            "Days": count(r.get("tradedate_days")) if r else "n/a"}
+
+
 def macros(rep: dict, source: str) -> dict:
     """{macro name: LaTeX text} for one cut report."""
     out = {"CutLiveStart": stamp_text(dt.datetime.fromisoformat(rep["live_start"]).strftime("%Y%m%dT%H")),
@@ -113,6 +126,14 @@ def macros(rep: dict, source: str) -> dict:
                 out[f"{P}{S}GTwo{f}"] = v
             for f, v in diff_fields(u.get("g2_minus_rnd2")).items():
                 out[f"{P}{S}GTwoMinusRandom{f}"] = v
+    main_p = (rep["headline"].get("primary") or {}).get(MAIN, {})
+    for a, X in ARMS.items():
+        for f, v in risk_fields((main_p.get("arms", {}).get(a, {}) or {}).get("risk") or {}).items():
+            out[f"MainRisk{X}{f}"] = v
+    bmk = rep.get("benchmarks_main") or {}
+    out["BenchIndexReturn"] = pct(bmk.get("index_return_pct"))
+    out["BenchTBillReturn"] = pct(bmk.get("tbill_return_pct"), 2)
+    out["BenchIndexSource"] = (bmk.get("index_source") or "n/a").replace("&", "\\&")
     bad = [k for k in out if not re.fullmatch(r"[A-Za-z]+", k)]
     if bad:
         raise ValueError(f"macro names must be letters only: {bad}")
@@ -165,7 +186,10 @@ def self_test() -> bool:
             "full universe (L19: quoting hours S to 2026-10-17 T05)": {"g2": {"net_usd": -760.34, "return_pct": -6.11,
                                                                               "events": 876, "settled_fills": 5512}},
             "full universe, same hours as the main result (descriptive; ...)": {"g2": {"net_usd": -197.03, "return_pct": -6.08}}}
+    g2["risk"] = {"tradedate_days": 12, "peak_open_capital_usd": 1234.5, "sharpe": 3.456, "max_drawdown_usd": 40.0,
+                  "max_drawdown_pct_of_peak_capital": 3.24, "profitable_days_share": 0.75, "top10_event_share": 0.62}
     rep = {"cut": "20261028T00", "settle_by": "20261030T00", "live_start": "2026-10-15T19:00:00+00:00", "hours": 300,
+           "benchmarks_main": {"index_return_pct": 1.234, "tbill_return_pct": 0.12, "index_source": "FRED SP500 (price index, no dividends)"},
            "headline": {"primary": head, "primary_strict": {MAIN: {"g2": g2, "arms": {"g2": {**g2, "net_usd": 50.0}}}}}}
     ms = macros(rep, "planted.json")
     check("main result: G2 net, return, events, event-cluster CI and k", (ms["MainGTwoNet"], ms["MainGTwoReturn"],
@@ -182,6 +206,12 @@ def self_test() -> bool:
     check("meta: cut, settle-by and live start in words",
           (ms["CutTime"], ms["CutSettleBy"], ms["CutLiveStart"], ms["CutHours"])
           == ("28 Oct 2026, 00:00 UTC", "30 Oct 2026, 00:00 UTC", "15 Oct 2026, 19:00 UTC", "300"))
+    check("main risk: Sharpe, drawdown and its share of peak capital, profitable days, top-10 share, days; absent arm n/a",
+          (ms["MainRiskGTwoSharpe"], ms["MainRiskGTwoMaxDrawdown"], ms["MainRiskGTwoMaxDrawdownPct"], ms["MainRiskGTwoProfitableDays"],
+           ms["MainRiskGTwoTopTenShare"], ms["MainRiskGTwoDays"], ms["MainRiskNeuralSharpe"])
+          == ("3.5", "\\$40.00", "3\\%", "75\\%", "62\\%", "12", "n/a"))
+    check("benchmarks over the main result's dates", (ms["BenchIndexReturn"], ms["BenchTBillReturn"])
+          == ("+1.2\\%", "+0.12\\%"))
     check("every macro name is letters only and unique", all(re.fullmatch(r"[A-Za-z]+", k) for k in ms))
     txt = render(ms, ["test"])
     check("render: one \\newcommand per macro, sorted", txt.count("\\newcommand") == len(ms) and "\\newcommand{\\MainGTwoNet}{+\\$101.04}" in txt)

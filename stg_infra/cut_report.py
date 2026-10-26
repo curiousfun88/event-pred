@@ -314,6 +314,23 @@ def tradedate_series(F):
 
 # ---------------------------------------------------------------- benchmarks
 
+def main_benchmarks(closes: dict, tbill_rate_pct, lo_ns: int, hi_ns: int, source=None) -> dict:
+    """S&P 500 and 3-month T-bill returns over the main result's dates (2026-10-26; descriptive, section 6): the index
+    from its last close before the main result starts to its last close before the cut; the T-bill rate over the
+    same calendar days."""
+    lo = dt.datetime.fromtimestamp(lo_ns / 1e9, dt.timezone.utc).date()
+    hi = dt.datetime.fromtimestamp(hi_ns / 1e9, dt.timezone.utc).date()
+    days = sorted(closes)
+    before = [d for d in days if d < lo.isoformat()]
+    upto = [d for d in days if d < hi.isoformat()]
+    out = {"from": lo.isoformat(), "to": hi.isoformat(), "index_source": source}
+    if before and upto and upto[-1] > before[-1]:
+        out["index_return_pct"] = 100 * (closes[upto[-1]] / closes[before[-1]] - 1)
+    if tbill_rate_pct is not None:
+        out["tbill_return_pct"] = tbill_rate_pct * (hi - lo).days / 365
+    return out
+
+
 def fetch_spy_and_tbill(lo: dt.date, hi: dt.date):
     """SPY daily closes (Stooq, split-adjusted close) and the mean 3-month T-bill rate (FRED DTB3) over [lo, hi]."""
     import requests
@@ -499,7 +516,9 @@ def build(cut: str, settle_by: str, bench=True):
         m["max_drawdown_tradedate_usd"] = max_drawdown(td_cum)
         m["splits"] = universe_splits(keys, results, settled_at, settle_ns, mid_next)   # L11: descriptive
         rep["arms"].setdefault(w, {})[a] = m
-    rep["headline"] = headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt)
+    rf = bm.get("tbill_rate_pct", 0.0) / 100 if bm.get("tbill_rate_pct") else None
+    rep["headline"] = headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt, rf_annual=rf)
+    rep["benchmarks_main"] = main_benchmarks(spy, bm.get("tbill_rate_pct"), ns_of(MAIN_FROM), cut_ns, bm.get("index_source"))
     rep["arms_universe_note"] = ("'arms' covers every live hour S to the cut, so from 2026-10-17 T06 (L19) only the 23 "
                                  "series; the L19 full-universe result is headline['" + FULL + "']")
     return rep
@@ -512,7 +531,23 @@ FULL = "full universe (L19: quoting hours S to 2026-10-17 T05)"
 FULL_SAME = "full universe, same hours as the main result (descriptive; 2026-10-16 T17 to 2026-10-17 T05)"
 
 
-def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt, main_from=None, full_to=None):
+def main_risk(keys, done, settled_at, top10_share, rf_annual=None) -> dict:
+    """Risk of one arm on the main result (2026-10-26; descriptive, section 6): settled fills booked by trade date
+    (each fill's final net on the day it was quoted, as the 2025 and 2026 offline risk tables), peak open capital of
+    the arm's main-result fills, daily Sharpe over the T-bill rate, largest drawdown, profitable days, and the top-10
+    events' share of net P&L."""
+    ends, cum = tradedate_series(done)
+    cap = peak_open_capital(keys, settled_at, ends) if ends else 0.0
+    r = risk_metrics(cum, cap, rf_annual)
+    daily = np.diff(np.concatenate([[0.0], cum])) if cum else np.array([])
+    mdd = max_drawdown(cum)
+    return {"tradedate_days": len(cum), "peak_open_capital_usd": cap, "sharpe": r.get("sharpe", float("nan")),
+            "max_drawdown_usd": mdd, "max_drawdown_pct_of_peak_capital": 100 * mdd / cap if cap else float("nan"),
+            "profitable_days_share": float(np.mean(daily > 0)) if len(daily) else float("nan"),
+            "top10_event_share": top10_share if top10_share is not None else float("nan")}
+
+
+def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt, main_from=None, full_to=None, rf_annual=None):
     """L18: the main result on the 23 training series from MAIN_FROM, and the full universe from S beside it: per stream,
     G2's return (event-cluster CI and the L8 one-sided bound) and G2 minus rnd2 (paired). L19: the full universe ends at
     FULL_TO (later hours quote only the 23 series)."""
@@ -538,9 +573,10 @@ def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt,
         for a2 in sorted(a_ for w_, a_ in fills if w_ == w):
             ks = [k for k in fills[(w, a2)] if start <= int(k[7]) < cut_ns and is_train23_key(k) and int(k[7]) >= main_from]
             m2 = fill_metrics(ks, results, settled_at, settle_ns, mid_next)
-            m2.pop("_done")
+            done2 = m2.pop("_done")
             res[MAIN]["arms"][a2] = {k: m2[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills",
                                                         "events", "ci", "ci_day_clusters") if k in m2}
+            res[MAIN]["arms"][a2]["risk"] = main_risk(ks, done2, settled_at, m2.get("top10_event_share"), rf_annual)
         out[w] = res
     return out
 
@@ -624,6 +660,23 @@ def self_test() -> bool:
           and abs(hl3["primary"]["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]["g2"]["net_usd"] - 7.0) < 1e-9)
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
+    rk = t23["arms"]["g2"]["risk"]
+    check("main result risk: one trade date, top-10 share 1 (one winning event), drawdown 0 on a rising curve",
+          rk["tradedate_days"] == 1 and abs(rk["top10_event_share"] - 1.0) < 1e-9 and rk["max_drawdown_usd"] == 0.0)
+    Fr = [("E1", "A", 1, 40, 10, 0.0, 600.0, 400.0, 0.0, H0), ("E2", "B", 1, 40, 10, 0.0, -200.0, 400.0, 0.0, H0 + DAY_NS),
+          ("E3", "C", 1, 40, 10, 0.0, 100.0, 400.0, 0.0, H0 + 2 * DAY_NS)]
+    kr = [(f[0], f[1], f[2], f[3], f[4], f[5], f[7], f[9]) for f in Fr]
+    # E1 settles the morning after its trade date, E2 and E3 stay open past the last day end
+    rr = main_risk(kr, Fr, {"E1": H0 + DAY_NS + H_NS, "E2": H0 + 5 * DAY_NS, "E3": H0 + 5 * DAY_NS}, 0.5)
+    check("main result risk: +6, -2, +1 by trade date -> drawdown $2.00, 2 of 3 days profitable, peak open capital $8.00 "
+          "(E2 and E3 open at the last day end), drawdown 25% of it",
+          abs(rr["max_drawdown_usd"] - 2.0) < 1e-9 and abs(rr["profitable_days_share"] - 2 / 3) < 1e-9
+          and abs(rr["peak_open_capital_usd"] - 8.0) < 1e-9 and abs(rr["max_drawdown_pct_of_peak_capital"] - 25.0) < 1e-9)
+    D0 = dt.datetime(2026, 10, 16, 17, tzinfo=dt.timezone.utc)
+    b1 = main_benchmarks({"2026-10-15": 100.0, "2026-10-16": 101.0, "2026-10-27": 103.0, "2026-10-28": 999.0}, 3.65,
+                         int(D0.timestamp()) * 10**9, int(dt.datetime(2026, 10, 28, tzinfo=dt.timezone.utc).timestamp()) * 10**9)
+    check("benchmarks over the main result: index from the last close before 16 Oct to the last before the cut (+3%), "
+          "T-bill over 12 days", abs(b1["index_return_pct"] - 3.0) < 1e-9 and abs(b1["tbill_return_pct"] - 3.65 * 12 / 365) < 1e-9)
     # behaviour metrics on planted fills: (event, ticker, side, price, qty, fee, net, capital, markout, H)
     Fb = [("E1", "A", 1, 40, 10, 0.0, 600.0, 400.0, 0.0, H0), ("E2", "B", -1, 90, 10, 10.0, -1010.0, 100.0, 0.0, H0 + DAY_NS),
           ("E3", "C", 1, 10, 10, 0.0, -100.0, 100.0, 0.0, H0 + 2 * DAY_NS)]
