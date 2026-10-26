@@ -975,7 +975,20 @@ repeat this. First handover on office: 2026-10-23 00:43-00:44 (prod-a to prod-b)
 counts a flag as a re-check of a corrected gap only if it is on the corrected arm and either lies in the corrected
 entries or reports nothing missing and exactly the corrected number of extra fills for its window (8/12/6/10). Any
 other flag stays an issue. On the ledger at 2026-10-23 10:00 UTC: 68 covered, 0 issues remaining. Shown as its own
-dashboard chip. Display only: no ledger entry, fill or figure changes. Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+dashboard chip. Display only: no ledger entry, fill or figure changes.
+**Dashboard: re-checks of a corrected gap, part 2 (2026-10-26).** From entry 20261025T15 the dashboard counted 32 new
+issues, all g2_sel: missing_now 0, extra_now 4/7/2/4 in every round. Cause (`stg_infra/examples/diagnose_g2_sel_flags.py`,
+ada9ecc): the two 21 Oct events of the correction (KXHIGHDEN-26OCT21, KXHIGHPHIL-26OCT21, last candidate 20261021T15)
+left the 4-day recompute window when a round's newest hour reached 20261025T16, so the re-check finds only the other two
+events' corrected fills (2+2, 5+2, 2+0, 2+2), which the exact-count rule above did not recognise. Checked on every
+g2_sel flag after the corrected entries: 53 of 53 equal the corrected fills still in the window. Replaying the fold-2
+selection at every backup commit from 2026-10-24 22:00 UTC gave Climate and Weather throughout, so no selection changed.
+Rule now: a flag also counts as a re-check of the corrected gap when nothing is missing and its extra fills equal the
+corrected fills whose events had a candidate in the 4 days to the round's newest hour (the entry's hour or up to two
+hours later). Any other flag stays an issue. On the ledger to 20261026T06: 32 issues -> 0, covered 188 -> 220. The
+flags shrink to 2/2/0/2 when KXHIGHPHIL-26OCT22 leaves the window (from about 2026-10-26 T20) and stop when
+KXHMONTHRANGE-26OCT does (early November), not about 2026-10-26 as estimated above. Display only: no ledger entry, fill
+or figure changes. Active from the keeper start after the file is copied (recorded here). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 

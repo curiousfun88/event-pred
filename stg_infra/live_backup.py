@@ -177,30 +177,64 @@ def recount_rows(repo: Path, ents) -> tuple:
 
 def load_corrections(ledger_dir: Path) -> list:
     """Append-only corrections (ledger/corrections/correction_<arm>_<date>.json): [(arm, first H, last H,
-    {window: number of corrected fills})]. 2026-10-23."""
+    {window: [event of each corrected fill]})]. 2026-10-23."""
     out = []
     for p in sorted((ledger_dir / "corrections").glob("correction_*.json")) if (ledger_dir / "corrections").exists() else []:
         try:
             doc = json.loads(p.read_text())
             arm = p.stem[len("correction_"):].rsplit("_", 1)[0]
             lo, hi = doc["entries"]
-            out.append((arm, lo, hi, {w: len(v) for w, v in doc["fills_by_window"].items()}))
+            out.append((arm, lo, hi, {w: [str(f[0]) for f in v] for w, v in doc["fills_by_window"].items()}))
         except Exception:
             continue
     return out
 
 
-def covered_by_correction(flag: dict, H: str, corrections: list) -> bool:
+# paper_trader.ACTIVE_DAYS: a ledger round re-derives only events with a candidate in the last 4 days
+ACTIVE_DAYS = 4
+_LAST_CAND = {}         # score file name -> {event: newest H_ns}; score files never change once written
+
+
+def last_candidates(repo: Path, events: set) -> dict:
+    """{event: newest H_ns at which it had a logged one-level candidate}, for the given events only."""
+    import polars as pl
+    out = {}
+    for f in sorted((repo / "runs/live/scores").glob("one_*.parquet")):
+        if f.name not in _LAST_CAND:
+            d = pl.read_parquet(f, columns=["event", "H_ns"]).group_by("event").agg(pl.col("H_ns").max())
+            _LAST_CAND[f.name] = dict(zip(d["event"].to_list(), d["H_ns"].to_list()))
+        for ev, h in _LAST_CAND[f.name].items():
+            if ev in events:
+                out[ev] = max(out.get(ev, 0), int(h))
+    return out
+
+
+def _h_ns(H: str) -> int:
+    return int(dt.datetime.strptime(H, "%Y%m%dT%H").replace(tzinfo=dt.timezone.utc).timestamp()) * 10**9
+
+
+def covered_by_correction(flag: dict, H: str, corrections: list, last_cand: dict | None = None) -> bool:
     """A check flag is a known, corrected gap (not a new issue) iff it is on a corrected arm and either sits in the
-    corrected entries themselves, or reports nothing missing and EXACTLY the corrected number of extra fills for its
-    window. Any other flag on that arm (a different count, anything missing later) stays an issue."""
-    for arm, lo, hi, n in corrections:
+    corrected entries themselves, or reports nothing missing and as extra fills EXACTLY the corrected fills that the
+    round still re-derives: all of them, or (2026-10-26) those whose event had a candidate in the ACTIVE_DAYS days to
+    the round's newest hour, which is H or up to two hours later (a round writes up to two entries). Once a corrected
+    event leaves that window the re-check no longer sees its fills, so the flag shows a subset. Any other flag on that
+    arm (another count, anything missing) stays an issue."""
+    for arm, lo, hi, evs in corrections:
         if flag.get("arm") != arm:
             continue
         if lo <= H <= hi:
             return True
-        if flag.get("missing_now") == 0 and flag.get("extra_now") == n.get(flag.get("window")):
+        if flag.get("missing_now") != 0:
+            continue
+        w_evs = evs.get(flag.get("window"), [])
+        if flag.get("extra_now") == len(w_evs):
             return True
+        if last_cand is not None:
+            for k in range(3):
+                edge = _h_ns(H) + k * 3600 * 10**9 - ACTIVE_DAYS * 24 * 3600 * 10**9
+                if flag.get("extra_now") == sum(1 for ev in w_evs if last_cand.get(ev, 0) >= edge):
+                    return True
     return False
 
 
@@ -212,10 +246,16 @@ def build_summary(repo: Path) -> dict:
     ents = sorted((d / "entries").glob("*.json")) if (d / "entries").exists() else []
     rows, main_rows, issues, prejoin, rederive, covered, last = [], [], 0, 0, 0, 0, None
     corrections = load_corrections(d)
+    last_cand = None
+    if corrections:
+        try:
+            last_cand = last_candidates(repo, {ev for c in corrections for v in c[3].values() for ev in v})
+        except Exception:                           # never let the dashboard stop the backup: exact counts only
+            last_cand = None
     for f in ents:
         e = json.loads(f.read_text())
         for x in e.get("verification") or []:
-            if covered_by_correction(x, str(e.get("H", f.stem)), corrections):
+            if covered_by_correction(x, str(e.get("H", f.stem)), corrections, last_cand):
                 covered += 1
                 continue
             # entries 10-16 T08-T10: liq_traded (L17, joined at T06) was compared on hours before it joined; nothing
@@ -704,6 +744,28 @@ def self_test() -> bool:
               f"(got covered {sm6['correction_covered_notes']}, issues {sm6['verification_issues']})",
               sm6["correction_covered_notes"] == 3 and sm6["verification_issues"] == 3)
         check("corrections: no corrections folder means nothing is covered", load_corrections(Path(td6) / "nope") == [])
+    with tempfile.TemporaryDirectory() as td7:            # 2026-10-26: subsets once corrected events leave the window
+        import polars as pl
+        R7 = Path(td7); L7 = R7 / "runs/live/paper/ledger"; (L7 / "entries").mkdir(parents=True); (L7 / "corrections").mkdir()
+        (R7 / "runs/live/scores").mkdir(parents=True)
+        (L7 / "corrections/correction_g2_sel_20261022.json").write_text(json.dumps(
+            {"entries": ["20261021T15", "20261022T05"],
+             "fills_by_window": {"primary": [["OLD-1", "t", 1, 30, 1, 0, 30, 0]] * 3 + [["NEW-1", "t", 1, 30, 1, 0, 30, 0]] * 2}}))
+        pl.DataFrame({"event": ["OLD-1", "NEW-1"], "H_ns": [_h_ns("20261021T15"), _h_ns("20261023T20")]}).write_parquet(
+            R7 / "runs/live/scores/one_20261023T20.parquet")
+        fg = lambda x, m=0: [{"window": "primary", "arm": "g2_sel", "missing_now": m, "extra_now": x}]
+        for stamp, v in (("20261024T10", fg(5)),     # both events still re-derived: full count, covered
+                         ("20261025T15", fg(2)),     # round's newest hour T16: OLD-1 left the window, covered
+                         ("20261025T17", fg(2)),     # covered
+                         ("20261025T18", fg(3)),     # 3 matches no re-derived subset: issue
+                         ("20261028T00", fg(1)),     # NEW-1 left too (expected 0): issue
+                         ("20261025T19", fg(2, 1))): # something missing: issue
+            (L7 / "entries" / f"{stamp}.json").write_text(json.dumps({"H": stamp, "verification": v, "new_fills": {}}))
+        sm7 = build_summary(R7)
+        check(f"corrections: a re-check showing only the corrected fills still in the 4-day window is a note, any other "
+              f"count or anything missing is an issue (got covered {sm7['correction_covered_notes']}, "
+              f"issues {sm7['verification_issues']})",
+              sm7["correction_covered_notes"] == 3 and sm7["verification_issues"] == 3)
     print("SELF-TEST", "PASSED" if ok else "FAILED")
     return ok
 

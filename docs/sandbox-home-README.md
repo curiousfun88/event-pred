@@ -30,9 +30,10 @@ The pre-registered verdicts are computed on settled events at the interim cut (2
 In a ledger entry, `new_fills` and `settlements` are what happened in that hour, `hash` and `prev_hash` chain the
 entries, and `verification` lists any mismatch found when the hour's fills were re-derived from scratch. For P&L
 use `summary.json` or the dashboard: they recount the fills (amendment L20), while the entries' own running totals
-undercount repeated identical fills. Until about 26 Oct 2026, the first entry of each ledger round flags strategy
-`g2_sel` (8 fills omitted from the entries of 21 Oct 15:00 to 22 Oct 05:00 UTC after the move). These flags are the
-known gap listed in `corrections/correction_g2_sel_20261022.json`, not new mismatches. No other strategy is affected.
+undercount repeated identical fills. Until early November 2026, the first entry of each ledger round flags strategy
+`g2_sel` (8 fills omitted from the entries of 21 Oct 15:00 to 22 Oct 05:00 UTC after the move, fewer as their events
+leave the 4-day re-check window). These flags are the known gap listed in `corrections/correction_g2_sel_20261022.json`,
+not new mismatches. No other strategy is affected.
 
 ## Research Fleet
 
