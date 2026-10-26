@@ -988,7 +988,8 @@ corrected fills whose events had a candidate in the 4 days to the round's newest
 hours later). Any other flag stays an issue. On the ledger to 20261026T06: 32 issues -> 0, covered 188 -> 220. The
 flags shrink to 2/2/0/2 when KXHIGHPHIL-26OCT22 leaves the window (from about 2026-10-26 T20) and stop when
 KXHMONTHRANGE-26OCT does (early November), not about 2026-10-26 as estimated above. Display only: no ledger entry, fill
-or figure changes. Active from the keeper start after the file is copied (recorded here). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
+or figure changes. Copied to the office production sandbox 2026-10-26 07:48 UTC (live_backup.py sha256 35f4c038d00a ->
+dbd2cb2f27bb, checked before and after); active from the next keeper start (handover). Hours the laptop produces are copied into the home volume's `runs/live` before a sandbox producer
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
