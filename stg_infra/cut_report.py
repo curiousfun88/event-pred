@@ -531,6 +531,12 @@ FULL = "full universe (L19: quoting hours S to 2026-10-17 T05)"
 FULL_SAME = "full universe, same hours as the main result (descriptive; 2026-10-16 T17 to 2026-10-17 T05)"
 
 
+def _pick(m: dict) -> dict:
+    """The per-arm figures the report uses, from fill_metrics."""
+    return {k: m[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills", "events", "ci",
+                              "ci_day_clusters") if k in m}
+
+
 def main_risk(keys, done, settled_at, top10_share, rf_annual=None) -> dict:
     """Risk of one arm on the main result (2026-10-26; descriptive, section 6): settled fills booked by trade date
     (each fill's final net on the day it was quoted, as the 2025 and 2026 offline risk tables), peak open capital of
@@ -577,6 +583,15 @@ def headline(fills, start, cut_ns, results, settled_at, settle_ns, mid_next, pt,
             res[MAIN]["arms"][a2] = {k: m2[k] for k in ("net_usd", "capital_usd", "return_pct", "fills", "settled_fills",
                                                         "events", "ci", "ci_day_clusters") if k in m2}
             res[MAIN]["arms"][a2]["risk"] = main_risk(ks, done2, settled_at, m2.get("top10_event_share"), rf_annual)
+            # L11 (descriptive): weather / non-weather within the main result (2026-10-26)
+            res[MAIN]["arms"][a2]["splits"] = {
+                nm: _pick(fill_metrics([k for k in ks if keep_w(k)], results, settled_at, settle_ns, mid_next))
+                for nm, keep_w in (("weather", is_weather_key), ("non_weather", lambda k: not is_weather_key(k)))}
+        # descriptive (no verdict): every arm on the full universe's hours (L19), for the report's appendix (2026-10-26)
+        res[FULL]["arms"] = {}
+        for a2 in sorted(a_ for w_, a_ in fills if w_ == w):
+            ks = [k for k in fills[(w, a2)] if start <= int(k[7]) < cut_ns and int(k[7]) <= full_to]
+            res[FULL]["arms"][a2] = _pick(fill_metrics(ks, results, settled_at, settle_ns, mid_next))
         out[w] = res
     return out
 
@@ -660,6 +675,13 @@ def self_test() -> bool:
           and abs(hl3["primary"]["train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"]["g2"]["net_usd"] - 7.0) < 1e-9)
     cap = peak_open_capital(keys, st, [H0 + 2 * H_NS + 1, H0 + 4 * H_NS])
     check("peak open capital: E2 and E3 open after E1 settles ($8.00)", abs(cap - 8.0) < 1e-9)
+    check("L11 split within the main result: G2's training-series fill is weather (+$7.00), none non-weather",
+          abs(t23["arms"]["g2"]["splits"]["weather"]["net_usd"] - 7.0) < 1e-9
+          and t23["arms"]["g2"]["splits"]["non_weather"].get("fills", 0) == 0)
+    check("full universe, every arm: rnd2 holds the e-soccer fill (-$4.00), g2 both fills (+$3.00)",
+          abs(full["arms"]["rnd2"]["net_usd"] + 4.0) < 1e-9 and abs(full["arms"]["g2"]["net_usd"] - 3.0) < 1e-9)
+    check("full universe, every arm: hours after the switch excluded",
+          hl3["primary"][FULL]["arms"]["g2"].get("fills", 0) == 0)
     rk = t23["arms"]["g2"]["risk"]
     check("main result risk: one trade date, top-10 share 1 (one winning event), drawdown 0 on a rising curve",
           rk["tradedate_days"] == 1 and abs(rk["top10_event_share"] - 1.0) < 1e-9 and rk["max_drawdown_usd"] == 0.0)

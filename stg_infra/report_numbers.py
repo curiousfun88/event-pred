@@ -14,6 +14,8 @@ Macros (all from the cut report's headline block; `primary` = pessimistic fills,
   G2 - random     \\Main<Stream>GTwoMinusRandom{,Lo,Hi,OneSided,DayLo,DayHi,DayOneSided}   (return points)
   main risk       \\MainRisk<Arm><Field> (pessimistic): Sharpe MaxDrawdown MaxDrawdownPct ProfitableDays TopTenShare
                   PeakCapital Days; \\BenchIndexReturn \\BenchTBillReturn \\BenchIndexSource (main result's dates)
+  weather (L11)   \\Main<Arm>{Weather,NonWeather}<Field> (pessimistic, within the main result); \\MainGTwoWeatherProfitShare
+  full, all arms  \\Full<Stream><Arm><Field> for every arm (L19 hours)
   full universe   \\Full<Stream>GTwo<Field>, \\Full<Stream>GTwoMinusRandom...  (L19 hours), and \\FullSame... (same
                   hours as the main result)
 Stream: '' (pessimistic), Strict, Opt, Sens (as-executed order window). Money '+\\$1,234.56', returns '+9.3\\%',
@@ -126,7 +128,22 @@ def macros(rep: dict, source: str) -> dict:
                 out[f"{P}{S}GTwo{f}"] = v
             for f, v in diff_fields(u.get("g2_minus_rnd2")).items():
                 out[f"{P}{S}GTwoMinusRandom{f}"] = v
+    for w, S in STREAMS.items():           # every arm on the full universe (L19 hours), 2026-10-26
+        u = next((v for k, v in (rep["headline"].get(w) or {}).items() if k.startswith(FULL_PREFIX)), None) or {}
+        for a, X in ARMS.items():
+            if a == "g2":                      # \\Full<Stream>GTwo... already come from the verdict block
+                continue
+            for f, v in arm_fields(u.get("arms", {}).get(a, {})).items():
+                out[f"Full{S}{X}{f}"] = v
     main_p = (rep["headline"].get("primary") or {}).get(MAIN, {})
+    for a, X in ARMS.items():             # L11 weather / non-weather within the main result, pessimistic, 2026-10-26
+        sp = (main_p.get("arms", {}).get(a, {}) or {}).get("splits") or {}
+        for nm, N in (("weather", "Weather"), ("non_weather", "NonWeather")):
+            for f, v in arm_fields(sp.get(nm, {})).items():
+                out[f"Main{X}{N}{f}"] = v
+    g2a = main_p.get("arms", {}).get("g2", {}) or {}
+    wn, tn = ((g2a.get("splits") or {}).get("weather") or {}).get("net_usd"), g2a.get("net_usd")
+    out["MainGTwoWeatherProfitShare"] = ("n/a" if _bad(wn) or _bad(tn) or tn <= 0 else f"{100 * wn / tn:.0f}\\%")
     for a, X in ARMS.items():
         for f, v in risk_fields((main_p.get("arms", {}).get(a, {}) or {}).get("risk") or {}).items():
             out[f"MainRisk{X}{f}"] = v
@@ -184,8 +201,11 @@ def self_test() -> bool:
             "day": {"diff": 14.47, "lo95": -2.0, "hi95": 30.0, "lo_one_sided": 0.5}}
     head = {MAIN: {"g2": g2, "g2_minus_rnd2": diff, "arms": {"g2": g2, "rnd2": rnd}},
             "full universe (L19: quoting hours S to 2026-10-17 T05)": {"g2": {"net_usd": -760.34, "return_pct": -6.11,
-                                                                              "events": 876, "settled_fills": 5512}},
+                                                                              "events": 876, "settled_fills": 5512},
+                                                                       "arms": {"rnd2": {"net_usd": -900.0, "return_pct": -8.0}}},
             "full universe, same hours as the main result (descriptive; ...)": {"g2": {"net_usd": -197.03, "return_pct": -6.08}}}
+    g2["splits"] = {"weather": {"net_usd": 75.0, "return_pct": 12.0, "events": 20, "settled_fills": 200, "ci": {}},
+                    "non_weather": {"net_usd": 26.04, "return_pct": 5.0, "events": 9, "settled_fills": 165, "ci": {}}}
     g2["risk"] = {"tradedate_days": 12, "peak_open_capital_usd": 1234.5, "sharpe": 3.456, "max_drawdown_usd": 40.0,
                   "max_drawdown_pct_of_peak_capital": 3.24, "profitable_days_share": 0.75, "top10_event_share": 0.62}
     rep = {"cut": "20261028T00", "settle_by": "20261030T00", "live_start": "2026-10-15T19:00:00+00:00", "hours": 300,
@@ -210,6 +230,11 @@ def self_test() -> bool:
           (ms["MainRiskGTwoSharpe"], ms["MainRiskGTwoMaxDrawdown"], ms["MainRiskGTwoMaxDrawdownPct"], ms["MainRiskGTwoProfitableDays"],
            ms["MainRiskGTwoTopTenShare"], ms["MainRiskGTwoDays"], ms["MainRiskNeuralSharpe"])
           == ("3.5", "\\$40.00", "3\\%", "75\\%", "62\\%", "12", "n/a"))
+    check("weather split within the main result, and weather's share of G2's net (75 / 101.04 = 74%)",
+          (ms["MainGTwoWeatherNet"], ms["MainGTwoNonWeatherReturn"], ms["MainGTwoWeatherProfitShare"], ms["MainRandomWeatherNet"])
+          == ("+\\$75.00", "+5.0\\%", "74\\%", "n/a"))
+    check("full universe, every arm: random from the arms block; G2 keeps the verdict block's macros",
+          (ms["FullRandomNet"], ms["FullRandomReturn"], ms["FullGTwoNet"]) == ("\\(-\\)\\$900.00", "\\(-\\)8.0\\%", "\\(-\\)\\$760.34"))
     check("benchmarks over the main result's dates", (ms["BenchIndexReturn"], ms["BenchTBillReturn"])
           == ("+1.2\\%", "+0.12\\%"))
     check("every macro name is letters only and unique", all(re.fullmatch(r"[A-Za-z]+", k) for k in ms))
