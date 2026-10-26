@@ -72,6 +72,27 @@ def read_ledger(d: Path):
     return start, fills, curve
 
 
+def apply_corrections(d: Path, fills: dict) -> list:
+    """Append-only corrections (ledger/corrections/correction_<arm>_<date>.json, e.g. the 2026-10-22 g2_sel fills
+    omitted after the restore): add each listed fill to (window, arm) as many times as the correction lists it beyond
+    what the entries already hold, so nothing is counted twice. Entries are never changed. Returns what was added."""
+    from collections import Counter
+    applied = []
+    cdir = d / "corrections"
+    for p in sorted(cdir.glob("correction_*.json")) if cdir.exists() else []:
+        doc = json.loads(p.read_text())
+        arm = p.stem[len("correction_"):].rsplit("_", 1)[0]
+        added = {}
+        for w, rows in doc.get("fills_by_window", {}).items():
+            have = Counter(fills.get((w, arm), []))
+            need = Counter(tuple(r) for r in rows)
+            extra = [k for k, n in need.items() for _ in range(max(0, n - have.get(k, 0)))]
+            fills.setdefault((w, arm), []).extend(extra)
+            added[w] = len(extra)
+        applied.append({"file": p.name, "arm": arm, "entries": doc.get("entries"), "fills_added": added})
+    return applied
+
+
 # ---------------------------------------------------------------- metrics (pure, self-tested)
 
 def settle_times(markets: dict) -> dict:
@@ -444,6 +465,7 @@ def build(cut: str, settle_by: str, bench=True):
     start, fills, curve = read_ledger(LEDGER)
     if start is None:
         raise SystemExit("no ledger entries: the live test has not started")
+    corrections = apply_corrections(LEDGER, fills)        # 2026-10-26: append-only corrections (g2_sel, 22 Oct)
     recomputed = recomputed_fills(LIVE / "paper", RECOMPUTED_ARMS, start, pt)     # L17: descriptive arms from S
     fills.update(recomputed)
     cut_ns, settle_ns = ns_of(cut), ns_of(settle_by)
@@ -477,7 +499,8 @@ def build(cut: str, settle_by: str, bench=True):
     spy_days = sorted(spy)
     spy_ret = {spy_days[i]: spy[spy_days[i]] / spy[spy_days[i - 1]] - 1 for i in range(1, len(spy_days))}
     rep = {"cut": cut, "settle_by": settle_by, "live_start": dt.datetime.fromtimestamp(start / 1e9, dt.timezone.utc).isoformat(),
-           "hours": len(hours), "benchmarks": {k: v for k, v in bm.items() if k != "spy_close"}, "arms": {}}
+           "hours": len(hours), "benchmarks": {k: v for k, v in bm.items() if k != "spy_close"}, "arms": {},
+           "corrections_applied": corrections}
     for (w, a), keys in sorted(fills.items()):
         keys = [k for k in keys if start <= int(k[7]) < cut_ns]
         m = fill_metrics(keys, results, settled_at, settle_ns, mid_next)
@@ -734,6 +757,18 @@ def self_test() -> bool:
                          lambda live, s: {}, results={})
         s0, fl, cv = read_ledger(d)
         check("ledger reader recovers the live start, fills and curve", s0 == H0 and len(fl[("primary", "g2")]) == 2 and len(cv) == 1)
+        (d / "corrections").mkdir()
+        ck = ("E9", "T9", 1, 30, 10, 0.0, 300.0, H0)
+        (d / "corrections/correction_g2_sel_20261022.json").write_text(json.dumps(
+            {"entries": ["20261021T15", "20261022T05"], "fills_by_window": {"primary": [list(ck), list(ck)], "primary_opt": [list(ck)]}}))
+        fc = {("primary", "g2_sel"): [ck]}                       # one of the two identical fills already recorded
+        ap = apply_corrections(d, fc)
+        check("corrections: a listed fill is added only as often as it is missing (2 listed, 1 recorded -> +1), new window created",
+              fc[("primary", "g2_sel")] == [ck, ck] and fc[("primary_opt", "g2_sel")] == [ck]
+              and ap[0]["arm"] == "g2_sel" and ap[0]["fills_added"] == {"primary": 1, "primary_opt": 1})
+        ap2 = apply_corrections(d, fc)
+        check("corrections: applying twice adds nothing", ap2[0]["fills_added"] == {"primary": 0, "primary_opt": 0}
+              and len(fc[("primary", "g2_sel")]) == 2)
     # L20: a repeated identical fill counts twice in the recounted curve, whatever the stored total says
     kr = ("E1", "E1-A", 1, 40, 1, 0.0, 40.0, H0)
     rcv = recounted_curve({("primary", "g2"): [kr, kr]}, [(H0, {"primary": {"g2": 0.6}})], {"E1-A": "yes"}, {"E1": H0 + H_NS}, {}, H0)
