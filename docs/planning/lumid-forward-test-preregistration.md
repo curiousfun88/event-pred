@@ -1118,3 +1118,13 @@ result is unaffected. On a copy of the live record (ledger through 2026-10-19 T0
 -$732.06 (-5.67%) as previously shown -> **-$760.34 (-6.11%)**; same hours -$168.75 -> -$197.03; main result +$28.77
 both ways. The full-universe figures still change as positions from those hours settle. Self-tests cover a planted
 post-switch fill. Active on the dashboard from the deploy hour (recorded in the host log).
+
+**Exploratory note 9 (2026-10-27 15:35 UTC, during the live test; offline only, nothing is selected or deployed).**
+Feature-group ablation and posting-threshold sensitivity of G2, for the report. `stg_infra/examples/ablate_g2.py`
+(self-tested): A15's five folds (test months 2026-04..08, G2's model and G2-W3's exact rows); each of the four
+feature groups of the report's feature table (order, market, basket, context) removed in turn and the model
+retrained, scored at the 1c rule; full minus variant on the mean of fold returns with a paired event bootstrap; the
+full model's predictions also scored at thresholds 0, 0.5, 1, 2, 4c. The September window and live hours are not read.
+**Predictions (before running):** every group removed lowers the mean return; the market group (spread, trades,
+mid change) costs most, then context (category), then order, and basket least; return rises with the threshold
+while the posted share and, above about 1c, net dollars fall.
