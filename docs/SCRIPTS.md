@@ -186,6 +186,7 @@ Protocol: `docs/planning/lumid-forward-test-preregistration.md` (L1-L20).
 | `live_signal_producer.py` | Hourly candidate orders and every arm's decisions on live Kalshi baskets |
 | `paper_trader.py` | Settles each live hour's orders against the real trade tape (the simulator's fill rules) |
 | `paper_ledger.py` | Append-only, hash-chained hourly ledger with independent timestamps → `runs/live/paper/ledger/` |
+| `verify_ledger_chain.py` | Checks the ledger's hash chain from its entry files alone (public backup repo); 284 entries to 27 Oct T14 verify |
 | `examples/validate_g2_sel.py` | L4: category selection of the `g2_sel` arm on the validation window |
 | `examples/diagnose_g2_sel_flags.py` | Why the ledger check flagged extra `g2_sel` fills from 25 Oct T15 (diagnostic) |
 | `examples/live_case_study.py` | Case study: the live 25 October weather day → `results/live/case_study_20261025.json` |
