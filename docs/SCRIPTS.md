@@ -200,18 +200,18 @@ Each table's `% source` comment in the report names the same files.
 |---|---|---|
 | `tab:maker-G`, `tab:maker-g-month`, `tab:maker-g-category` | `policy_G_validate.py test`, `policy_G_audit.py` | `logs/v2_forecast/policy_G_TEST.log`, `policy_G_audit.log` |
 | `tab:maker-baselines` | `baselines_2025.py` | `results/maker/a16_baselines_2025.json`, `a16_metrics_2025.json` |
-| `tab:maker-failed` (App. E) | `run_test_724.sh` (A10), `policy_G_validate.py test GS` | `logs/v2_forecast/test_724/maker.log`, `policy_GS_TEST.log`, `policy_GS_minus_G_test.log` |
+| `tab:maker-failed` (App. D) | `run_test_724.sh` (A10), `policy_G_validate.py test GS` | `logs/v2_forecast/test_724/maker.log`, `policy_GS_TEST.log`, `policy_GS_minus_G_test.log` |
 | `tab:retrain-windows`, `tab:retrain-validation`, `tab:case-regime` | `smoke_test_2026.py`, `retrain_g2.py` | `logs/v2_forecast/smoke_test_2026-09.log`, `g2_W*_train_validate.log`, `g2_W3_final_selection.log` |
 | `tab:retrain-wf` | `select_g2_window.py`, `offline_baselines.py` | `results/live/l9_window_selection.json`, `offline_baselines.json` |
 | `tab:retrain-matched` | `offline_baselines.py` | `results/live/offline_baselines.json` (`volume_curves_full`) |
 | `tab:retrain-risk` | `wf_risk_2026.py` | `results/live/wf_risk_2026.json` |
-| `tab:retrain-sensitivity` | `tune_gbm.py`, `offline_baselines.py` | `logs/v2_forecast/tune_gbm_a15_summary.log`, `results/live/mlp_sensitivity.json`, `lin_sensitivity.json` |
+| `tab:g2-sensitivity`, `tab:retrain-sensitivity` | `tune_gbm.py`, `offline_baselines.py` | `logs/v2_forecast/tune_gbm_a15_summary.log`, `results/live/mlp_sensitivity.json`, `lin_sensitivity.json` |
 | `tab:ablation` | as the rows' tables, plus `ablate_g2.py` | `results/maker/ablation_g2_2026.json` |
 | `tab:threshold` | `ablate_g2.py` | `results/maker/ablation_g2_2026.json` (`threshold`) |
 | `tab:case-2025` | `case_study_2025.py` | `results/maker/case_study_2025.json` |
 | `tab:live-main`, `tab:live-fills`, App. C tables | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` |
 | `tab:live-case` | `live_case_study.py` | `results/live/case_study_20261025.json` |
-| `tab:universe` (App. I) | `smoke_test_2026.py` (series kept); leg counts by hand | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
+| `tab:universe` (App. H) | `smoke_test_2026.py` (series kept); leg counts by hand | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
 
 ## Library code (imported, not run)
 
