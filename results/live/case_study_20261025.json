@@ -1,0 +1,235 @@
+{
+ "note": "exploratory; realised P&L from the ledger's settlement records, primary window, all fills since the live start",
+ "window": [
+  "20261025T11",
+  "20261026T12"
+ ],
+ "events": 27,
+ "totals_usd": {
+  "g2": -66.72,
+  "rnd2": -57.17,
+  "cand": -104.67,
+  "lin2": 36.96
+ },
+ "by_event": {
+  "KXHIGHPHIL-26OCT25": {
+   "g2": -33.73,
+   "rnd2": -43.27,
+   "cand": -22.22,
+   "lin2": 11.38
+  },
+  "KXLALIGAGAME-26OCT25BARRMA": {
+   "g2": -23.61,
+   "rnd2": 0.22,
+   "cand": -8.53,
+   "lin2": 0.0
+  },
+  "KXHIGHAUS-26OCT25": {
+   "g2": -21.14,
+   "rnd2": -13.98,
+   "cand": -7.24,
+   "lin2": 0.0
+  },
+  "KXHIGHDEN-26OCT25": {
+   "g2": -11.36,
+   "rnd2": -5.62,
+   "cand": -24.73,
+   "lin2": 13.2
+  },
+  "KXHIGHCHI-26OCT25": {
+   "g2": -7.66,
+   "rnd2": 6.74,
+   "cand": -3.11,
+   "lin2": -4.6
+  },
+  "KXLALIGAGAME-26OCT25RSOLEV": {
+   "g2": -4.45,
+   "rnd2": -2.03,
+   "cand": -8.62,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT25AUXMAN": {
+   "g2": -2.74,
+   "rnd2": 0.0,
+   "cand": 0.12,
+   "lin2": 0.0
+  },
+  "KXEPLGAME-26OCT25CRYNEW": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": -16.04,
+   "lin2": 0.0
+  },
+  "KXEPLGAME-26OCT25HULBRE": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXEPLGAME-26OCT25MUNBOU": {
+   "g2": 0.0,
+   "rnd2": -0.65,
+   "cand": -0.65,
+   "lin2": 0.0
+  },
+  "KXLALIGAGAME-26OCT25ATHGET": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT25ASMLIL": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXBUNDESLIGAGAME-26OCT25TSGLEV": {
+   "g2": 0.0,
+   "rnd2": 0.41,
+   "cand": 4.56,
+   "lin2": 0.0
+  },
+  "KXLALIGAGAME-26OCT25RCCRBB": {
+   "g2": 0.0,
+   "rnd2": 12.32,
+   "cand": 10.73,
+   "lin2": 0.0
+  },
+  "KXBUNDESLIGAGAME-26OCT25SCFBMU": {
+   "g2": 0.0,
+   "rnd2": -1.83,
+   "cand": -2.75,
+   "lin2": 0.0
+  },
+  "KXEPLGAME-26OCT25SUNLEE": {
+   "g2": 0.0,
+   "rnd2": -2.13,
+   "cand": 0.13,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT24TFCEST": {
+   "g2": 0.0,
+   "rnd2": 1.87,
+   "cand": -4.48,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT25ANGFCL": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT25OLMHAC": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXLIGUE1GAME-26OCT25RENRCS": {
+   "g2": 0.0,
+   "rnd2": 0.0,
+   "cand": 0.0,
+   "lin2": 0.0
+  },
+  "KXNASCARRACE-YEL26": {
+   "g2": 1.75,
+   "rnd2": -1.22,
+   "cand": 0.37,
+   "lin2": 0.37
+  },
+  "KXHIGHLAX-26OCT24": {
+   "g2": 1.9,
+   "rnd2": -8.3,
+   "cand": 1.7,
+   "lin2": 6.2
+  },
+  "KXMLSGAME-26OCT25LAFCLAG": {
+   "g2": 2.78,
+   "rnd2": 8.73,
+   "cand": 9.32,
+   "lin2": 1.21
+  },
+  "KXHIGHMIA-26OCT25": {
+   "g2": 2.9,
+   "rnd2": 0.45,
+   "cand": 7.45,
+   "lin2": 2.2
+  },
+  "KXHIGHNY-26OCT25": {
+   "g2": 4.1,
+   "rnd2": 3.9,
+   "cand": -4.17,
+   "lin2": 2.6
+  },
+  "KXEPLGAME-26OCT25LFCBRI": {
+   "g2": 8.98,
+   "rnd2": -21.38,
+   "cand": -17.74,
+   "lin2": 0.0
+  },
+  "KXHIGHDEN-26OCT24": {
+   "g2": 15.56,
+   "rnd2": 8.6,
+   "cand": -18.77,
+   "lin2": 4.4
+  }
+ },
+ "g2_legs_worst": {
+  "KXHIGHPHIL-26OCT25": [
+   {
+    "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+    "side": "buy YES",
+    "contracts": 10,
+    "mean_price_c": 58.0
+   },
+   {
+    "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+    "side": "sell YES",
+    "contracts": 15,
+    "mean_price_c": 48.1
+   },
+   {
+    "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+    "side": "buy YES",
+    "contracts": 50,
+    "mean_price_c": 68.7
+   },
+   {
+    "ticker": "KXHIGHPHIL-26OCT25-B69.5",
+    "side": "sell YES",
+    "contracts": 30,
+    "mean_price_c": 14.0
+   }
+  ],
+  "KXLALIGAGAME-26OCT25BARRMA": [
+   {
+    "ticker": "KXLALIGAGAME-26OCT25BARRMA-RMA",
+    "side": "sell YES",
+    "contracts": 30,
+    "mean_price_c": 21.7
+   }
+  ],
+  "KXHIGHAUS-26OCT25": [
+   {
+    "ticker": "KXHIGHAUS-26OCT25-B81.5",
+    "side": "buy YES",
+    "contracts": 10,
+    "mean_price_c": 29.0
+   },
+   {
+    "ticker": "KXHIGHAUS-26OCT25-B83.5",
+    "side": "buy YES",
+    "contracts": 60,
+    "mean_price_c": 61.7
+   },
+   {
+    "ticker": "KXHIGHAUS-26OCT25-B83.5",
+    "side": "sell YES",
+    "contracts": 30,
+    "mean_price_c": 29.3
+   }
+  ]
+ },
+ "last_entry": "20261026T22"
+}
