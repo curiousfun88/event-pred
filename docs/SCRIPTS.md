@@ -150,6 +150,68 @@ figure below as a backtest artefact, not as realisable profit.**
 | `build_mece_leg_spreads.py` | Measured MECE per-leg spreads → `results/mece/mece_leg_spreads.parquet` (`--window` variants) |
 | `examples/mece_yield_by_month.py` | Usable basket-days per month, all 54 months → `results/data_audit/mece_yield_by_month.parquet` |
 | `examples/sports_categorisation_check.py` | Is "sports first appears 2024-12" real? → `results/data_audit/sports_categorisation_check.parquet` |
+| `examples/taker_maker_return_screen.py` | What did takers, and the makers opposite them, earn at settlement? (the case for market making) |
+
+## Phase 6 — Market making: simulator, policy G, retrained G2
+
+Protocols: `docs/planning/maker-simulator-preregistration.md` (A1-A16) and, from L9 on,
+`docs/planning/lumid-forward-test-preregistration.md` (exploratory notes 1-9). Every script has `--self-test`.
+
+| Script | Output / question |
+|---|---|
+| `simulate_maker.py` | **The maker fill simulator** on the trade tape (optimistic / pessimistic / strict fills); rule-based makers A10 (`run_test_724.sh` step `maker` → `logs/v2_forecast/test_724/maker.log`) |
+| `maker_policy.py` | **Policy G** (A12): features, `train`, `score`, `check` |
+| `examples/learned_maker_policy.py`, `examples/explore_basket_maker.py` | Development-month exploration before G (superseded by `maker_policy.py`) |
+| `examples/policy_G_validate.py` | A12 validation gate (`run`); **the single G test, Aug-Nov 2025** (`test`, variant `G` or `GS`) → `logs/v2_forecast/policy_G_TEST.log`, `policy_GS_TEST.log` |
+| `examples/policy_G_audit.py` | Post-test audit of G: by month, by category, calibration → `logs/v2_forecast/policy_G_audit.log` |
+| `examples/baselines_2025.py` | A16: the live test's baselines on G's 2025 test months, risk metrics → `results/maker/a16_baselines_2025.json`, `a16_metrics_2025.json` |
+| `examples/case_study_2025.py` | Case study: G on the six worst days for makers, 2025 → `results/maker/case_study_2025.json` |
+| `examples/smoke_test_2026.py` | **Decay check**: frozen G on 7 Sep - 4 Oct 2026 → `logs/v2_forecast/smoke_test_2026-09.log` |
+| `examples/smoke_test_2026_diagnose.py` | Why G earned in 2025 but not 2026 → `logs/v2_forecast/smoke_test_2026_diagnosis.log` |
+| `examples/retrain_g2.py` | A13/A14: train G2 and G2 two-level on W1/W2/W3, validate on Sep 2026 → `logs/v2_forecast/g2_W*_train_validate.log`, `g2_W3_final_selection.log` |
+| `examples/select_g2_window.py` | L9: choose G2's window on the six-month walk-forward → `results/live/l9_window_selection.json` |
+| `examples/tune_gbm.py` | A15: hyperparameter sensitivity of G2, 14 settings x 5 folds (`build`, `fit`, `summarise`; cluster array) → `runs/tune_gbm/`, `logs/v2_forecast/tune_gbm_a15_summary.log` |
+| `examples/train_baselines.py` | L3/L6: the linear (`lin2`) and neural (`mlp2`) baseline models |
+| `examples/offline_baselines.py` | Notes 1-5, 7: baselines on the walk-forward folds, matched posting shares, neural and linear sensitivity → `results/live/offline_baselines.json`, `mlp_sensitivity.json`, `lin_sensitivity.json` |
+| `examples/wf_risk_2026.py` | Note 8: risk metrics of the 2026 walk-forward → `results/live/wf_risk_2026.json` |
+| `examples/ablate_g2.py` | Note 9: **feature-group ablation and posting-threshold sensitivity** of G2 → `results/maker/ablation_g2_2026.json`, `logs/v2_forecast/ablation_g2_2026.log` |
+| `examples/diagnose_g2_event_timing.py` | Where in a market's life G2 makes and loses money (validation window) |
+
+## Phase 7 — Live forward test
+
+Protocol: `docs/planning/lumid-forward-test-preregistration.md` (L1-L20).
+
+| Script | Output / question |
+|---|---|
+| `live_signal_producer.py` | Hourly candidate orders and every arm's decisions on live Kalshi baskets |
+| `paper_trader.py` | Settles each live hour's orders against the real trade tape (the simulator's fill rules) |
+| `paper_ledger.py` | Append-only, hash-chained hourly ledger with independent timestamps → `runs/live/paper/ledger/` |
+| `examples/validate_g2_sel.py` | L4: category selection of the `g2_sel` arm on the validation window |
+| `examples/diagnose_g2_sel_flags.py` | Why the ledger check flagged extra `g2_sel` fills from 25 Oct T15 (diagnostic) |
+| `examples/live_case_study.py` | Case study: the live 25 October weather day → `results/live/case_study_20261025.json` |
+| `cut_report.py` | **The cut report**: every pre-registered metric from the ledger → `results/live/cut_interim.json` |
+| `report_numbers.py` | Cut report → LaTeX macros for the report (`generated/numbers.tex` in the report repo) |
+
+## Report evidence map (FYP report, tables)
+
+Each table's `% source` comment in the report names the same files.
+
+| Report table | Script | Evidence |
+|---|---|---|
+| `tab:maker-G`, `tab:maker-g-month`, `tab:maker-g-category` | `policy_G_validate.py test`, `policy_G_audit.py` | `logs/v2_forecast/policy_G_TEST.log`, `policy_G_audit.log` |
+| `tab:maker-baselines` | `baselines_2025.py` | `results/maker/a16_baselines_2025.json`, `a16_metrics_2025.json` |
+| `tab:maker-failed` (App. E) | `run_test_724.sh` (A10), `policy_G_validate.py test GS` | `logs/v2_forecast/test_724/maker.log`, `policy_GS_TEST.log`, `policy_GS_minus_G_test.log` |
+| `tab:retrain-windows`, `tab:retrain-validation`, `tab:case-regime` | `smoke_test_2026.py`, `retrain_g2.py` | `logs/v2_forecast/smoke_test_2026-09.log`, `g2_W*_train_validate.log`, `g2_W3_final_selection.log` |
+| `tab:retrain-wf` | `select_g2_window.py`, `offline_baselines.py` | `results/live/l9_window_selection.json`, `offline_baselines.json` |
+| `tab:retrain-matched` | `offline_baselines.py` | `results/live/offline_baselines.json` (`volume_curves_full`) |
+| `tab:retrain-risk` | `wf_risk_2026.py` | `results/live/wf_risk_2026.json` |
+| `tab:retrain-sensitivity` | `tune_gbm.py`, `offline_baselines.py` | `logs/v2_forecast/tune_gbm_a15_summary.log`, `results/live/mlp_sensitivity.json`, `lin_sensitivity.json` |
+| `tab:ablation` | as the rows' tables, plus `ablate_g2.py` | `results/maker/ablation_g2_2026.json` |
+| `tab:threshold` | `ablate_g2.py` | `results/maker/ablation_g2_2026.json` (`threshold`) |
+| `tab:case-2025` | `case_study_2025.py` | `results/maker/case_study_2025.json` |
+| `tab:live-main`, `tab:live-fills`, App. C tables | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` |
+| `tab:live-case` | `live_case_study.py` | `results/live/case_study_20261025.json` |
+| `tab:universe` (App. I) | `smoke_test_2026.py` (series kept); leg counts by hand | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
 
 ## Library code (imported, not run)
 
