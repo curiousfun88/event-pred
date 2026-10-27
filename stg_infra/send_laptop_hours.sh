@@ -3,15 +3,19 @@
 # other hour (2026-10-22). Run on the LAPTOP from the repo root, AFTER stopping the laptop producer
 # (bash stg_infra/laptop_fallback.sh stop) and BEFORE starting the sandbox keeper:
 #
-#   bash stg_infra/send_laptop_hours.sh <since YYYYMMDDTHH> <office|home>
+#   bash stg_infra/send_laptop_hours.sh <since YYYYMMDDTHH> <office|home|vm>
 #
 # Copies the decision files (scores, stamps, payloads) of hours >= since, the producer's warm caches (runs/live/state),
 # and appends to the sandbox's runs.jsonl the laptop's lines for hours the sandbox does not have yet. Checks the
 # sandbox's record afterwards. Nothing is started.
 set -euo pipefail
-SINCE=${1:?usage: send_laptop_hours.sh <since YYYYMMDDTHH> <office|home>}
-case "${2:?site}" in office) PORT=31226 ;; home) PORT=31223 ;; *) echo "site must be office or home"; exit 2 ;; esac
-S="ssh -o ConnectTimeout=20 -p $PORT -i $HOME/.ssh/lumid_sbx_ed25519 gw@lum.id"
+SINCE=${1:?usage: send_laptop_hours.sh <since YYYYMMDDTHH> <office|home|vm>}
+case "${2:?site}" in
+  office) S="ssh -o ConnectTimeout=20 -p 31226 -i $HOME/.ssh/lumid_sbx_ed25519 gw@lum.id" ;;
+  home)   S="ssh -o ConnectTimeout=20 -p 31223 -i $HOME/.ssh/lumid_sbx_ed25519 gw@lum.id" ;;
+  vm)     S="ssh -o ConnectTimeout=20 -i $HOME/.ssh/gcp_standby curiouslearner842@34.139.76.10" ;;  # 2026-10-27: GCP standby
+  *) echo "site must be office, home or vm"; exit 2 ;;
+esac
 R=/home/curiouslearner842/event-pred
 cd "$(dirname "$0")/.."
 systemctl --user is-active -q maker-producer && { echo "the laptop producer is still running: stop it first"; exit 3; }

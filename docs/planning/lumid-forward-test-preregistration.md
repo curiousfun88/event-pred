@@ -993,6 +993,27 @@ dbd2cb2f27bb, checked before and after); active from the next keeper start (hand
 starts again; the paper trader then fills them from Kalshi's tape like any other hour. Positions taken before the outage
 settle on Kalshi regardless and are booked when the paper trader resumes.
 
+**Move to a Google Cloud VM (2026-10-27, L12 host log; no rule, fill, decision, model or verdict changes).** About 01:00
+UTC the office site failed and its producer stopped after T00. The test was moved to Lumid's home site (failover.py),
+but Kalshi throttled home's shared address (HTTP 429) and the producer could not complete a cycle there. A new office
+sandbox then failed to start. The laptop fallback (`stg_infra/laptop_fallback.sh`) produced T02 (snapshot 02:05) and T03
+(03:01). The test then moved to a Google Cloud VM, `event-pred-standby` (us-east1, 2 vCPU, 4 GB, Ubuntu 24.04,
+Python 3.12, a venv pinned to the laptop's library versions, scikit-learn 1.8.0 and numpy 2.4.3). It was rebuilt from
+GitHub with `stg_infra/restore_on_site.sh office` (code at 2ea8577, live state from the event-pred-live backup), the
+backup key and the other secrets were copied in by hand, and `send_laptop_hours.sh <since> vm` (target added
+2026-10-27) sent T02 and T03 to it. The keeper runs as the systemd unit `event-pred-keeper.service`, active from 03:52:46
+UTC. The VM produced T04 (04:02) and every hour since. The paper trader caught up from entry 20261026T23 and has written
+entries on schedule since 06:14. Checked 2026-10-27 09:39 UTC: the seven live model files (G, G2-W1/W2/W3, G2P-W3, lin2-W3,
+mlp2-W3) are byte-identical to the laptop's (sha256), the ledger's hash chain verifies over all 277 entries, and the
+latest entry's verification list is empty. **Lost producer hour: 2026-10-27 T01** (one hour, L12: never reconstructed).
+Its ledger entry exists and records no fills.
+
+Deviation: the restore rule above names the laptop or another Lumid site as the restore host. The VM is neither. It was
+used because both Lumid sites were unavailable at the time and the laptop could not keep the producer running. The
+code, models, decision rule, fill engine and ledger are unchanged, so only the host differs. This supersedes "the live
+test stays on office until it ends" in the office-site entry above: the test stays on the VM until it ends, with a
+restore on a Lumid site as the fallback.
+
 ## Amendment L20 (2026-10-19, erratum; no trading rule, fill, decision, model or outcome changes): repeated identical fills were dropped from the ledger's running totals
 
 **What was wrong.** When one resting order is filled by several trades in its hour, the simulator emits one fill per
