@@ -1128,3 +1128,12 @@ full model's predictions also scored at thresholds 0, 0.5, 1, 2, 4c. The Septemb
 **Predictions (before running):** every group removed lowers the mean return; the market group (spread, trades,
 mid change) costs most, then context (category), then order, and basket least; return rises with the threshold
 while the posted share and, above about 1c, net dollars fall.
+
+**Note 9 result (2026-10-27 15:45 UTC).** Full model = A15's `hgb_a12` folds exactly (mean +2.71%, worst +1.95%,
+19.3% posted, +$2,963). Mean return with a group removed, and full minus variant (95% paired interval): order +2.48%
+(+0.24 [-1.48, +2.13]; posted share halves to 9.6%, net +$967), market +2.14% (+0.57 [-0.33, +1.49]), basket +1.77%
+(+0.94 [+0.05, +1.87]), context +1.97% (+0.74 [-0.04, +1.51]). Threshold 0 / 0.5 / 1 / 2 / 4c: mean +1.61 / +2.02 /
++2.71 / +4.48 / +9.38%, posted 37.3 / 27.2 / 19.3 / 9.7 / 3.4%, net +$3,441 / 3,187 / 2,963 / 2,327 / 1,554.
+Prediction partly held: every removal lowers the mean return, but the order was wrong (basket costs most and is the
+only interval excluding zero; market less than predicted). Return rises with the threshold, but net dollars fall at
+every step from 0c, not only above 1c. Files: `results/maker/ablation_g2_2026.json`, `logs/v2_forecast/ablation_g2_2026.log`.
