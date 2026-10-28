@@ -1,0 +1,15 @@
+# Share of Kalshi trades whose taker bought YES (taker_side == 'yes', i.e. paid the ask), all trades, per month, 2025.
+# Source: data/trades/trades_kalshi_{even,odd}/trades_2025-MM.parquet. Generated 2026-10-28 (inline polars group_by on taker_side).
+# Report uses July 2025: 1,313,622 / 1,911,395 = 68.7% (numbers_offline.tex \AskSideShare; spread-artefact-finding.md s.2).
+month         trades   yes (ask)    no (bid) ask share
+2025-01      600,592     337,607     262,985     56.2%
+2025-02      703,600     400,655     302,945     56.9%
+2025-03    1,904,463   1,345,654     558,809     70.7%
+2025-04    1,402,189     908,038     494,151     64.8%
+2025-05    1,981,110   1,339,644     641,466     67.6%
+2025-06    1,995,705   1,371,380     624,325     68.7%
+2025-07    1,911,395   1,313,622     597,773     68.7%
+2025-08    2,371,707   1,709,121     662,586     72.1%
+2025-09    4,338,862   3,087,775   1,251,087     71.2%
+2025-10    8,740,821   6,343,097   2,397,724     72.6%
+2025-11    9,452,603   6,885,216   2,567,387     72.8%
