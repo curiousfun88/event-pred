@@ -170,6 +170,7 @@ Protocols: `docs/planning/maker-simulator-preregistration.md` (A1-A16) and, from
 | `examples/smoke_test_2026_diagnose.py` | Why G earned in 2025 but not 2026 → `logs/v2_forecast/smoke_test_2026_diagnosis.log` |
 | `examples/retrain_g2.py` | A13/A14: train G2 and G2 two-level on W1/W2/W3, validate on Sep 2026 → `logs/v2_forecast/g2_W*_train_validate.log`, `g2_W3_final_selection.log` |
 | `examples/select_g2_window.py` | L9: choose G2's window on the six-month walk-forward → `results/live/l9_window_selection.json` |
+| `examples/shortcut_vs_simulator.py` | Exploratory: why the fill-level score differs from the simulator (W3, Sep 2026: +2.36% vs +1.41%); splits the gap into extra and missing fills and checks the limits → `logs/v2_forecast/shortcut_vs_simulator_W3_sep2026.log` |
 | `examples/tune_gbm.py` | A15: hyperparameter sensitivity of G2, 14 settings x 5 folds (`build`, `fit`, `summarise`; cluster array) → `runs/tune_gbm/`, `logs/v2_forecast/tune_gbm_a15_summary.log` |
 | `examples/train_baselines.py` | L3/L6: the linear (`lin2`) and neural (`mlp2`) baseline models |
 | `examples/offline_baselines.py` | Notes 1-5, 7: baselines on the walk-forward folds, matched posting shares, neural and linear sensitivity → `results/live/offline_baselines.json`, `mlp_sensitivity.json`, `lin_sensitivity.json` |
