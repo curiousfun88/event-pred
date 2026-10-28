@@ -76,7 +76,7 @@ class Config:
     basket: bool = False         # S3: bid every leg when sum(bid) <= 100 - sum(maker fee)
     pos_limit: int = 50
     event_limit: int = 200
-    universe: str = "mece"       # mece | liquid
+    universe: str = "mece"       # mece | mece_full (mece + revocation) | liquid
     min_trades_24h: int = 0      # causal liquidity rule: trades in (H-24h, H]
     stgat: str = ""              # A6.3: "" (no model) | "s4" (filter) | "s5" (model-led); needs --signal
     min_ttc_h: int = 0           # A10: no quote on a leg within this many hours of its close
@@ -388,11 +388,38 @@ def self_test() -> int:
     check("A14: the one-level policy path is unchanged (allow-all == no policy)",
           simulate(Config(**base, policy="x", policy_t=1.0), "pess", lg, evs, nofee, ["2026-01"], policy_scores=allow)
           == simulate(Config(**base), "pess", lg, evs, nofee, ["2026-01"]))
+    import polars as pl
+    import datetime as dt
+    D = lambda d: dt.datetime(2025, 1, d)
+    mem = pl.DataFrame({"ticker": ["ok", "revoked_before", "revoked_after", "never", "early"],
+                        "q_from": [D(5), D(5), D(5), None, D(5)],
+                        "q_to": [None, D(10), D(20), None, None],
+                        "leg_created": [D(15), D(15), D(15), D(15), D(3)]},
+                       schema={"ticker": pl.Utf8, "q_from": pl.Datetime("ns"), "q_to": pl.Datetime("ns"),
+                               "leg_created": pl.Datetime("ns")})
+    check("universe mece (pre-registered): qualified before listing, revocation ignored",
+          member_tickers(mem) == {"ok", "revoked_before", "revoked_after"})
+    check("universe mece_full: a family revoked before the leg was listed is dropped",
+          member_tickers(mem, revoke=True) == {"ok", "revoked_after"})
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
 
 
 # ---------------------------------------------------------------- data
+
+def member_tickers(mem, revoke=False) -> set:
+    """Legs of causally qualified MECE families: the family qualified before the leg was listed
+    (q_from <= leg_created). With revoke, the family must also not have been revoked by then
+    (q_to null or q_to > leg_created). The pre-registered universe "mece" omits the revocation, an
+    oversight found 2026-10-28: it kept KXAPPRANKFREE2 (revoked 2025-05-20) in G's 2025 test, 5 of
+    whose test events settled with no YES leg. "mece_full" applies it; "mece" stays the default so
+    prior figures reproduce."""
+    import polars as pl
+    keep = pl.col("q_from").is_not_null() & (pl.col("q_from") <= pl.col("leg_created"))
+    if revoke:
+        keep = keep & (pl.col("q_to").is_null() | (pl.col("q_to") > pl.col("leg_created")))
+    return set(mem.filter(keep)["ticker"].to_list())
+
 
 def load(months, universe="mece"):
     import polars as pl
@@ -415,9 +442,8 @@ def load(months, universe="mece"):
     q = q.filter((pl.col("end_ts") >= pl.datetime(int(lo[:4]), int(lo[5:]), 1)) &
                  (pl.col("end_ts") < pl.datetime(int(hi[:4]), int(hi[5:]), 1)))
     mem = pl.read_parquet(_REPO / "results/mece/mece_membership.parquet")
-    causal = set(mem.filter(pl.col("q_from").is_not_null() & (pl.col("q_from") <= pl.col("leg_created")))["ticker"].to_list())
-    if universe == "mece":
-        q = q.filter(pl.col("ticker").is_in(list(causal)))
+    if universe in ("mece", "mece_full"):
+        q = q.filter(pl.col("ticker").is_in(list(member_tickers(mem, revoke=universe == "mece_full"))))
     tickers = q["ticker"].unique().to_list()
 
     mk = pl.concat([pl.read_parquet(p, columns=["ticker", "event_ticker", "result", "close_time"])
