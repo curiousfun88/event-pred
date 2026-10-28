@@ -1,6 +1,12 @@
-# What the MECE population actually is (May–Sep 2025)
+# What the MECE population actually is (pilot validation months, Jul–Aug 2025)
 
 **Measured, VAL split, 12,177 complete basket-snapshots across 19 series.**
+
+**Correction (2026-10-28):** this document was titled "May–Sep 2025". That is the
+pilot window loaded (`PILOT_MONTHS`), not the months measured. The script keeps only
+the `val` chunks, and the split constants (`TRAIN_END = "2025-06"`,
+`VAL_END = "2025-08"`) make those **July–August 2025**. No figure changes; the window
+labels in the title, §2 and §6 are corrected.
 Produced by `diagnose_basket_composition.py`. Corrects two claims carried
 over from the earlier investigation window.
 
@@ -51,7 +57,7 @@ tail.
 
 `superseded-findings-summary.md` states that "every 14+ leg family has
 **NEVER** contributed a single full-basket snapshot at any MAX_LEGS setting
-tested". That was true on its window. It is **not** true on May–Sep 2025:
+tested". That was true on its window. It is **not** true on Jul–Aug 2025:
 
 | series | legs | snapshots >5¢ | median \|dev\| |
 |---|---|---|---|
@@ -134,7 +140,7 @@ load-bearing.
 ## 6. Follow-ups
 
 1. Re-run on the extended 2024-11 → 2025-11 range once `cache/` is rebuilt.
-   Football seasons start in August, so May–Sep straddles an off-season for
+   Football seasons start in August, so Jul–Aug straddles an off-season for
    several leagues and the sports share is likely understated relative to a
    full year.
 2. Qualify the "14+ legs never" sentence in
