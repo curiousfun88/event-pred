@@ -1137,3 +1137,14 @@ while the posted share and, above about 1c, net dollars fall.
 Prediction partly held: every removal lowers the mean return, but the order was wrong (basket costs most and is the
 only interval excluding zero; market less than predicted). Return rises with the threshold, but net dollars fall at
 every step from 0c, not only above 1c. Files: `results/maker/ablation_g2_2026.json`, `logs/v2_forecast/ablation_g2_2026.log`.
+
+**Exploratory note 10 (2026-10-29 06:49 UTC, before the interim cut report is computed; descriptive, no verdict or
+arm depends on it).** Live matched-share comparison of `g2`, `g2p` (G2 two-level) and `lin2`, as Exploratory note 2
+did offline. Main result (L18: 23 series, quoting hours from 2026-10-16 T17 to the cut), primary order window,
+pessimistic fills. From quote-everything's live fills (`cand`), each model keeps its top-ranked candidate fills by its
+own logged hourly score at fixed shares (2, 5, 10, 15, 20, 25, 30, 40% of candidate fills); return and net P&L are
+pooled over the settled events of the cut, beside each model's own 1c rule. It answers whether `lin2`'s live lead
+comes from ranking or from posting fewer orders. It will be run and reported at the interim cut whatever its outcome;
+the pre-registered `g2` - `lin2` comparison stays in net return with net P&L beside it, and no threshold changes.
+**Prediction (before running):** as offline, `g2` has the higher return and net P&L than `lin2` at most shares; `g2p`
+ranks at least as well as `g2`.
