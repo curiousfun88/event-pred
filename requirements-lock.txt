@@ -1,0 +1,21 @@
+# Exact versions of the runs reported in the FYP report (Python 3.12.3). requirements.txt gives lower bounds.
+# Install: pip install -r requirements-lock.txt && pip install -e ./stg_infra
+httpx==0.28.1
+matplotlib==3.10.8
+networkx==3.6.1
+numpy==2.4.3
+pandas==3.0.1
+polars==1.39.3
+polars-runtime-32==1.39.3
+pyarrow==23.0.1
+requests==2.34.2
+scikit-learn==1.8.0
+scipy==1.17.1
+sentence-transformers==5.3.0
+torch==2.11.0
+torch-geometric==2.8.0.post1
+torchcde==0.2.5
+torchdiffeq==0.2.5
+torchsde==0.2.6
+statsmodels==0.14.6      # stg/pairs (phase-1 pairs thread)
+xgboost==3.4.1           # optional: tune_gbm.py GPU settings

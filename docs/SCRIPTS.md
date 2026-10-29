@@ -30,6 +30,7 @@ figure below as a backtest artefact, not as realisable profit.**
 | `scripts/data_split_by_month.py` | Split raw files into `data/{kind}/{kind}_kalshi_{even,odd}/{kind}_YYYY-MM.parquet` |
 | `scripts/data_split_odd_even_months.py` | Streaming odd/even-month splitter (`SplitByOddEvenMonths`), used by `kalshi_traintest.py` |
 | `scripts/view_parquet.py` | Print columns and head of a markets/trades file |
+| `scripts/run_self_tests.sh` | Run every script's `--self-test` (no data needed; see `REPRODUCE.md`) |
 | `examples/fetch_kalshi_categories_series.py` | Kalshi's own series → category lookup → `results/data_audit/kalshi_series_categories.parquet` |
 
 ## Phase 0 — `stg` library demos (Semester 1)
@@ -147,6 +148,7 @@ figure below as a backtest artefact, not as realisable profit.**
 | Script | Output / question |
 |---|---|
 | `examples/mece_spread_artefact_check.py` | **The overround test** → `results/mece/mece_spread_artefact_check.parquet` |
+| `examples/ask_side_share.py` | Share of trades at the ask per month (the order-flow prediction, 68.7% in July 2025) → `logs/v2_forecast/ask_side_share_by_month_2025.log` |
 | `build_mece_leg_spreads.py` | Measured MECE per-leg spreads → `results/mece/mece_leg_spreads.parquet` (`--window` variants) |
 | `examples/mece_yield_by_month.py` | Usable basket-days per month, all 54 months → `results/data_audit/mece_yield_by_month.parquet` |
 | `examples/sports_categorisation_check.py` | Is "sports first appears 2024-12" real? → `results/data_audit/sports_categorisation_check.parquet` |
@@ -195,6 +197,9 @@ Protocol: `docs/planning/lumid-forward-test-preregistration.md` (L1-L20).
 | `report_numbers.py` | Cut report → LaTeX macros for the report (`generated/numbers.tex` in the report repo) |
 
 ## Report evidence map (FYP report, tables)
+
+The complete map, with Chapter 3, the appendices and the commands to rerun each stage, is in
+[`../REPRODUCE.md`](../REPRODUCE.md). The table below covers the maker-policy and live tables.
 
 Each table's `% source` comment in the report names the same files.
 

@@ -84,3 +84,12 @@ runs/maker/policy_*_scores_*.parquet
 runs/maker/learned_policy_features_dev.npz
 runs/maker/.a10_done
 runs/tune_gbm/features.npz
+
+# LaTeX build files of documents under docs/
+docs/**/*.aux
+docs/**/*.out
+docs/**/*.log
+docs/**/*.toc
+docs/**/*.synctex.gz
+docs/**/*.fdb_latexmk
+docs/**/*.fls
