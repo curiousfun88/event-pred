@@ -55,7 +55,7 @@ def spread_labels(ys: list, gap: float) -> list:
     return out
 
 
-def figure(days, cum, fig_out: Path):
+def figure(days, cum, fig_out: Path, mark_days=()):
     import matplotlib as mpl
     mpl.use("Agg")
     import matplotlib.pyplot as plt
@@ -66,8 +66,15 @@ def figure(days, cum, fig_out: Path):
     style = {"g2": dict(color="black", lw=1.6), "g2p": dict(color="#eb6834", lw=1.2),
              "lin2": dict(color="#2ca02c", lw=1.2),
              "rnd2": dict(color="#3182bd", lw=1.0), "cand": dict(color="#636363", lw=1.0, ls="--")}
-    x = [dt.datetime.fromisoformat(d) for d in days]
+    # each point is the running total at the END of its quoting day, from zero at the start of the first, so a band
+    # over a day covers exactly the segment that day's fills move
+    x0 = dt.datetime.fromisoformat(days[0])
+    x = [x0] + [dt.datetime.fromisoformat(d) + dt.timedelta(days=1) for d in days]
+    cum = {a: [0.0] + c for a, c in cum.items()}
     fig, ax = plt.subplots(figsize=(TEXT_W, 2.6))
+    for d in mark_days:
+        t = dt.datetime.fromisoformat(d)
+        ax.axvspan(t, t + dt.timedelta(days=1), color="#d9d9d9", lw=0)
     ax.axhline(0, color="grey", lw=0.6)
     for a, lab in ARMS.items():
         ax.plot(x, cum[a], marker="o", ms=2.5, label=lab, **style[a])
@@ -77,7 +84,7 @@ def figure(days, cum, fig_out: Path):
         ax.annotate(f"{'+' if v >= 0 else '−'}\\${abs(v):,.0f}", (x[-1], v), xytext=(x[-1] + dt.timedelta(hours=5), y),
                     va="center", fontsize=7.5)
     ax.set_ylabel("Cumulative net P&L (USD)")
-    ax.set_xlim(x[0] - dt.timedelta(hours=12), x[-1] + dt.timedelta(days=1.2))
+    ax.set_xlim(x[0] - dt.timedelta(hours=6), x[-1] + dt.timedelta(days=1.2))
     import matplotlib.dates as mdates
     ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
@@ -109,7 +116,7 @@ def self_test() -> bool:
     return ok
 
 
-def run(cut, settle_by, check_json, fig_out):
+def run(cut, settle_by, check_json, fig_out, mark_days=()):
     import cut_report as cr
     import paper_ledger as pl_
     m = pickle.loads((cr.LIVE / "paper" / "markets.pkl").read_bytes())
@@ -136,7 +143,7 @@ def run(cut, settle_by, check_json, fig_out):
     print(f"{'day':<12}" + "".join(f"{a:>12}" for a in ARMS))
     for i, d in enumerate(days):
         print(f"{d:<12}" + "".join(f"{cum[a][i]:>+12.2f}" for a in ARMS))
-    figure(days, cum, fig_out)
+    figure(days, cum, fig_out, mark_days)
 
 
 def main():
@@ -146,10 +153,13 @@ def main():
     ap.add_argument("--settle-by", default="2026-10-30T00")
     ap.add_argument("--check-json", default="results/live/cut_interim.json")
     ap.add_argument("--fig-out", type=Path, default=Path("../fyp-report/figures"))
+    ap.add_argument("--mark-day", action="append", default=None,
+                    help="quoting day (UTC) to shade, e.g. the case study's; repeatable (default 2026-10-25)")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    run(a.cut.replace("-", "").replace(":", ""), a.settle_by.replace("-", "").replace(":", ""), a.check_json, a.fig_out)
+    run(a.cut.replace("-", "").replace(":", ""), a.settle_by.replace("-", "").replace(":", ""), a.check_json, a.fig_out,
+        a.mark_day or ["2026-10-25"])
 
 
 if __name__ == "__main__":
