@@ -83,7 +83,8 @@ def arm_fields(m: dict) -> dict:
             "SettledFills": count(m.get("settled_fills", 0)), "CILo": pct(ci.get("lo95")), "CIHi": pct(ci.get("hi95")),
             "EventClusters": count(ci.get("clusters")), "DayCILo": pct(cd.get("lo95")), "DayCIHi": pct(cd.get("hi95")),
             "DayClusters": count(cd.get("clusters")), "OneSided": pct(ci.get("lo_one_sided")),
-            "DayOneSided": pct(cd.get("lo_one_sided"))}
+            "DayOneSided": pct(cd.get("lo_one_sided")),
+            "Capital": "n/a" if _bad(m.get("capital_usd")) else f"\\${m['capital_usd']:,.0f}"}
 
 
 def diff_fields(d: dict) -> dict:
@@ -221,6 +222,7 @@ def self_test() -> bool:
     check("verdicts: G2 one-sided bounds and G2 minus random (return points)",
           (ms["MainGTwoOneSided"], ms["MainGTwoMinusRandom"], ms["MainGTwoMinusRandomOneSided"], ms["MainGTwoMinusRandomDayLo"])
           == ("\\(-\\)4.6\\%", "+14.5", "+4.9", "\\(-\\)2.0"))
+    check("committed capital, whole dollars; absent -> n/a", (ms["MainGTwoCapital"], ms["MainNeuralCapital"]) == ("\\$1,084", "n/a"))
     check("every arm gets its one-sided bounds (descriptive outside G2); absent -> n/a",
           (ms["MainRandomOneSided"], ms["MainNeuralOneSided"]) == ("n/a", "n/a") and ms["MainGTwoDayOneSided"] == "\\(-\\)7.9\\%")
     check("fill models: the strict stream gets its own prefix", ms["MainStrictGTwoNet"] == "+\\$50.00")
