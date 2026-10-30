@@ -82,7 +82,8 @@ def arm_fields(m: dict) -> dict:
     return {"Net": money(m.get("net_usd")), "Return": pct(m.get("return_pct")), "Events": count(m.get("events", 0)),
             "SettledFills": count(m.get("settled_fills", 0)), "CILo": pct(ci.get("lo95")), "CIHi": pct(ci.get("hi95")),
             "EventClusters": count(ci.get("clusters")), "DayCILo": pct(cd.get("lo95")), "DayCIHi": pct(cd.get("hi95")),
-            "DayClusters": count(cd.get("clusters"))}
+            "DayClusters": count(cd.get("clusters")), "OneSided": pct(ci.get("lo_one_sided")),
+            "DayOneSided": pct(cd.get("lo_one_sided"))}
 
 
 def diff_fields(d: dict) -> dict:
@@ -220,6 +221,8 @@ def self_test() -> bool:
     check("verdicts: G2 one-sided bounds and G2 minus random (return points)",
           (ms["MainGTwoOneSided"], ms["MainGTwoMinusRandom"], ms["MainGTwoMinusRandomOneSided"], ms["MainGTwoMinusRandomDayLo"])
           == ("\\(-\\)4.6\\%", "+14.5", "+4.9", "\\(-\\)2.0"))
+    check("every arm gets its one-sided bounds (descriptive outside G2); absent -> n/a",
+          (ms["MainRandomOneSided"], ms["MainNeuralOneSided"]) == ("n/a", "n/a") and ms["MainGTwoDayOneSided"] == "\\(-\\)7.9\\%")
     check("fill models: the strict stream gets its own prefix", ms["MainStrictGTwoNet"] == "+\\$50.00")
     check("full universe (L19) and same hours", (ms["FullGTwoNet"], ms["FullGTwoReturn"], ms["FullSameGTwoNet"])
           == ("\\(-\\)\\$760.34", "\\(-\\)6.1\\%", "\\(-\\)\\$197.03"))
