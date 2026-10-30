@@ -1148,3 +1148,17 @@ comes from ranking or from posting fewer orders. It will be run and reported at 
 the pre-registered `g2` - `lin2` comparison stays in net return with net P&L beside it, and no threshold changes.
 **Prediction (before running):** as offline, `g2` has the higher return and net P&L than `lin2` at most shares; `g2p`
 ranks at least as well as `g2`.
+
+**Note 10 result (2026-10-30 03:01 UTC, interim cut: fills before 2026-10-28 T00, events settled by 2026-10-30 T00).**
+Run on quote-everything's ledger fills of the main result, checked identical to the cut report's (-$549.02, 9,166
+settled fills); every fill scored by all three models (lin2 recomputed from the logged features, as the paper trader
+does). Return and net P&L at shares 2 / 5 / 10 / 15 / 20 / 25 / 30 / 40%:
+g2 +21.5 / +8.5 / +1.8 / +3.7 / +3.9 / +4.4 / +3.9 / +3.0% ($94 / 98 / 42 / 136 / 201 / 268 / 276 / 282);
+lin2 +29.7 / +13.0 / +9.6 / +4.0 / +2.7 / +2.5 / +1.7 / +1.4% ($124 / 180 / 217 / 130 / 112 / 129 / 106 / 116);
+g2p +20.7 / +13.2 / +12.1 / +7.5 / +7.8 / +5.0 / +4.1 / +4.1% ($88 / 155 / 288 / 291 / 405 / 319 / 306 / 387).
+Own 1c rule: g2 +4.26% ($218), lin2 +11.12% ($216), g2p +6.07% ($361). Prediction partly held: `g2` beats `lin2` on
+return and net P&L at 20-40% (and on net P&L at 15%), the shares where G2 trades, but `lin2` ranks better at 2-10%,
+so live its lead comes from ranking its top few percent better as well as from posting fewer orders (offline, `g2`
+led at every share). `g2p` ranks at least as well as `g2` at every share but 2%. Files:
+`results/live/note10_matched_share_interim.json`, `logs/v2_forecast/note10_matched_share_interim.log`
+(`stg_infra/examples/live_matched_share.py`), cut report `results/live/cut_interim.json`.
