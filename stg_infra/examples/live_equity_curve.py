@@ -2,7 +2,7 @@
 live_equity_curve.py
 
 Cumulative net P&L by quoting day (UTC) at a cut, main result, pessimistic fills, primary order window: G2, G2
-two-level, random quoting at G2's share and quoting everything. Descriptive; the report's live P&L figure (Chapter 6).
+two-level, the linear policy, random quoting at G2's share and quoting everything. Descriptive; the report's live P&L figure (Chapter 6).
 Fills, settlement and the main-result filters are the cut report's own, as in live_day_breakdown.py. Each arm's total
 is checked against the cut report's json before anything is drawn.
 
@@ -29,7 +29,7 @@ from live_day_breakdown import by_day  # noqa: E402
 
 TEXT_W = 6.27                                      # A4 with 1in margins, inches
 MAIN = "train23 (L18 main result, hours from 2026-10-16 17:00 UTC)"
-ARMS = {"g2": "G2", "g2p": "G2 two-level", "rnd2": "Random at G2's share", "cand": "Quote everything"}
+ARMS = {"g2": "G2", "g2p": "G2 two-level", "lin2": "Linear", "rnd2": "Random at G2's share", "cand": "Quote everything"}
 
 
 def cumulative(days_by_arm: dict) -> tuple[list, dict]:
@@ -45,6 +45,16 @@ def cumulative(days_by_arm: dict) -> tuple[list, dict]:
     return days, out
 
 
+def spread_labels(ys: list, gap: float) -> list:
+    """Label heights at least `gap` apart, each as close as possible to its own value (order kept)."""
+    order = sorted(range(len(ys)), key=lambda i: ys[i])
+    out = list(ys)
+    for j in range(1, len(order)):
+        a, b = order[j - 1], order[j]
+        out[b] = max(out[b], out[a] + gap)
+    return out
+
+
 def figure(days, cum, fig_out: Path):
     import matplotlib as mpl
     mpl.use("Agg")
@@ -54,15 +64,18 @@ def figure(days, cum, fig_out: Path):
                          "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.spines.top": False, "axes.spines.right": False,
                          "pdf.fonttype": 42})
     style = {"g2": dict(color="black", lw=1.6), "g2p": dict(color="#eb6834", lw=1.2),
+             "lin2": dict(color="#2ca02c", lw=1.2),
              "rnd2": dict(color="#3182bd", lw=1.0), "cand": dict(color="#636363", lw=1.0, ls="--")}
     x = [dt.datetime.fromisoformat(d) for d in days]
     fig, ax = plt.subplots(figsize=(TEXT_W, 2.6))
     ax.axhline(0, color="grey", lw=0.6)
     for a, lab in ARMS.items():
         ax.plot(x, cum[a], marker="o", ms=2.5, label=lab, **style[a])
-        v = cum[a][-1]
-        ax.annotate(f"{'+' if v >= 0 else '−'}\\${abs(v):,.0f}", (x[-1], v), xytext=(4, 0),
-                    textcoords="offset points", va="center", fontsize=7.5)
+    ends = [cum[a][-1] for a in ARMS]
+    span = max(max(c) for c in cum.values()) - min(min(c) for c in cum.values())
+    for v, y in zip(ends, spread_labels(ends, 0.06 * span)):
+        ax.annotate(f"{'+' if v >= 0 else '−'}\\${abs(v):,.0f}", (x[-1], v), xytext=(x[-1] + dt.timedelta(hours=5), y),
+                    va="center", fontsize=7.5)
     ax.set_ylabel("Cumulative net P&L (USD)")
     ax.set_xlim(x[0] - dt.timedelta(hours=12), x[-1] + dt.timedelta(days=1.2))
     import matplotlib.dates as mdates
@@ -90,6 +103,8 @@ def self_test() -> bool:
     check("days are the union of every arm's days, sorted", days == ["2026-10-16", "2026-10-17", "2026-10-18"])
     check("an arm with no fills on a day carries its total forward (cents -> dollars)",
           c["a"] == [1.0, 1.0, 0.5] and c["b"] == [0.0, 0.3, 0.3])
+    check("end labels: +221 and +220 are pushed apart, the others stay at their values",
+          spread_labels([220.0, 290.0, 221.0, -186.0], 20.0) == [220.0, 290.0, 240.0, -186.0])
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 
