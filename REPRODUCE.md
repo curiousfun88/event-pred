@@ -158,6 +158,7 @@ Each table in the report also carries a `% source:` comment naming these files.
 | App. E | `tab:maker-failed` | `run_test_724.sh` (A10), `policy_G_validate.py test GS` | `logs/v2_forecast/test_724/maker.log`, `policy_GS_TEST.log` |
 | App. | `tab:forecast-main` (STGAT) | `run_test_724.sh`, `score_forecast.py` | `logs/v2_forecast/test_724/forecast_s*.log`, `strata_s*.log` |
 | App. H | `tab:universe` | `smoke_test_2026.py` | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
+| App. I | `tab:window-months` (data window by month) | `stg_infra/examples/mece_yield_by_month.py` | `results/data_audit/mece_yield_by_month.parquet` |
 
 Single numbers quoted in the text are typed once in the report's `numbers_offline.tex`, each with its source file in
 a comment; the live numbers are generated into `generated/numbers.tex` by `report_numbers.py`.
