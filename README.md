@@ -36,7 +36,9 @@ plans with numbered amendments: [STGAT test](docs/planning/stgat-7-2-4-preregist
 The work did not run in a straight line. Leaks were found and fixed (contracts replayed after they closed, and a
 time-to-close input that revealed when events ended), headline numbers moved when they were, and a profitability
 claim for taking dislocations was withdrawn. Every such revision is recorded in
-[`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md).
+[`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md). Work left out of the final report (the STGAT forecasting model, threshold
+ladders, and the routes tried before policy G) is recorded with its figures in
+[`docs/negative-results.md`](docs/negative-results.md).
 
 ## Repository layout
 

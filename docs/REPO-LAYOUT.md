@@ -12,6 +12,7 @@ docs/
 ├── RESEARCH_LOG.md                    chronology, documents by phase, every revision
 ├── SCRIPTS.md                         every script by phase; report evidence map
 ├── REPO-LAYOUT.md                     this map
+├── negative-results.md               work left out of the final report: STGAT, ladders, routes tried before G
 ├── superseded-findings-summary.md     naive-phase survey (5 Sep); kept as the audit trail, do not cite
 ├── sandbox-home-README.md             README placed on the live sandbox (operations of the live test)
 │
