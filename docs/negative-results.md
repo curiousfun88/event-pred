@@ -11,9 +11,8 @@ Contents:
 2. [The STGAT forecasting model](#2-the-stgat-forecasting-model)
 3. [Threshold ladders](#3-threshold-ladders)
 
-**Disclosure that stays in the report.** G's test months (August to November 2025) had been used before, for the
-rule-based makers of section 1. The report says so (Chapter 5, test setup) and points here. No design choice of G used
-them.
+**Test-month reuse.** G's test months (August to November 2025) had been used before, for the rule-based makers of
+section 1. No design choice of G used them. The final report does not state this; it is recorded here.
 
 ---
 
