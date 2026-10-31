@@ -3,13 +3,14 @@
 Work that was done, measured and reported in earlier drafts of the report, but left out of the final report
 (*The Law of One Dollar: Machine Learning for Market Making in Kalshi Prediction Markets*, submitted 3 November 2026),
 which reports only the results that carry its argument. This file keeps them on record for accountability. Every
-figure is the one the report's earlier drafts used, with the evidence behind it.
+figure is the one recorded at the time, in earlier report drafts or the research log, with the evidence behind it.
 
 Contents:
 
 1. [Routes tried before policy G](#1-routes-tried-before-policy-g)
 2. [The STGAT forecasting model](#2-the-stgat-forecasting-model)
 3. [Threshold ladders](#3-threshold-ladders)
+4. [The withdrawn taker backtest](#4-the-withdrawn-taker-backtest)
 
 **Test-month reuse.** G's test months (August to November 2025) had been used before, for the rule-based makers of
 section 1. No design choice of G used them. The final report does not state this; it is recorded here.
@@ -140,6 +141,26 @@ where the constraint ties every leg to a fixed $1 total.
 
 Evidence: `logs/v2_forecast/ladder_timing.log`, `ladder_timing_causal.log`;
 `docs/1-detection/ladder-conclusion-overturned.md`, `docs/1-detection/ladder-persistence-result.md`.
+
+---
+
+## 4. The withdrawn taker backtest
+
+**Claimed (before 26 September 2026).** A taker strategy that sells a basket whose last prices sum above $1 (or buys one
+below), entering only when the deviation exceeds the modelled cost, and holds it to the $1 settlement, was profitable:
++$292 to +$663 depending on configuration, on 4,891 fully covered basket-days.
+
+**Withdrawn on 26 September 2026.** The deviation was measured from last trade prints, which sit at the bid or the ask,
+never the mid. 68.7% of prints are at the ask, which predicts a +6.3¢ deviation on a six-leg basket with no mispricing.
+The prediction was recorded before measuring and matched (+5.25¢ measured, 92.5% of baskets above $1). Priced on the
+side a taker would actually trade, on baskets whose legs printed within an hour of each other, selling every leg at the
+bids nets −0.07¢ before fees (bids $0.9993, asks $1.1334, settlement $1.0000). The apparent profit was the spread.
+
+This is the measurement that became the report's Section 3.5. The report keeps only its general lesson: pricing legs
+at last trades, without regard to the side of the trade, invents profit that does not exist.
+
+Evidence: `docs/RESEARCH_LOG.md`, Revisions §1 and Phase 5; `stg_infra/evaluate_mece_settlement_pnl.py`;
+`stg_infra/examples/mece_spread_artefact_check.py` → `results/mece/mece_spread_artefact_check.parquet`.
 
 ---
 
