@@ -99,7 +99,9 @@ def risk_fields(r: dict) -> dict:
     return {"Sharpe": "n/a" if _bad(sh) else (("\\(-\\)" if sh < 0 else "") + f"{abs(sh):.1f}"),
             "MaxDrawdown": "n/a" if _bad(r.get("max_drawdown_usd")) else f"\\${r['max_drawdown_usd']:,.2f}",
             "MaxDrawdownPct": share(None if _bad(r.get("max_drawdown_pct_of_peak_capital")) else r["max_drawdown_pct_of_peak_capital"] / 100),
-            "ProfitableDays": share(r.get("profitable_days_share")), "TopTenShare": share(r.get("top10_event_share")),
+            "ProfitableDays": share(r.get("profitable_days_share")),
+            # a share of profit: undefined for a strategy that made none, shown as a dash (the caption says so)
+            "TopTenShare": "--" if r and _bad(r.get("top10_event_share")) else share(r.get("top10_event_share")),
             "PeakCapital": "n/a" if _bad(r.get("peak_open_capital_usd")) else f"\\${r['peak_open_capital_usd']:,.2f}",
             "Days": count(r.get("tradedate_days")) if r else "n/a"}
 
@@ -235,6 +237,9 @@ def self_test() -> bool:
           (ms["MainRiskGTwoSharpe"], ms["MainRiskGTwoMaxDrawdown"], ms["MainRiskGTwoMaxDrawdownPct"], ms["MainRiskGTwoProfitableDays"],
            ms["MainRiskGTwoTopTenShare"], ms["MainRiskGTwoDays"], ms["MainRiskNeuralSharpe"])
           == ("3.5", "\\$40.00", "3\\%", "75\\%", "62\\%", "12", "n/a"))
+    rl = macros({**rep, "headline": {"primary": {MAIN: {**head[MAIN], "arms": {"g2": g2, "rnd2": {**rnd, "risk": {
+        "tradedate_days": 12, "top10_event_share": float("nan")}}}}}}}, "planted.json")
+    check("top-10 share of a losing strategy is a dash, not n/a", rl["MainRiskRandomTopTenShare"] == "--")
     check("weather split within the main result, and weather's share of G2's net (75 / 101.04 = 74%)",
           (ms["MainGTwoWeatherNet"], ms["MainGTwoNonWeatherReturn"], ms["MainGTwoWeatherProfitShare"], ms["MainRandomWeatherNet"])
           == ("+\\$75.00", "+5.0\\%", "74\\%", "n/a"))
