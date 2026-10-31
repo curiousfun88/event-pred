@@ -39,11 +39,15 @@ answers before touching real data (69 scripts, about 2-3 minutes in all). Older 
 
 ## Level 3: data
 
-Raw data is not committed (about 5 GB). Everything comes from Kalshi's public interface, which needs no account.
+Raw data is not committed (about 5 GB). Everything comes from Kalshi's public interface, which needs no account. The
+Jun 2021 - Nov 2025 archive is a public, pre-collected dataset: Jon Becker's
+[prediction-market-analysis](https://github.com/Jon-Becker/prediction-market-analysis) (Kalshi markets and trades
+collected 23-25 Nov 2025, same schema as `data/{markets,trades}`). Download it from there to reproduce exactly.
+Everything later was fetched by this project's own scripts.
 
 | Data | Fetch with | Lands in |
 |---|---|---|
-| Every market and trade, Jun 2021 - Nov 2025 | `scripts/fetch_kalshi_data.py`, then `scripts/data_split_by_month.py` | `data/{markets,trades}/{markets,trades}_kalshi_{even,odd}/{kind}_YYYY-MM.parquet` |
+| Every market and trade, Jun 2021 - Nov 2025 | Becker's dataset (above), or re-crawl with `scripts/fetch_kalshi_data.py`; then `scripts/data_split_by_month.py` | `data/{markets,trades}/{markets,trades}_kalshi_{even,odd}/{kind}_YYYY-MM.parquet` |
 | Hourly quotes (best bid and ask), MECE legs, Jul - Sep 2025 | `stg_infra/fetch_quote_candles.py` | `data/quotes/` |
 | The 23 series, Dec 2025 - Sep 2026, with hourly quotes and every trade | `stg_infra/fetch_kalshi_api_months.py` | `data/kalshi_candles_cache/`, `runs/` caches |
 
