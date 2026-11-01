@@ -12,7 +12,7 @@
 set -euo pipefail
 U=curiouslearner842
 H=/home/$U
-BR=fix/post-close-carry-forward
+BR=main
 SITE=${1:?usage: restore_on_site.sh <office|home>}
 PY=$H/venv/bin/python
 cd "$H"

@@ -73,5 +73,5 @@ Daily records are running totals, so the 22 Oct record covers it.
 Everything under `event-pred/runs/live/` and `live-backup/` is written by the running test. Read freely, but do
 not edit, move or delete files there. `.lumid/` holds the account's access token and is not part of the results.
 
-Code and rules: https://github.com/curiousfun88/event-pred/tree/fix/post-close-carry-forward (pre-registration:
-`docs/planning/lumid-forward-test-preregistration.md` on that branch).
+Code and rules: https://github.com/curiousfun88/event-pred/tree/main (pre-registration:
+`docs/planning/lumid-forward-test-preregistration.md` on `main`).
