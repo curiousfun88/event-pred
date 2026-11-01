@@ -115,9 +115,9 @@ python stg_infra/report_numbers.py --cut-json results/live/cut_interim.json --ou
 `cut_report.py` needs a full copy of `runs/live` (ledger, settlement cache, logged scores); see its docstring.
 Third-party timestamps are checked with the OpenTimestamps client (`ots verify` on any file in `runs/live/stamps/`).
 
-### STGAT and ladders (Appendices)
+### STGAT and ladders (not in the report)
 
-The forecasting model's runs, exact commands and seeds are in [`runs/README.md`](runs/README.md) and
+These are recorded in [`docs/negative-results.md`](docs/negative-results.md), not in the final report. The forecasting model's runs, exact commands and seeds are in [`runs/README.md`](runs/README.md) and
 [`docs/planning/stgat-7-2-4-preregistration.md`](docs/planning/stgat-7-2-4-preregistration.md); the approved test is
 `stg_infra/run_test_724.sh`. These need a GPU and the per-month graph cache (`cache_724/`, about 4.5 GB, built by
 the run).
@@ -148,18 +148,17 @@ Each table in the report also carries a `% source:` comment naming these files.
 | Ch 5 | `tab:ablation`, `tab:ablation-inputs`, `tab:threshold` | `ablate_g2.py` (rows also from the tables above) | `results/maker/ablation_g2_2026.json` |
 | Ch 5 | `tab:g2-sensitivity`, `tab:retrain-sensitivity` | `tune_gbm.py`, `offline_baselines.py` | `logs/v2_forecast/tune_gbm_a15_summary.log`, `results/live/mlp_sensitivity.json`, `lin_sensitivity.json` |
 | Ch 6 | `tab:live-arms`, `tab:live-windows` | -- | `docs/planning/lumid-forward-test-preregistration.md` |
-| Ch 6 | `tab:live-main`, `tab:live-tests`, `tab:live-fills`; App. C tables | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` (written at the interim cut) |
+| Ch 6 | `tab:live-main`, `tab:live-tests`, `tab:live-fills` | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` (written at the interim cut) |
+| App. C | `tab:arms-fills`, `tab:weather-split`, `tab:live-risk` | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` |
 | Ch 6 | `tab:live-case` | `live_case_study.py` | `results/live/case_study_20261025.json` |
-| App C | `tab:live-case-legs` | `live_case_study.py --fills` (public ledger clone) | `results/live/case_study_20261025_fills.json`, `logs/v2_forecast/live_case_study_fills.log` |
+| App. C | `tab:live-case-legs` | `live_case_study.py --fills` (public ledger clone) | `results/live/case_study_20261025_fills.json`, `logs/v2_forecast/live_case_study_fills.log` |
 | Ch 6 | `fig:live-equity`; day-cluster paragraph | `live_equity_curve.py`, `live_day_breakdown.py` | `logs/v2_forecast/live_equity_curve_interim.log`, `logs/v2_forecast/live_day_breakdown_interim.log` |
-| Ch 6, App C | G2 against the linear policy (note 10), `tab:live-matched` | `live_matched_share.py` | `results/live/note10_matched_share_interim.json` |
+| Ch 6, App. C | G2 against the linear policy (note 10), `tab:live-matched` | `live_matched_share.py` | `results/live/note10_matched_share_interim.json` |
 | App. A | `tab:amendments`, `tab:notes` | -- | the three pre-registrations in `docs/planning/` |
 | App. B | `fig:architecture`, `tab:incidents`, `tab:missing-hours` | live system code | `docs/planning/lumid-forward-test-preregistration.md` (L12-L20) |
 | App. C | `tab:weather-rule` | `retrain_g2.py`, L11 split | `results/live/l11_weather_split.json` |
-| App. E | `tab:maker-failed` | `run_test_724.sh` (A10), `policy_G_validate.py test GS` | `logs/v2_forecast/test_724/maker.log`, `policy_GS_TEST.log` |
-| App. | `tab:forecast-main` (STGAT) | `run_test_724.sh`, `score_forecast.py` | `logs/v2_forecast/test_724/forecast_s*.log`, `strata_s*.log` |
-| App. H | `tab:universe` | `smoke_test_2026.py` | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
-| App. I | `tab:window-months` (data window by month) | `stg_infra/examples/mece_yield_by_month.py` | `results/data_audit/mece_yield_by_month.parquet` |
+| App. E | `tab:universe` | `smoke_test_2026.py` | `logs/v2_forecast/smoke_test_2026-09.log`, `universe_leg_counts_2026-09.log` |
+| App. F | `tab:window-months` (data window by month) | `stg_infra/examples/mece_yield_by_month.py` | `results/data_audit/mece_yield_by_month.parquet` |
 
 Single numbers quoted in the text are typed once in the report's `numbers_offline.tex`, each with its source file in
 a comment; the live numbers are generated into `generated/numbers.tex` by `report_numbers.py`.
@@ -168,5 +167,5 @@ a comment; the live numbers are generated into `generated/numbers.tex` by `repor
 
 - **Live decisions.** They depend on the hour they were made. They are not rerun; the hash chain and timestamps show
   they were not changed afterwards.
-- **STGAT training on a GPU** is not bit-for-bit deterministic. Four seeds are reported for that reason.
+- **STGAT training on a GPU** (not in the report) is not bit-for-bit deterministic. Four seeds are reported for that reason.
 - **Kalshi data revisions.** A fresh download may differ slightly from the archive used (see Data).
