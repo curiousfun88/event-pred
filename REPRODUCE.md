@@ -152,7 +152,7 @@ Each table in the report also carries a `% source:` comment naming these files.
 | Ch 6 | `tab:live-case` | `live_case_study.py` | `results/live/case_study_20261025.json` |
 | App C | `tab:live-case-legs` | `live_case_study.py --fills` (public ledger clone) | `results/live/case_study_20261025_fills.json`, `logs/v2_forecast/live_case_study_fills.log` |
 | Ch 6 | `fig:live-equity`; day-cluster paragraph | `live_equity_curve.py`, `live_day_breakdown.py` | `logs/v2_forecast/live_equity_curve_interim.log`, `logs/v2_forecast/live_day_breakdown_interim.log` |
-| Ch 6 | G2 against the linear policy (note 10) | `live_matched_share.py` | `results/live/note10_matched_share_interim.json` |
+| Ch 6, App C | G2 against the linear policy (note 10), `tab:live-matched` | `live_matched_share.py` | `results/live/note10_matched_share_interim.json` |
 | App. A | `tab:amendments`, `tab:notes` | -- | the three pre-registrations in `docs/planning/` |
 | App. B | `fig:architecture`, `tab:incidents`, `tab:missing-hours` | live system code | `docs/planning/lumid-forward-test-preregistration.md` (L12-L20) |
 | App. C | `tab:weather-rule` | `retrain_g2.py`, L11 split | `results/live/l11_weather_split.json` |
