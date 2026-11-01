@@ -1,0 +1,5 @@
+one-level: 9,374 candidates, 2,918 with a fixed trade history (31%); trades_24h changed on 9.5%, median correction +0
+  g    logged preds reproduced: True | posted (>1c) buggy 40.8% fixed 40.8% | decisions flipped 0.2% (post->skip 0.1%, skip->post 0.1%) | median |pred change| 0.00c
+  g2   logged preds reproduced: True | posted (>1c) buggy 43.9% fixed 43.9% | decisions flipped 0.5% (post->skip 0.2%, skip->post 0.2%) | median |pred change| 0.00c
+two-level: 17,210 candidates, 4,956 with a fixed trade history (29%); trades_24h changed on 8.9%, median correction +0
+  g2p  logged preds reproduced: True | posted (>1c) buggy 48.8% fixed 48.7% | decisions flipped 0.5% (post->skip 0.3%, skip->post 0.2%) | median |pred change| 0.00c

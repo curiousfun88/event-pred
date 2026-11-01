@@ -1,0 +1,136 @@
+{
+ "note": "exploratory note 8 (lumid-forward-test-preregistration.md), 2026-10-21, during the live test; offline only. L9/A15 walk-forward, G2-W3 recipe, test months 2026-04..08; metrics as the 2025 A16 addendum (trade-date daily series)",
+ "gates": "passed: rebuilt rows equal the walk-forward table; fold returns reproduce A15/L9",
+ "folds": {
+  "2026-04": {
+   "ret_pct": 1.95,
+   "fills": 9912
+  },
+  "2026-05": {
+   "ret_pct": 2.3,
+   "fills": 9299
+  },
+  "2026-06": {
+   "ret_pct": 3.26,
+   "fills": 8402
+  },
+  "2026-07": {
+   "ret_pct": 3.46,
+   "fills": 6182
+  },
+  "2026-08": {
+   "ret_pct": 2.59,
+   "fills": 5337
+  }
+ },
+ "benchmarks": {
+  "index_source": "FRED SP500 (price index, no dividends)",
+  "spy_return_pct": 16.89377855374341,
+  "tbill_rate_pct": 3.6661320754716984,
+  "tbill_return_pct": 1.5267180149909538
+ },
+ "G2": {
+  "net_usd": 2962.91,
+  "ret_pct": 2.63,
+  "fills": 39132,
+  "peak_open_capital_usd": 3432.99,
+  "max_drawdown_usd": 266.95,
+  "max_drawdown_pct_of_peak_capital": 7.78,
+  "profitable_days_share": 0.66,
+  "risk": {
+   "days": 153,
+   "ann_return_pct": 205.89573710845283,
+   "ann_vol_pct": 27.598826204070452,
+   "sharpe": 7.327471231481395,
+   "short_sample_warning": false,
+   "corr_spy": 0.17992323943315908
+  }
+ },
+ "random_same_share": [
+  {
+   "net_usd": -392.57,
+   "ret_pct": -0.48,
+   "fills": 39132,
+   "peak_open_capital_usd": 2150.63,
+   "max_drawdown_usd": 792.97,
+   "max_drawdown_pct_of_peak_capital": 36.87,
+   "profitable_days_share": 0.431,
+   "risk": {
+    "days": 153,
+    "ann_return_pct": -43.54645860117175,
+    "ann_vol_pct": 29.087135324806972,
+    "sharpe": -1.6231433638766817,
+    "short_sample_warning": false,
+    "corr_spy": -0.011709608078926164
+   }
+  },
+  {
+   "net_usd": -537.72,
+   "ret_pct": -0.65,
+   "fills": 39132,
+   "peak_open_capital_usd": 2180.71,
+   "max_drawdown_usd": 772.63,
+   "max_drawdown_pct_of_peak_capital": 35.43,
+   "profitable_days_share": 0.464,
+   "risk": {
+    "days": 153,
+    "ann_return_pct": -58.82469830611922,
+    "ann_vol_pct": 28.693311309259247,
+    "sharpe": -2.1778884182469835,
+    "short_sample_warning": false,
+    "corr_spy": 0.029589499383463377
+   }
+  },
+  {
+   "net_usd": -667.74,
+   "ret_pct": -0.82,
+   "fills": 39132,
+   "peak_open_capital_usd": 2000.83,
+   "max_drawdown_usd": 926.75,
+   "max_drawdown_pct_of_peak_capital": 46.32,
+   "profitable_days_share": 0.471,
+   "risk": {
+    "days": 153,
+    "ann_return_pct": -79.61568498092896,
+    "ann_vol_pct": 33.196398494169664,
+    "sharpe": -2.50876061362583,
+    "short_sample_warning": false,
+    "corr_spy": -0.02165296562498059
+   }
+  },
+  {
+   "net_usd": -990.81,
+   "ret_pct": -1.22,
+   "fills": 39132,
+   "peak_open_capital_usd": 2081.15,
+   "max_drawdown_usd": 1004.07,
+   "max_drawdown_pct_of_peak_capital": 48.25,
+   "profitable_days_share": 0.412,
+   "risk": {
+    "days": 153,
+    "ann_return_pct": -113.57648698188653,
+    "ann_vol_pct": 29.695040442298,
+    "sharpe": -3.948222238834074,
+    "short_sample_warning": false,
+    "corr_spy": -0.10357784463938997
+   }
+  },
+  {
+   "net_usd": -207.41,
+   "ret_pct": -0.25,
+   "fills": 39132,
+   "peak_open_capital_usd": 2030.66,
+   "max_drawdown_usd": 445.08,
+   "max_drawdown_pct_of_peak_capital": 21.92,
+   "profitable_days_share": 0.444,
+   "risk": {
+    "days": 153,
+    "ann_return_pct": -24.366542601268947,
+    "ann_vol_pct": 33.124125962606016,
+    "sharpe": -0.846291754486952,
+    "short_sample_warning": false,
+    "corr_spy": -0.02491378780280546
+   }
+  }
+ ]
+}

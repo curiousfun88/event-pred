@@ -1,0 +1,30 @@
+Structural count only (which series were fee-free for makers); no P&L is read.
+month    MECE events fee-free events  share
+2024-11          313             271    87%
+2024-12          986             944    96%
+2025-01        1,301           1,259    97%
+2025-02        1,350           1,312    97%
+2025-03        1,492           1,450    97%
+2025-04        1,514           1,469    97%
+2025-05        1,608           1,555    97%
+2025-06        1,688           1,646    98%
+2025-07        1,648           1,596    97%
+2025-08        1,686           1,603    95%
+2025-09        1,824           1,689    93%
+2025-10        2,392           2,313    97%
+2025-11        1,661           1,626    98%
+
+A10-eligible leg-days per month (filters only; outcomes not read):
+  2024-11:   124 leg-days in   27 events
+  2024-12:    64 leg-days in   19 events
+  2025-01:    33 leg-days in   16 events
+  2025-02:    11 leg-days in    7 events
+  2025-03:    18 leg-days in    8 events
+  2025-04:    61 leg-days in   31 events
+  2025-05:    60 leg-days in   29 events
+  2025-06:   114 leg-days in   54 events
+  2025-07:    85 leg-days in   35 events
+  2025-08:    48 leg-days in   19 events   <- test
+  2025-09:    47 leg-days in   19 events   <- test
+  2025-10:     7 leg-days in    6 events   <- test
+  2025-11:     5 leg-days in    4 events   <- test

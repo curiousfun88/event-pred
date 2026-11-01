@@ -71,7 +71,8 @@ class MonthlyBundleStore:
     ever concatenating the months' feature tensors themselves.
     """
 
-    def __init__(self, month_paths: "Dict[str, Path]", verbose: bool = True):
+    def __init__(self, month_paths: "Dict[str, Path]", verbose: bool = True,
+                 exclude_prefixes=()):
         """``month_paths`` maps 'YYYY-MM' -> path of that month's cached
         TorchGraphBundle (as written by torch.save). Months are processed
         in sorted calendar order, which is also the order their snapshots
@@ -81,6 +82,7 @@ class MonthlyBundleStore:
 
         self.month_paths = {m: Path(p) for m, p in sorted(month_paths.items())}
         self.verbose = verbose
+        self.exclude_prefixes = tuple(exclude_prefixes)
 
         # Cheap pass to learn each month's length and timestamps, so the
         # global timeline (and therefore splits/chunks) can be planned
@@ -190,7 +192,7 @@ class MonthlyBundleStore:
         month, month_start, _ = self._month_for(chunk)
         bundle = self._ensure_loaded(month)
         local = TemporalChunk(chunk.split, chunk.start - month_start, chunk.end - month_start)
-        return slice_bundle_chunk(bundle, local)
+        return slice_bundle_chunk(bundle, local, exclude_prefixes=self.exclude_prefixes)
 
     def release(self):
         """Drops the resident month. Worth calling between epochs' train

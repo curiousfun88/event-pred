@@ -1,0 +1,10 @@
+
+=== Building month 2025-11 ===
+Loading markets/trades for ['2025-11'] ...
+  530000 market rows, 9452603 trade rows across 1 month(s)
+
+  ticker metadata: 33,787 of 176,225 traded tickers found across 54 markets files (142,438 without a markets row)
+  dropped 6,173 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the CAUSAL rule (test month)
+2026-09-29 08:01:53,048 [INFO] stg.builders.builder: Temporal slicing produced 296 windows (9.2s)
+2025-11 exit: 137

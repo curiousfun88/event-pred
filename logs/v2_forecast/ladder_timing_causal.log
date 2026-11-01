@@ -1,0 +1,80 @@
+months: ['2025-05', '2025-06', '2025-07', '2025-08']  (splits: ['train', 'train', 'val', 'val'])  horizons: [1, 12]
+  2025-05: loaded, T=310 N=15555
+  2025-06: loaded, T=300 N=11782
+  2025-07: loaded, T=310 N=13256
+  2025-08: loaded, T=360 N=15245
+
+==============================================================================================================
+h=1 (2h ahead) -- scored exactly as _ladder_terms selects pairs
+  ladder pair-snapshots with both legs present at t: 66,981; still both present at t+h (scored): 50,991 (76.1%)
+  frozen share of scored pairs: 74.2% (reported in ladder-conclusion-overturned.md for val h=1: 89.8%)
+  PAST-CLOSE: 0.0% of scored pair-snapshots have a leg already closed by t+h (moved among them: nan%) -- carry-forward replays of contracts whose close_time the per-month build never saw
+
+  ALL SCORED PAIRS (as the objective saw them). AUC for 'moved' -- 0.5 = no information. 'age' is HIDDEN from the model; 'vol' and 'ttc' are what it saw.
+  lifetime class      pair-snaps   pairs k  series   moved  AUC age  AUC vol  AUC ttc
+  daily (<=26h)            6,600     1,279       5   62.5%    0.679    0.546    0.714
+  longer (>26h)           27,653       419      30   23.1%    0.835    0.659    0.420
+  unknown                 16,738        25       7   15.8%    0.790    0.679    0.483
+  ALL                     50,991     1,723      37   25.8%    0.830    0.666    0.617
+
+  moved share by the fresher leg's age (snapshots since its last trade):
+                      0 (traded this window)                       1                       2                     3-5                    6-11                     12+
+  daily (<=26h)          74.2% (n=    4,511)     43.0% (n=      959)     37.3% (n=      461)     33.4% (n=      509)     14.4% (n=      160)                       -
+  longer (>26h)          58.7% (n=    7,753)     24.9% (n=    2,452)     15.2% (n=    1,678)     11.7% (n=    3,439)      7.3% (n=    3,919)      3.4% (n=    8,412)
+  unknown                44.9% (n=    3,488)     19.1% (n=    1,501)     14.2% (n=    1,108)      8.7% (n=    2,322)      7.7% (n=    2,628)      4.0% (n=    5,691)
+  ALL                    60.1% (n=   15,752)     26.6% (n=    4,912)     18.0% (n=    3,247)     12.3% (n=    6,270)      7.7% (n=    6,707)      3.7% (n=   14,103)
+
+  LIVE PAIRS ONLY: 50,991 pair-snapshots, frozen share 74.2%
+
+  LIVE PAIRS ONLY. Same columns.
+  lifetime class      pair-snaps   pairs k  series   moved  AUC age  AUC vol  AUC ttc
+  daily (<=26h)            6,600     1,279       5   62.5%    0.679    0.546    0.714
+  longer (>26h)           27,653       419      30   23.1%    0.835    0.659    0.420
+  unknown                 16,738        25       7   15.8%    0.790    0.679    0.483
+  ALL                     50,991     1,723      37   25.8%    0.830    0.666    0.617
+
+  moved share by the fresher leg's age (snapshots since its last trade):
+                      0 (traded this window)                       1                       2                     3-5                    6-11                     12+
+  daily (<=26h)          74.2% (n=    4,511)     43.0% (n=      959)     37.3% (n=      461)     33.4% (n=      509)     14.4% (n=      160)                       -
+  longer (>26h)          58.7% (n=    7,753)     24.9% (n=    2,452)     15.2% (n=    1,678)     11.7% (n=    3,439)      7.3% (n=    3,919)      3.4% (n=    8,412)
+  unknown                44.9% (n=    3,488)     19.1% (n=    1,501)     14.2% (n=    1,108)      8.7% (n=    2,322)      7.7% (n=    2,628)      4.0% (n=    5,691)
+  ALL                    60.1% (n=   15,752)     26.6% (n=    4,912)     18.0% (n=    3,247)     12.3% (n=    6,270)      7.7% (n=    6,707)      3.7% (n=   14,103)
+
+==============================================================================================================
+h=12 (24h ahead) -- scored exactly as _ladder_terms selects pairs
+  ladder pair-snapshots with both legs present at t: 64,876; still both present at t+h (scored): 39,441 (60.8%)
+  frozen share of scored pairs: 44.0% (reported in ladder-conclusion-overturned.md for val h=1: 89.8%)
+  PAST-CLOSE: 0.0% of scored pair-snapshots have a leg already closed by t+h (moved among them: nan%) -- carry-forward replays of contracts whose close_time the per-month build never saw
+
+  ALL SCORED PAIRS (as the objective saw them). AUC for 'moved' -- 0.5 = no information. 'age' is HIDDEN from the model; 'vol' and 'ttc' are what it saw.
+  lifetime class      pair-snaps   pairs k  series   moved  AUC age  AUC vol  AUC ttc
+  daily (<=26h)                8         8       1  100.0%      nan      nan      nan
+  longer (>26h)           23,467       315      30   57.2%    0.770    0.508    0.413
+  unknown                 15,966        25       7   54.1%    0.697    0.609    0.505
+  ALL                     39,441       348      36   56.0%    0.741    0.550    0.475
+
+  moved share by the fresher leg's age (snapshots since its last trade):
+                      0 (traded this window)                       1                       2                     3-5                    6-11                     12+
+  daily (<=26h)         100.0% (n=        8)                       -                       -                       -                       -                       -
+  longer (>26h)          87.3% (n=    6,595)     71.1% (n=    2,180)     63.1% (n=    1,543)     54.9% (n=    3,161)     42.6% (n=    3,663)     29.3% (n=    6,325)
+  unknown                80.3% (n=    3,325)     66.3% (n=    1,430)     62.1% (n=    1,058)     56.3% (n=    2,234)     48.6% (n=    2,536)     34.7% (n=    5,383)
+  ALL                    85.0% (n=    9,928)     69.2% (n=    3,610)     62.7% (n=    2,601)     55.5% (n=    5,395)     45.0% (n=    6,199)     31.8% (n=   11,708)
+
+  LIVE PAIRS ONLY: 39,441 pair-snapshots, frozen share 44.0%
+
+  LIVE PAIRS ONLY. Same columns.
+  lifetime class      pair-snaps   pairs k  series   moved  AUC age  AUC vol  AUC ttc
+  daily (<=26h)                8         8       1  100.0%      nan      nan      nan
+  longer (>26h)           23,467       315      30   57.2%    0.770    0.508    0.413
+  unknown                 15,966        25       7   54.1%    0.697    0.609    0.505
+  ALL                     39,441       348      36   56.0%    0.741    0.550    0.475
+
+  moved share by the fresher leg's age (snapshots since its last trade):
+                      0 (traded this window)                       1                       2                     3-5                    6-11                     12+
+  daily (<=26h)         100.0% (n=        8)                       -                       -                       -                       -                       -
+  longer (>26h)          87.3% (n=    6,595)     71.1% (n=    2,180)     63.1% (n=    1,543)     54.9% (n=    3,161)     42.6% (n=    3,663)     29.3% (n=    6,325)
+  unknown                80.3% (n=    3,325)     66.3% (n=    1,430)     62.1% (n=    1,058)     56.3% (n=    2,234)     48.6% (n=    2,536)     34.7% (n=    5,383)
+  ALL                    85.0% (n=    9,928)     69.2% (n=    3,610)     62.7% (n=    2,601)     55.5% (n=    5,395)     45.0% (n=    6,199)     31.8% (n=   11,708)
+
+saved summary to results/ladder/ladder_timing_check_causal.parquet
+exit: 0

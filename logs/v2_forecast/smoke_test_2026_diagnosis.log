@@ -1,0 +1,40 @@
+====================================================================================================
+1. COMPOSITION AND PER-GROUP RETURNS (pessimistic): G and quote-everything (ALL)
+ 2025 Aug-Nov:  G  +3.55% [ +2.50, +4.57] fills 34,086 ev 1325   ALL  -0.34% [ -0.76, +0.10] fills 110,867 ev 1609
+    weather   G share of fills 89.9%  G  +3.00% [ +1.92, +4.12] fills 30,631 ev  770   ALL  +0.27% [ -0.16, +0.72] fills 94,286 ev  770
+    index     G share of fills  0.7%  G +10.44% [ +2.76,+19.92] fills    247 ev   67   ALL  -8.70% [-10.78, -6.71] fills  3,320 ev  156
+    football  G share of fills  3.9%  G  +4.47% [ -0.83, +9.50] fills  1,321 ev  261   ALL  +0.00% [ -2.14, +2.04] fills  6,619 ev  358
+    other     G share of fills  5.5%  G  +8.88% [ +5.32,+12.57] fills  1,887 ev  227   ALL  -1.95% [ -4.07, +0.11] fills  6,642 ev  325
+ 2026 Sep 7-Oct 4:  G  -1.41% [ -4.14, +1.39] fills 10,599 ev  329   ALL  -1.45% [ -2.41, -0.53] fills 29,452 ev  386
+    weather   G share of fills 72.4%  G  -2.66% [ -6.74, +1.37] fills  7,676 ev  189   ALL  -0.85% [ -1.76, +0.12] fills 23,199 ev  190
+    index     G share of fills 17.0%  G  -2.55% [ -5.69, +0.56] fills  1,803 ev   38   ALL  -5.82% [ -9.22, -2.79] fills  2,706 ev   38
+    football  G share of fills  2.1%  G +18.74% [ +0.55,+37.92] fills    225 ev   56   ALL  -1.57% [ -8.46, +5.25] fills  1,143 ev  112
+    other     G share of fills  8.4%  G  +1.51% [ -3.31, +6.58] fills    895 ev   46   ALL  -2.12% [ -4.88, +0.94] fills  2,404 ev   46
+====================================================================================================
+2. SEASONALITY: weather by month, 2025 (G / ALL)
+   G: 2025-08 +2.54% | 2025-09 +4.50% | 2025-10 +2.78% | 2025-11 +1.55%
+   ALL: 2025-08 -0.10% | 2025-09 +0.86% | 2025-10 +0.32% | 2025-11 -0.15%
+====================================================================================================
+3. MARKET HARDER? quote-everything fills, by group
+   2025 weather  fills/event  122.4  net c/contract +0.14  markout c/contract +0.31  fee c/contract 0.00  sell share 53%  price<=15c 29%  >=85c 2%
+   2025 index    fills/event   21.3  net c/contract -4.96  markout c/contract -2.52  fee c/contract 0.34  sell share 65%  price<=15c 34%  >=85c 1%
+   2025 all      fills/event   68.9  net c/contract -0.17  markout c/contract +0.30  fee c/contract 0.03  sell share 54%  price<=15c 29%  >=85c 2%
+   2026 weather  fills/event  122.1  net c/contract -0.43  markout c/contract -0.67  fee c/contract 0.00  sell share 54%  price<=15c 30%  >=85c 4%
+   2026 index    fills/event   71.2  net c/contract -2.93  markout c/contract -0.72  fee c/contract 0.00  sell share 52%  price<=15c 47%  >=85c 0%
+   2026 all      fills/event   76.3  net c/contract -0.74  markout c/contract -0.42  fee c/contract 0.02  sell share 55%  price<=15c 31%  >=85c 3%
+====================================================================================================
+4. DOES THE RANKING STILL WORK? quote-everything fills by G-prediction decile: realised net c/contract
+   2025 (matched 100%): -2.1 -2.5 -1.1 -0.6 -0.8 +0.5 -0.2 +0.2 +1.7 +4.1   corr(pred, y) +0.043
+        mean pred by decile:  -6.8 -3.3 -2.0 -1.2 -0.6 -0.1 +0.5 +1.3 +2.6 +6.7
+   2026 (matched 100%): -4.2 -3.6 -0.1 -1.6 +0.4 +0.2 -0.8 -2.5 -0.5 -0.7   corr(pred, y) +0.022
+        mean pred by decile:  -5.9 -3.0 -1.7 -0.9 -0.3 +0.3 +1.1 +2.0 +3.2 +8.6
+====================================================================================================
+5. INPUT SHIFT: candidate features, 2026 vs 2025-09 (weather and all)
+   2025-09     weather  n= 44,412 selected 25%  median: spread=4.0 mid=21.0 rel_price=0.0 trades_24h=29.0 dmid_24h=1.5 n_legs=6.0 n_quoted=5.0 basket_sum=103.0 charged=0.0
+                        spread share 2c 15% 3-5c 51% 6c+ 27% | trades_24h=0 5% | dmid missing 82%
+   2025-09     all      n=176,408 selected 17%  median: spread=2.0 mid=27.0 rel_price=0.0 trades_24h=4.0 dmid_24h=0.0 n_legs=3.0 n_quoted=3.0 basket_sum=100.0 charged=0.0
+                        spread share 2c 43% 3-5c 22% 6c+ 22% | trades_24h=0 19% | dmid missing 42%
+   2026-09/10  weather  n= 17,558 selected 27%  median: spread=2.0 mid=21.0 rel_price=0.0 trades_24h=196.0 dmid_24h=3.5 n_legs=6.0 n_quoted=6.0 basket_sum=102.0 charged=0.0
+                        spread share 2c 45% 3-5c 36% 6c+ 6% | trades_24h=0 1% | dmid missing 72%
+   2026-09/10  all      n=149,948 selected 43%  median: spread=4.0 mid=24.0 rel_price=0.0 trades_24h=1.0 dmid_24h=0.0 n_legs=5.0 n_quoted=3.0 basket_sum=101.0 charged=0.0
+                        spread share 2c 26% 3-5c 25% 6c+ 41% | trades_24h=0 49% | dmid missing 35%

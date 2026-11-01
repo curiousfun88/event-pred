@@ -70,14 +70,19 @@ logging.basicConfig(
 _THIS_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _THIS_DIR.parent
 sys.path.insert(0, str(_THIS_DIR))
+sys.path.insert(0, str(_THIS_DIR / "examples"))
 
 from build_combined_stgat_graph import build_combined_graph
 from stg.bridge import to_torch_bundle
-from examples.data_windows import MASTER_MONTHS
+from examples.data_windows import MASTER_MONTHS, split_for
 from model.month_store import MonthlyBundleStore, build_month_paths
 from model.train import TrainingConfig, run_training
+from model.run_guards import check_no_post_close_nodes
 
 MECE_LEG_PRICES_PATH = str(_REPO_ROOT / "results/mece/mece_sum_to_one_leg_prices.parquet")
+# Time-aware basket membership (build_mece_membership.py). Training months use
+# the hindsight rule, val/test months the causal one -- see _mece_mode().
+MECE_MEMBERSHIP_PATH = str(_REPO_ROOT / "results/mece/mece_membership.parquet")
 LADDER_PAIRS_PATH = str(_REPO_ROOT / "results/ladder/pairwise_monotonicity_taker_side_results_corrected.parquet")
 
 # Start here, not at MASTER_MONTHS -- see the memory note above. Widen
@@ -179,6 +184,42 @@ def load_months(months) -> tuple[pl.DataFrame, pl.DataFrame]:
     return markets, trades
 
 
+def load_ticker_meta(tickers) -> pl.DataFrame:
+    """KalshiTickerNodes metadata (close_time above all) for EVERY ticker in
+    ``tickers``, read from ALL markets files regardless of month.
+
+    WHY NOT load_months()' markets table: that table holds only markets
+    CREATED in the build's month (see _drop_out_of_range_rows), so any
+    contract created earlier and still trading had no close_time, was never
+    evicted by KalshiTickerNodes, and was replayed frozen at its last print
+    until the 14-day max_staleness fallback. Measured on May-Aug 2025: 62-72%
+    of scored ladder pairs and 17-33% of MECE leg observations were such
+    replays (diagnose_ladder_timing.py). Metadata is only ever used for dict
+    lookups, never for group_by_dynamic bucketing, so a wide read here carries
+    none of the outlier-timestamp risk that motivated the month filter.
+    """
+    files = sorted(Path(_REPO_ROOT / "data/markets").glob("markets_kalshi_*/markets_*.parquet"))
+    if not files:
+        raise FileNotFoundError(f"no markets files under {_REPO_ROOT / 'data/markets'}")
+    wanted = pl.Series("ticker", list(tickers)).cast(pl.Utf8).unique()
+    cols = ["ticker", "event_ticker", "title", "status", "market_type", "close_time", "created_time", "result"]
+    frames = []
+    for f in files:
+        have = set(pl.read_parquet_schema(f))
+        frames.append(pl.scan_parquet(f).select([c for c in cols if c in have])
+                      .filter(pl.col("ticker").is_in(wanted.implode())))
+    meta = (pl.concat(frames, how="diagonal_relaxed").collect()
+            .sort("created_time").unique(subset=["ticker"], keep="last"))
+    print(f"  ticker metadata: {meta.height:,d} of {wanted.len():,d} traded tickers found across "
+          f"{len(files)} markets files ({wanted.len() - meta.height:,d} without a markets row)")
+    return meta
+
+
+def _close_time_map(meta: pl.DataFrame) -> dict:
+    return {t: (c.replace(tzinfo=None) if c is not None and c.tzinfo else c)
+            for t, c in zip(meta["ticker"].to_list(), meta["close_time"].to_list())}
+
+
 def _rss_mb() -> float:
     """Current RSS in MB. `ru_maxrss` is a PEAK high-water mark and never
     goes down, so it can't show a free() working -- this reads the live
@@ -206,27 +247,65 @@ def _build_one_month(month: str, cache_path: Path):
     """
     print(f"\n=== Building month {month} ===", flush=True)
     markets, trades = load_months([month])
-    mece_leg_prices = pl.read_parquet(MECE_LEG_PRICES_PATH)
+    node_meta = load_ticker_meta(trades["ticker"].unique())
+    # A print timestamped at/after its market's close cannot be a live price.
+    # Found by check_no_post_close_nodes on the first fixed rebuild: early-
+    # closed markets (e.g. KXEARNINGSMENTIONMSFT-25JUL29-*, closed 13:50 UTC,
+    # prints until 20:46) carry a handful of post-close rows in the feed.
+    closes = node_meta.select("ticker", pl.col("close_time").dt.replace_time_zone(None).alias("_close"))
+    n_before = trades.height
+    trades = (trades.join(closes, on="ticker", how="left")
+              .filter(pl.col("_close").is_null() | (pl.col("created_time") < pl.col("_close")))
+              .drop("_close"))
+    print(f"  dropped {n_before - trades.height:,d} trade row(s) timestamped at/after their market's close_time")
+    # trade_id and _fetched_at are never read by the node/edge builders, but
+    # slicing holds the frame, a sorted copy and the per-window copies at
+    # once; on 2025-11 (9.4M trades) that peak alone exceeded the WSL VM.
+    trades = trades.drop([c for c in ("trade_id", "_fetched_at") if c in trades.columns])
+    gc.collect()
+    mece_mode = "hindsight" if split_for(month) == "train" else "causal"
+    mece_leg_prices = pl.read_parquet(MECE_MEMBERSHIP_PATH)
     ladder_pairs = pl.read_parquet(LADDER_PAIRS_PATH)
+    print(f"  MECE membership: {MECE_MEMBERSHIP_PATH} under the {mece_mode.upper()} rule "
+          f"({split_for(month)} month)")
 
-    stg = build_combined_graph(trades, markets, mece_leg_prices, ladder_pairs)
+    stg = build_combined_graph(trades, markets, mece_leg_prices, ladder_pairs,
+                               node_markets_df=node_meta, mece_mode=mece_mode)
     print(f"Built graph for {month}: {stg.summary()}")
+
+    # Free the raw frames BEFORE densifying: to_torch_bundle allocates the
+    # (T, N, F) tensor, and on the largest month (2025-10, 8.7M trades) the
+    # frames plus that tensor exceeded the 7.8GB WSL VM and crashed it twice.
+    # node_meta is still needed below for close times and settlement.
+    del trades, markets, mece_leg_prices, ladder_pairs
+    gc.collect()
+    print(f"Freed raw frames before bundling: RSS {_rss_mb():.0f}MB", flush=True)
 
     bundle = to_torch_bundle(stg)
     print(f"Bundle {month}: T={len(bundle.timestamps)}  N={len(bundle.node_ids)}  "
           f"F={bundle.features.shape[-1]}  mask_coverage={bundle.mask.float().mean().item():.1%}")
+    check_no_post_close_nodes(bundle.timestamps, bundle.node_ids, bundle.mask, _close_time_map(node_meta))
+    # Settlement data for TARGETS only (MechanismForecastObjective mece_rule
+    # "whole_settle"): close time and 1/0 settlement per node, NaN/None for
+    # hubs and unresolved markets. Never passed to the model.
+    closes = _close_time_map(node_meta)
+    results = dict(zip(node_meta["ticker"].to_list(), node_meta["result"].to_list()))
+    bundle.node_close = [closes.get(str(n)) for n in bundle.node_ids]
+    bundle.node_settle = torch.tensor(
+        [1.0 if results.get(str(n)) == "yes" else 0.0 if results.get(str(n)) == "no" else float("nan")
+         for n in bundle.node_ids], dtype=torch.float32)
 
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(bundle, cache_path)
     print(f"Cached to {cache_path}")
 
     before = _rss_mb()
-    del stg, bundle, trades, markets, mece_leg_prices, ladder_pairs
+    del stg, bundle, node_meta
     gc.collect()
     print(f"Freed build state for {month}: RSS {before:.0f}MB -> {_rss_mb():.0f}MB", flush=True)
 
 
-def main(months=None, chunk_len=168, use_cache=True, epochs=20):
+def main(months=None, chunk_len=168, use_cache=True, epochs=20, cache_dir=None, build_only=False):
     months = months or PILOT_MONTHS
 
     # PER-MONTH CACHE. Two problems solved at once:
@@ -245,7 +324,7 @@ def main(months=None, chunk_len=168, use_cache=True, epochs=20):
     # Pass --no-cache to force a rebuild after changing anything upstream
     # of the bundle: the graph builders, node/edge definitions, or the
     # raw parquet data.
-    cache_dir = _REPO_ROOT / "cache"
+    cache_dir = Path(cache_dir) if cache_dir else _REPO_ROOT / "cache"
     month_paths = build_month_paths(months, cache_dir)
 
     for month, path in month_paths.items():
@@ -253,6 +332,9 @@ def main(months=None, chunk_len=168, use_cache=True, epochs=20):
             print(f"Month {month}: using cached bundle at {path}")
         else:
             _build_one_month(month, path)
+    if build_only:
+        print("\n--build-only: bundles written, not training.")
+        return None
 
     store = MonthlyBundleStore(month_paths)
     print(f"\n{store.summary()}\n")
@@ -305,6 +387,12 @@ if __name__ == "__main__":
                               "receptive field. Given most Kalshi markets live only ~1-2 days, a "
                               "1-week window still covers a typical market's whole lifetime -- "
                               "drop this first if memory is still tight.")
+    parser.add_argument("--cache-dir", default=None,
+                         help="Where month bundles are read/written (default: <repo>/cache). "
+                              "Use a separate directory to rebuild without touching the bundles "
+                              "existing results were computed on.")
+    parser.add_argument("--build-only", action="store_true",
+                         help="Build (or reuse) the month bundles and stop before training.")
     args = parser.parse_args()
     main(args.months, chunk_len=args.chunk_len, use_cache=not args.no_cache,
-         epochs=args.epochs)
+         epochs=args.epochs, cache_dir=args.cache_dir, build_only=args.build_only)

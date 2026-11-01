@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Hashable, List, Optional
+from typing import Any, Dict, Hashable, List, Optional, Tuple
 
 import numpy as np
 import polars as pl
@@ -424,6 +424,64 @@ class KalshiEventNodes:
         return NodeState(node_id, np.nan_to_num(feats, nan=0.0), meta)
 
 
+class MeceMembership:
+    """Which legs form which MECE basket AT A GIVEN WINDOW.
+
+    Two membership tables are accepted:
+      - a static one (columns event_ticker, ticker), e.g.
+        mece_sum_to_one_leg_prices.parquet: every leg always belongs, as before;
+      - build_mece_membership.py's output (adds leg_created, hind_ok, q_from,
+        q_to), read under a ``mode``:
+          "hindsight"  event belongs iff hind_ok (training months only)
+          "causal"     event belongs iff its family qualified by window start:
+                       q_from <= window_start < q_to (val/test months)
+        In both modes a leg counts only once created (leg_created <=
+        window_end), so the hub's leg count -- a model INPUT -- never
+        includes legs that were not yet listed.
+    """
+
+    def __init__(self, df: pl.DataFrame, mode: Optional[str] = None) -> None:
+        timed = {"leg_created", "hind_ok", "q_from", "q_to"} <= set(df.columns)
+        if mode is not None and not timed:
+            raise ValueError(f"mode={mode!r} needs build_mece_membership.py output "
+                             f"(leg_created/hind_ok/q_from/q_to); got columns {df.columns}")
+        if mode not in (None, "hindsight", "causal"):
+            raise ValueError(f"mode must be None, 'hindsight' or 'causal', got {mode!r}")
+        self.mode = mode if timed else None
+        self.leg_basket: Dict[str, str] = {}
+        self._legs: Dict[str, List[Tuple[str, Optional[datetime]]]] = {}
+        self._event: Dict[str, Tuple[bool, Optional[datetime], Optional[datetime]]] = {}
+        cols = ["event_ticker", "ticker"] + (["leg_created", "hind_ok", "q_from", "q_to"] if self.mode else [])
+        for row in df.select(cols).unique(subset=["ticker"]).iter_rows(named=True):
+            evt, tic = str(row["event_ticker"]), str(row["ticker"])
+            self.leg_basket[tic] = evt
+            self._legs.setdefault(evt, []).append((tic, _as_naive_utc(row.get("leg_created"))))
+            if self.mode:
+                self._event[evt] = (bool(row["hind_ok"]), _as_naive_utc(row["q_from"]), _as_naive_utc(row["q_to"]))
+        self._memo: Dict[Tuple[str, Any], List[str]] = {}
+
+    def legs_at(self, evt: str, window_start: Any = None, window_end: Any = None) -> List[str]:
+        legs = self._legs.get(evt, [])
+        if self.mode is None:
+            return [t for t, _ in legs]
+        key = (evt, window_start)
+        if key in self._memo:
+            return self._memo[key]
+        ws, we = _as_naive_utc(window_start), _as_naive_utc(window_end)
+        if ws is None or we is None:
+            raise ValueError("time-aware MECE membership needs window_start/window_end")
+        hind, q_from, q_to = self._event.get(evt, (False, None, None))
+        if self.mode == "hindsight":
+            on = hind
+        else:
+            on = q_from is not None and ws >= q_from and (q_to is None or ws < q_to)
+        out = [t for t, c in legs if c is None or c <= we] if on else []
+        if len(self._memo) > 200_000:
+            self._memo.clear()
+        self._memo[key] = out
+        return out
+
+
 class KalshiMeceBasketNodes:
     """Synthetic hub node per validated MECE (single-winner, sum-to-$1) basket.
 
@@ -498,14 +556,13 @@ class KalshiMeceBasketNodes:
     N_FEATURES = COMBINED_N_FEATURES
     _RAW_FEATURES = 6
 
-    def __init__(self, leg_prices_df: pl.DataFrame, node_col: str = "ticker") -> None:
+    def __init__(self, leg_prices_df: pl.DataFrame, node_col: str = "ticker",
+                 mode: Optional[str] = None) -> None:
         self.node_col = node_col
-        self._basket_legs: Dict[str, List[str]] = {}
-        self._leg_basket: Dict[str, str] = {}
-        for row in leg_prices_df.select(["event_ticker", "ticker"]).unique().iter_rows(named=True):
-            evt, tic = str(row["event_ticker"]), str(row["ticker"])
-            self._basket_legs.setdefault(evt, []).append(tic)
-            self._leg_basket[tic] = evt
+        # Membership may be time-aware (see MeceMembership); with a static
+        # two-column table this reproduces the original behaviour exactly.
+        self.membership = MeceMembership(leg_prices_df, mode)
+        self._leg_basket = self.membership.leg_basket
         # Carry-forward cache: ticker -> last known yes_price (cents). Updated
         # only when a leg actually trades; consulted (without being cleared)
         # when a leg is absent from the current window. See class docstring
@@ -516,15 +573,27 @@ class KalshiMeceBasketNodes:
     def identify_nodes(self, data: pl.DataFrame, **kwargs: Any) -> List[Hashable]:
         if data.is_empty():
             return []
-        active = set(data[self.node_col].unique().to_list())
-        baskets_present = {
-            self._leg_basket[t] for t in active if t in self._leg_basket
-        }
-        return [f"{self._PREFIX}{evt}" for evt in baskets_present]
+        ws, we = kwargs.get("window_start"), kwargs.get("window_end")
+        member = data.filter(pl.col(self.node_col).is_in(list(self._leg_basket)))
+        # Update the carry-forward cache for EVERY member leg that traded,
+        # whether or not its basket is active yet, so a basket that becomes
+        # active mid-month starts with the prices that were already known.
+        if not member.is_empty():
+            if "created_time" in member.columns:
+                member = member.sort("created_time")
+            for row in (member.group_by(self.node_col)
+                        .agg(pl.col("yes_price").cast(pl.Float64).last().alias("p")).iter_rows()):
+                self._last_known_price[row[0]] = row[1]
+        baskets_present = set()
+        for t in set(member[self.node_col].unique().to_list()) if not member.is_empty() else ():
+            evt = self._leg_basket[t]
+            if t in self.membership.legs_at(evt, ws, we):
+                baskets_present.add(evt)
+        return [f"{self._PREFIX}{evt}" for evt in sorted(baskets_present)]
 
     def build_node_state(self, node_id: Hashable, data: pl.DataFrame, **kwargs: Any) -> NodeState:
         evt = str(node_id)[len(self._PREFIX):]
-        legs_total = self._basket_legs.get(evt, [])
+        legs_total = self.membership.legs_at(evt, kwargs.get("window_start"), kwargs.get("window_end"))
         meta: Dict[str, Any] = {
             "node_type": "mece_basket", "event_ticker": evt, "n_legs_total": len(legs_total),
         }
@@ -535,20 +604,8 @@ class KalshiMeceBasketNodes:
         if not legs_total:
             return NodeState(node_id, feats, meta)
 
-        t = data.filter(pl.col(self.node_col).is_in(legs_total))
-        legs_fresh_this_window = 0
-
-        if not t.is_empty():
-            if "created_time" in t.columns:
-                t = t.sort("created_time")
-            fresh_prices = (
-                t.group_by(self.node_col)
-                .agg(pl.col("yes_price").cast(pl.Float64).last().alias("last_price"))
-            )
-            legs_fresh_this_window = fresh_prices.height
-            # Update the carry-forward cache with this window's actual trades.
-            for row in fresh_prices.iter_rows(named=True):
-                self._last_known_price[row[self.node_col]] = row["last_price"]
+        # The cache was already updated in identify_nodes; only count freshness here.
+        legs_fresh_this_window = data.filter(pl.col(self.node_col).is_in(legs_total))[self.node_col].n_unique()
 
         # Sum using every leg with a KNOWN price -- fresh this window, or
         # carried forward from an earlier one -- not just legs that traded

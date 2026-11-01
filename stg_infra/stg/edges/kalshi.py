@@ -221,12 +221,15 @@ class KalshiMeceHyperedges:
         -- must have columns ``"event_ticker"``, ``"ticker"``.
     """
 
-    def __init__(self, leg_prices_df: pl.DataFrame, node_col: str = "ticker", weight: float = 1.0) -> None:
+    def __init__(self, leg_prices_df: pl.DataFrame, node_col: str = "ticker", weight: float = 1.0,
+                 mode: Optional[str] = None) -> None:
+        from stg.nodes.kalshi import MeceMembership
         self.node_col = node_col
         self.weight = weight
-        self._leg_basket: Dict[str, str] = {}
-        for row in leg_prices_df.select(["event_ticker", "ticker"]).unique().iter_rows(named=True):
-            self._leg_basket[str(row["ticker"])] = str(row["event_ticker"])
+        # Same membership object semantics as KalshiMeceBasketNodes: a leg is
+        # linked to its hub only while it belongs to the basket at this window.
+        self.membership = MeceMembership(leg_prices_df, mode)
+        self._leg_basket = self.membership.leg_basket
 
     def build_edges(self, snapshot: GraphSnapshot, data: pl.DataFrame, **kwargs: Any) -> List[EdgeState]:
         edges: List[EdgeState] = []
@@ -237,6 +240,8 @@ class KalshiMeceHyperedges:
                 continue
             evt = self._leg_basket.get(str(nid))
             if evt is None:
+                continue
+            if str(nid) not in self.membership.legs_at(evt, kwargs.get("window_start"), kwargs.get("window_end")):
                 continue
             hub_id: Hashable = f"MECE:{evt}"
             if hub_id not in node_id_set:

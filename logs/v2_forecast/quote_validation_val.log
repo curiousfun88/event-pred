@@ -1,0 +1,19 @@
+quotes: 393,567 candles, 10,981 tickers
+
+=== VAL: whole baskets with every leg live ===
+1. coverage : 97.5% of 55,823 leg-snapshots have a quote at the window end; 95.6% of 12,178 basket-snapshots fully quoted
+2. clock    : last print - quoted mid: median +0.50c, mean +0.60c, |.|<=2c for 74.4%
+3. proxy    : all trade-print bids: trade-print bid - quoted bid: median +1.00c, mean +1.27c, exact match 32.3%, within 2c 76.4% (n=45,377)
+3. proxy    : prints <= 1h old: trade-print bid - quoted bid: median +0.00c, mean +1.53c, exact match 46.5%, within 2c 77.1% (n=14,505)
+4. spread   : two-sided legs 69.9%; quoted spread median 2.00c, mean 4.40c, p90 10.0c  (trade-based estimates: 4.68-5.61c)
+5. baskets  (n=11,643, median legs 5):
+     sum of last prints: mean 1.0492  (dev mean +4.92c, median +3.00c, |dev| median 4.00c)
+     sum of bids       : mean 0.9218  (dev mean -7.82c, median -3.00c, |dev| median 3.00c)
+     sum of asks       : mean 1.1218  (dev mean +12.18c, median +5.00c, |dev| median 5.00c)
+     sum of mids       : mean 1.0218  (dev mean +2.18c, median +0.50c, |dev| median 1.50c)
+     last-print sum - mid sum: mean +2.74c  (the overround share carried by print side)
+     executable edge before fees: sell-at-bids > $1 in 2.6% (mean when >0 1.97c); buy-at-asks < $1 in 1.5% (mean when >0 4.81c)
+     [every leg two-sided: n=6,535 (56%)] mid-sum dev mean +0.50c | last-print dev mean +2.76c | bid sum 0.9403, ask sum 1.0697
+     [some leg one-sided: n=5,108 (44%)] mid-sum dev mean +4.33c | last-print dev mean +7.68c | bid sum 0.8981, ask sum 1.1884
+
+exit: 0

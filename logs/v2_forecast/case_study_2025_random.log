@@ -1,0 +1,7 @@
+437,268 candidates, G's share 0.1972 (A16: 0.1972)
+{"seed": 0, "fills": 24473, "ret": 0.18437795771009877, "A16": [24473, 0.18437795771009877], "reproduces": true}
+{"seed": 1, "fills": 24585, "ret": 0.3710515399359697, "A16": [24585, 0.3710515399359697], "reproduces": true}
+{"seed": 2, "fills": 24303, "ret": -0.8195599848891939, "A16": [24303, -0.8195599848891939], "reproduces": true}
+{"seed": 3, "fills": 24520, "ret": -0.4350176615148804, "A16": [24520, -0.4350176615148804], "reproduces": true}
+{"seed": 4, "fills": 24406, "ret": -0.4758508327591513, "A16": [24406, -0.4758508327591513], "reproduces": true}
+all five seeds reproduce A16; saved to /home/fyp/event-pred/runs/maker/case_study

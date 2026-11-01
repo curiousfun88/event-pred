@@ -1,0 +1,53 @@
+Kalshi data availability, Dec 2025 - Sep 2026 (corrected: archive endpoints + archive candle format)
+
+KXHIGHNY: 1,824 settled markets
+  month    markets                      probe ticker  trades (1st page) taker side ok  candles  two-sided
+  2025-12      186            KXHIGHNY-25NOV30-B46.5                570          True       38         29
+  2026-01      186            KXHIGHNY-26JAN30-B17.5              1,000          True       38         32
+  2026-02      168            KXHIGHNY-26JAN31-B23.5              1,000          True       38         30
+  2026-03      186              KXHIGHNY-26MAR30-T69              1,000          True       39         27
+  2026-04      180              KXHIGHNY-26MAR31-T77              1,000          True       39         28
+  2026-05      186            KXHIGHNY-26MAY30-B68.5              1,000          True       39         30
+  2026-06      180            KXHIGHNY-26MAY31-B74.5              1,000          True       39         33
+  2026-07      186            KXHIGHNY-26JUN30-B87.5              1,000          True       39         32
+  2026-08      186            KXHIGHNY-26JUL31-B84.5              1,000          True       38         30
+  2026-09      180            KXHIGHNY-26SEP29-B69.5              1,000          True       39         31
+
+KXHIGHCHI: 1,824 settled markets
+  month    markets                      probe ticker  trades (1st page) taker side ok  candles  two-sided
+  2025-12      186           KXHIGHCHI-25NOV30-B33.5                411          True       39         29
+  2026-01      186           KXHIGHCHI-26JAN30-B20.5              1,000          True       39         36
+  2026-02      168           KXHIGHCHI-26JAN31-B26.5                747          True       39         31
+  2026-03      186           KXHIGHCHI-26MAR30-B80.5              1,000          True       40         33
+  2026-04      180             KXHIGHCHI-26MAR31-T74              1,000          True       40         30
+  2026-05      186           KXHIGHCHI-26MAY30-B74.5              1,000          True       40         30
+  2026-06      180           KXHIGHCHI-26MAY31-B74.5              1,000          True       40         32
+  2026-07      186           KXHIGHCHI-26JUN30-B94.5              1,000          True       40         32
+  2026-08      186           KXHIGHCHI-26JUL31-B82.5              1,000          True       39         26
+  2026-09      180           KXHIGHCHI-26SEP29-B80.5                942          True       40         28
+
+KXEPLGAME: 900 settled markets
+  month    markets                      probe ticker  trades (1st page) taker side ok  candles  two-sided
+  2025-12      168       KXEPLGAME-25DEC30WHUBRI-TIE              1,000          True       73         72
+  2026-01      147       KXEPLGAME-26JAN31WOLBOU-BOU              1,000          True       73         72
+  2026-02      126       KXEPLGAME-26FEB28NEWEVE-EVE              1,000          True       73         71
+  2026-03       96       KXEPLGAME-26MAR22TOTNFO-NFO              1,000          True       73         72
+  2026-04       90       KXEPLGAME-26APR27MUNBRE-MUN              1,000          True       73         71
+  2026-05      123       KXEPLGAME-26MAY24WHULEE-WHU              1,000          True       73         71
+  2026-06        0  -- no markets this month
+  2026-07        0  -- no markets this month
+  2026-08       60       KXEPLGAME-26AUG31AVLARS-ARS              1,000          True       73         72
+  2026-09       90       KXEPLGAME-26SEP20MCISUN-MCI              1,000          True       73         71
+
+KXINX: 6,300 settled markets
+  month    markets                      probe ticker  trades (1st page) taker side ok  candles  two-sided
+  2025-12      660          KXINX-25DEC31H1600-B6837                 44          True       11          8
+  2026-01      630          KXINX-26JAN30H1600-B6937                191          True       60         38
+  2026-02      570          KXINX-26FEB27H1600-B6887                558          True       71         65
+  2026-03      660          KXINX-26MAR31H1600-B6537                192          True       12          7
+  2026-04      630          KXINX-26APR30H1600-B7212                259          True       15         12
+  2026-05      600          KXINX-26MAY29H1600-B7587                463          True       66         63
+  2026-06      630          KXINX-26JUN30H1600-B7487                511          True       19         17
+  2026-07      660          KXINX-26JUL31H1600-B7487                230          True       70         43
+  2026-08      630          KXINX-26AUG31H1600-B7687                169          True       66         65
+  2026-09      630          KXINX-26SEP30H1600-B7662                 90          True       15         14

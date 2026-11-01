@@ -1,0 +1,87 @@
+VALIDATION 2026-09-07..2026-10-05  legs 3,545  with T_ref 3,545
+  soccer games: share of traded contracts in the 8h before T_ref (hour k = [T_ref+k, T_ref+k+1))
+    -8h    1.6%
+    -7h    1.1%
+    -6h    1.9%
+    -5h    2.4%
+    -4h    9.3%
+    -3h   26.7%
+    -2h   51.9%
+    -1h    5.1%
+    +0h    0.0%
+    +1h    0.0%
+
+REPRODUCTION CHECK (amendment L1: non-weather +6.73%, CI +2.4..+11.4, 1,725 fills)
+  G2-W3 non-weather pess  fills 1,725  events  153  net $ +366.51  ret  +6.73% CI [ +2.40, +11.40]  markout +3.41c
+  REPRODUCED
+
+== SOCCER GAME  (hours from quoting hour to T_ref)
+  total G2-W3 pess    fills   387  events   78  net $ +165.55  ret +17.65% CI [ +3.84, +31.60]  markout +5.25c
+  G2-W3, pessimistic fills
+    [0,2)h       fills    13  events    5  net $  -12.24  ret -38.13% CI [-100.72, +17.92]  markout -11.75c
+    [2,3)h       fills    17  events   11  net $  +28.36  ret +62.41% CI [+11.39, +100.07]  markout +13.88c
+    [3,4)h       fills     5  events    2  net $  +10.00  ret +100.00% CI [+66.67, +150.00]  markout +10.75c
+    [12,24)h     fills     1  events    1  net $   -5.55  ret -100.91% CI [  +nan,   +nan]  markout +0.00c
+    [24,72)h     fills     9  events    6  net $  -19.92  ret -62.94% CI [-100.90, +18.35]  markout +0.60c
+    [72,inf)h    fills   342  events   68  net $ +164.90  ret +20.28% CI [ +4.21, +35.26]  markout +5.46c
+  G2-W3, strict fills
+    [0,2)h       fills    19  events    4  net $  -12.96  ret -56.84% CI [-101.49, +12.15]  markout -5.50c
+    [2,3)h       fills    20  events   11  net $  +28.35  ret +62.39% CI [+11.31, +100.05]  markout +13.88c
+    [3,4)h       fills     5  events    2  net $  +10.00  ret +100.00% CI [+66.67, +150.00]  markout +10.75c
+    [12,24)h     fills     1  events    1  net $   -5.55  ret -100.91% CI [  +nan,   +nan]  markout +0.00c
+    [24,72)h     fills     7  events    5  net $   -6.95  ret -37.07% CI [-101.05, +62.00]  markout +0.27c
+    [72,inf)h    fills   103  events   42  net $  +88.18  ret +27.88% CI [ +0.88, +55.73]  markout +5.09c
+  quote everything, pessimistic fills
+    [0,2)h       fills   113  events   23  net $  -29.64  ret -11.83% CI [-27.48,  -1.79]  markout +1.05c
+    [2,3)h       fills   108  events   24  net $  -12.13  ret  -4.41% CI [-15.25,  +6.03]  markout -1.30c
+    [3,4)h       fills    54  events   15  net $   -2.45  ret  -1.73% CI [-16.92,  +8.06]  markout -0.14c
+    [4,6)h       fills    11  events    6  net $   -4.67  ret -13.54% CI [-74.06, +62.19]  markout -0.36c
+    [12,24)h     fills     2  events    2  net $   -3.73  ret -43.12% CI [-100.91, +57.78]  markout +0.17c
+    [24,72)h     fills    42  events   18  net $  -41.80  ret -23.81% CI [-57.26,  +4.95]  markout +0.56c
+    [72,inf)h    fills   813  events   91  net $  +44.29  ret  +1.92% CI [ -7.94, +11.07]  markout +2.38c
+
+== OTHER NON-WEATHER  (hours from quoting hour to T_ref)
+  total G2-W3 pess    fills 1,338  events   75  net $ +200.96  ret  +4.46% CI [ +0.27,  +8.91]  markout +2.91c
+  G2-W3, pessimistic fills
+    [0,2)h       fills     8  events    2  net $   +8.68  ret +76.81% CI [+14.71, +284.62]  markout +2.00c
+    [2,3)h       fills     6  events    3  net $   +7.06  ret +21.52% CI [+12.36, +44.93]  markout +8.00c
+    [3,4)h       fills    16  events    5  net $   -0.40  ret  -1.00% CI [-68.57, +52.82]  markout +15.62c
+    [4,6)h       fills   169  events   29  net $  -53.22  ret -15.18% CI [-29.73,  -3.51]  markout -2.36c
+    [6,12)h      fills   232  events   44  net $  +25.29  ret  +3.23% CI [ -7.85, +14.96]  markout +1.04c
+    [12,24)h     fills   218  events   41  net $  +74.58  ret  +9.03% CI [ -0.74, +20.01]  markout +1.57c
+    [24,72)h     fills   268  events   28  net $  +64.78  ret  +6.74% CI [ -3.60, +17.99]  markout +1.38c
+    [72,inf)h    fills   421  events   31  net $  +74.19  ret  +4.94% CI [ -4.32, +14.99]  markout +6.33c
+  G2-W3, strict fills
+    [-inf,0)h    fills     3  events    1  net $   -4.66  ret -101.30% CI [  +nan,   +nan]  markout -44.50c
+    [0,2)h       fills    19  events    3  net $   -2.31  ret  -3.72% CI [-21.66, +284.62]  markout -1.12c
+    [2,3)h       fills    12  events    4  net $   +4.74  ret +10.52% CI [ -8.77, +32.23]  markout +7.46c
+    [3,4)h       fills    21  events    8  net $   -0.89  ret  -1.47% CI [-47.80, +37.43]  markout +9.62c
+    [4,6)h       fills   159  events   32  net $  -34.82  ret  -8.64% CI [-24.96,  +6.66]  markout -1.01c
+    [6,12)h      fills   191  events   40  net $  +58.68  ret  +7.80% CI [ -3.87, +19.66]  markout -0.17c
+    [12,24)h     fills   138  events   36  net $  +16.56  ret  +2.99% CI [ -8.80, +15.31]  markout +1.43c
+    [24,72)h     fills   151  events   22  net $  +10.99  ret  +1.88% CI [ -8.55, +13.25]  markout +0.18c
+    [72,inf)h    fills   200  events   28  net $  +90.14  ret +10.04% CI [ +0.42, +18.46]  markout +2.44c
+  quote everything, pessimistic fills
+    [0,2)h       fills   132  events   18  net $  -58.18  ret -24.64% CI [-38.98, -11.62]  markout -1.52c
+    [2,3)h       fills   115  events   22  net $  -66.03  ret -21.04% CI [-30.27, -12.37]  markout -5.88c
+    [3,4)h       fills    60  events   16  net $   -2.29  ret  -1.25% CI [-26.81, +19.38]  markout -2.74c
+    [4,6)h       fills   898  events   54  net $ -186.54  ret -14.63% CI [-23.44,  -6.89]  markout -2.12c
+    [6,12)h      fills 1,523  events   58  net $ -113.58  ret  -3.42% CI [ -8.08,  +1.39]  markout -1.35c
+    [12,24)h     fills   395  events   51  net $  +72.70  ret  +5.62% CI [ -1.67, +12.96]  markout +0.47c
+    [24,72)h     fills   640  events   23  net $  -65.80  ret  -3.73% CI [-11.02,  +4.33]  markout +1.00c
+    [72,inf)h    fills 1,347  events   32  net $  -21.02  ret  -0.53% CI [ -4.36,  +4.36]  markout +2.37c
+
+== GATES, re-simulated (non-weather; G2-W3 scores, but no quote while T_ref - H < k hours)
+   chosen-on-validation: descriptive only; a gate can only be tested forward as a new arm
+  k= 2h [pess  ] fills 1,704  events  151  net $ +370.07  ret  +6.85% CI [ +2.53, +11.58]  markout +3.52c
+  k= 2h [strict] fills 1,008  events  127  net $ +259.43  ret  +7.02% CI [ +1.61, +12.89]  markout +1.78c
+  k= 3h [pess  ] fills 1,681  events  144  net $ +334.65  ret  +6.29% CI [ +1.72, +11.14]  markout +3.36c
+  k= 3h [strict] fills   976  events  118  net $ +226.34  ret  +6.28% CI [ +0.69, +12.09]  markout +1.48c
+  k= 4h [pess  ] fills 1,660  events  142  net $ +325.05  ret  +6.17% CI [ +1.69, +11.17]  markout +3.22c
+  k= 4h [strict] fills   950  events  115  net $ +217.23  ret  +6.15% CI [ +0.63, +12.61]  markout +1.25c
+  k= 6h [pess  ] fills 1,491  events  140  net $ +378.27  ret  +7.69% CI [ +2.82, +13.01]  markout +3.69c
+  k= 6h [strict] fills   791  events  110  net $ +252.05  ret  +8.05% CI [ +2.21, +14.13]  markout +1.59c
+  k=12h [pess  ] fills 1,259  events  129  net $ +352.98  ret  +8.53% CI [ +3.02, +14.34]  markout +4.16c
+  k=12h [strict] fills   600  events   99  net $ +193.37  ret  +8.13% CI [ +1.48, +15.57]  markout +2.12c
+  no gate [pess  ] fills 1,725  events  153  net $ +366.51  ret  +6.73% CI [ +2.40, +11.40]  markout +3.41c
+  no gate [strict] fills 1,049  events  131  net $ +239.50  ret  +6.33% CI [ +0.92, +12.16]  markout +1.59c

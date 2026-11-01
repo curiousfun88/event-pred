@@ -1,0 +1,22 @@
+months ['2025-05', '2025-06']: 3,835,724 settled trades, 5,367 events; 51.7% of trades on maker-fee series
+
+TAKERS, net of taker fee:
+  all                                contract-wtd  -5.56%  CI95 [ -7.40%,  -3.49%]  equal-wtd  -8.66%  events 5,367  top-10 events 34% of stake
+  taker price 0-9c                   contract-wtd  -9.70%  CI95 [-74.63%, +99.03%]  equal-wtd -26.22%  events 4,271  top-10 events 52% of stake
+  taker price 10-19c                 contract-wtd -13.51%  CI95 [-60.95%, +59.45%]  equal-wtd -13.02%  events 4,509  top-10 events 52% of stake
+  taker price 20-29c                 contract-wtd -35.44%  CI95 [-67.55%, +15.85%]  equal-wtd -18.72%  events 4,520  top-10 events 50% of stake
+  taker price 30-39c                 contract-wtd  +4.80%  CI95 [-36.20%, +54.58%]  equal-wtd  +4.44%  events 4,556  top-10 events 54% of stake
+  taker price 40-49c                 contract-wtd  -3.70%  CI95 [-21.70%, +14.45%]  equal-wtd  -3.59%  events 4,421  top-10 events 36% of stake
+  taker price 50-59c                 contract-wtd -11.53%  CI95 [-25.63%,  +2.04%]  equal-wtd  -8.44%  events 4,302  top-10 events 37% of stake
+  taker price 60-69c                 contract-wtd -10.99%  CI95 [-32.61%,  +8.17%]  equal-wtd -11.91%  events 4,447  top-10 events 47% of stake
+  taker price 70-79c                 contract-wtd  +1.28%  CI95 [-14.34%, +13.53%]  equal-wtd  -3.23%  events 4,565  top-10 events 46% of stake
+  taker price 80-89c                 contract-wtd  +0.08%  CI95 [-12.50%,  +9.03%]  equal-wtd  -0.66%  events 4,590  top-10 events 47% of stake
+  taker price 90-99c                 contract-wtd  -3.34%  CI95 [-10.29%,  +1.58%]  equal-wtd  -1.95%  events 4,756  top-10 events 34% of stake
+
+MAKERS (aggregate, NOT achievable by a newcomer; see docstring):
+  all, gross                         contract-wtd  +2.59%  CI95 [ +0.80%,  +4.13%]  equal-wtd  +6.66%  events 5,367  top-10 events 37% of stake
+  all, net of maker fee              contract-wtd  +2.22%  CI95 [ +0.56%,  +3.62%]  equal-wtd  +6.13%  events 5,367  top-10 events 37% of stake
+  taker-only series (no maker fee)   contract-wtd  +1.49%  CI95 [ +0.63%,  +2.33%]  equal-wtd  +6.35%  events 4,343  top-10 events 7% of stake
+  maker-fee series, net              contract-wtd  +2.40%  CI95 [ +0.17%,  +4.04%]  equal-wtd  +5.92%  events 1,024  top-10 events 46% of stake
+
+exit: 0

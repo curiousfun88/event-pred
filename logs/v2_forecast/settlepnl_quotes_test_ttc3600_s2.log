@@ -1,0 +1,139 @@
+  backbone drops edge types: none
+  spreads file: 5,334 rows, 5,334 with BOTH legs' spreads present (100.0%)
+  distinct tickers with a spread: 5,334 across 20 series; global median 5.613c/leg
+
+checkpoint /home/fyp/event-pred/runs/v2_mece_causal_s2/best.pt  (epoch 24, selected on val_mece)
+split=test  horizon=1  execution=taker  cap=0.25
+  *** scoring TEST. Do this once, with the configuration already fixed on val. ***
+    [backbone] projection done  T=168 N=9346  0.22s  rss=2126MB
+      [spatial] t=   0/168  active=  407  mece_edges=  126  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/168  active=  768  mece_edges=  262  ladder_edges=  125  elapsed=   0.0s
+      [spatial] t=  40/168  active=  382  mece_edges=  146  ladder_edges=   61  elapsed=   0.0s
+      [spatial] t=  60/168  active=  828  mece_edges=  294  ladder_edges=   79  elapsed=   0.1s
+      [spatial] t=  80/168  active=  740  mece_edges=  248  ladder_edges=   72  elapsed=   0.1s
+      [spatial] t= 100/168  active=  371  mece_edges=  116  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t= 120/168  active=  753  mece_edges=  290  ladder_edges=   77  elapsed=   0.1s
+      [spatial] t= 140/168  active=  924  mece_edges=  354  ladder_edges=  103  elapsed=   0.1s
+      [spatial] t= 160/168  active=  344  mece_edges=  208  ladder_edges=   65  elapsed=   0.1s
+      [spatial] t= 167/168  active=  817  mece_edges=  264  ladder_edges=   72  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=944 (at t=116)  total_elapsed=0.2s
+    [backbone] spatial done     0.18s  rss=2126MB
+      [temporal] n_active=9346  node_batch_size=512  -> 19 batch(es)  T=168
+      [temporal] batch   1/19  b= 512  ckpt=False  elapsed=   0.4s
+      [temporal] batch   6/19  b= 512  ckpt=False  elapsed=   2.0s
+      [temporal] batch  11/19  b= 512  ckpt=False  elapsed=   3.5s
+      [temporal] batch  16/19  b= 512  ckpt=False  elapsed=   5.3s
+      [temporal] batch  19/19  b= 130  ckpt=False  elapsed=   6.0s
+    [backbone] temporal done    6.05s  rss=2781MB
+  chunk 1/3 scanned  (2,894 events)
+    [backbone] projection done  T=168 N=10597  0.19s  rss=2781MB
+      [spatial] t=   0/168  active=  882  mece_edges=  250  ladder_edges=   75  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=  338  ladder_edges=  110  elapsed=   0.0s
+      [spatial] t=  40/168  active=  484  mece_edges=  152  ladder_edges=  101  elapsed=   0.1s
+      [spatial] t=  60/168  active=  870  mece_edges=  440  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t=  80/168  active=  679  mece_edges=  328  ladder_edges=   66  elapsed=   0.1s
+      [spatial] t= 100/168  active=  395  mece_edges=  150  ladder_edges=   65  elapsed=   0.1s
+      [spatial] t= 120/168  active=  875  mece_edges=  420  ladder_edges=   83  elapsed=   0.2s
+      [spatial] t= 140/168  active=  976  mece_edges=  424  ladder_edges=  139  elapsed=   0.2s
+      [spatial] t= 160/168  active=  436  mece_edges=  218  ladder_edges=   64  elapsed=   0.2s
+      [spatial] t= 167/168  active=  821  mece_edges=  300  ladder_edges=   75  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1078 (at t=128)  total_elapsed=0.2s
+    [backbone] spatial done     0.24s  rss=2781MB
+      [temporal] n_active=10597  node_batch_size=512  -> 21 batch(es)  T=168
+      [temporal] batch   1/21  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/21  b= 512  ckpt=False  elapsed=   1.9s
+      [temporal] batch  11/21  b= 512  ckpt=False  elapsed=   3.4s
+      [temporal] batch  16/21  b= 512  ckpt=False  elapsed=   4.9s
+      [temporal] batch  21/21  b= 357  ckpt=False  elapsed=   9.3s
+    [backbone] temporal done    9.37s  rss=2909MB
+  chunk 2/3 scanned  (7,094 events)
+    [backbone] projection done  T=24 N=3504  0.00s  rss=2909MB
+      [spatial] t=   0/24  active=  842  mece_edges=  308  ladder_edges=   78  elapsed=   0.0s
+      [spatial] t=  20/24  active=  957  mece_edges=  320  ladder_edges=  130  elapsed=   0.0s
+      [spatial] t=  23/24  active= 1004  mece_edges=  398  ladder_edges=   83  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1240 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.03s  rss=2909MB
+      [temporal] n_active=3504  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 432  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.04s  rss=2909MB
+  chunk 3/3 scanned  (7,393 events)
+
+robustness filters, attributed one at a time over 7,393 complete baskets:
+  --min-leg-volume 20      would drop 4,728 (64.0%) -- a leg below this had no tradeable last price
+  --min-ttc 3600             would drop 60 (0.8%) -- near resolution, post-determination prints possible
+      NOTE: time_to_close comes from the ACTUAL close_time, recorded after the fact. For early-closing markets this filter uses information a trader would not have at entry: label any result run with it as ex-post cleaned.
+  combined: kept 2,609 of 7,393 (35.3%), dropped 4,784
+  median |dev_t|: 3.00c before -> 3.00c after
+
+quoted execution: 2,554 events fully quoted at t and t+h; 55 dropped (2.1%) for a missing quote
+
+============================================================================================
+HOLD-TO-SETTLEMENT MECE ARBITRAGE -- TEST split, execution=taker, prices=quotes
+  PRICES = QUOTED TOP OF BOOK at the window end. Spread-source lines below do not apply;
+  depth is unknown, so fills beyond the best price at size C are ASSUMED.
+============================================================================================
+  spread sources:    [no legs costed]
+  baskets over threshold : 2,090
+  dropped below 1 contract: 0  (0.0%)
+  size: median 14.0  mean 28.8  p90 100.0
+  CAPITAL LOCKUP -- time_to_close at entry (ex post, from actual close_time), days: median 0.8  p90 12.2  max 119.9
+    (a position held to settlement is committed for this long; the cost of that capital is NOT modelled below)
+  waited: model 1,191   coin flip 1,035
+
+  WHAT THE COST GATE SELECTS  (median of each population)
+    population                   n    legs  days to close   thinnest leg vol  |dev| cents    size
+    all sized events         2,090     5.0            0.8                 89          3.0    14.0
+    cost-gated subset            1     6.0            1.0                 69         32.0    17.2
+    If the gated row shows far fewer legs, far longer to close, or far
+    thinner volume than the population, the gate is selecting
+    illiquidity rather than opportunity and the PnL is not executable.
+
+--------------------------------------------------------------------------------------------
+  strategy              trades    win%   gross/trd   cost/trd    net/trd    total net
+--------------------------------------------------------------------------------------------
+  static_now             2,090    3.3%       -1.21       0.97      -2.18       -4,566
+  cost_gated                 1  100.0%        0.86       0.79       0.07            0
+  model_timed            2,090    3.1%       -1.81       0.91      -2.72       -5,693
+  random_timed           2,090    3.2%       -3.14       0.86      -4.01       -8,378
+  model_timed_gated          1  100.0%        0.86       0.79       0.07            0
+--------------------------------------------------------------------------------------------
+
+  MODEL minus CONTROL (identical events, sizes and costs; only the
+  timing decision differs, so nothing but the forecast can explain a gap)
+  model_timed - random_timed         [+0.7446, +1.9063]  point +1.2843   BEATS  (CI entirely above 0)
+    clusters: k=312 baskets (bootstrap resamples baskets, applied to both books)
+  model_timed - static_now           [-0.8723, -0.2725]  point -0.5392   WORSE  (CI entirely below 0)
+  model_timed - cost_gated           [-3.2581, -2.3744]  point -2.7982   WORSE  (CI entirely below 0)
+  model_timed - model_timed_gated    [-3.2581, -2.3744]  point -2.7982   WORSE  (CI entirely below 0)
+
+  DOES THE MODEL IMPROVE THE PROFITABLE RULE?
+  model_timed_gated - cost_gated     [+0.0000, +0.0000]  point +0.0000   inconclusive (CI includes 0)
+    per trade : +0.074 on 1 trades   vs   +0.074 on 1
+    TOTAL net : +0   vs   +0   (+0.0%)
+    Per-trade and total can disagree: the model version trades a
+    LARGER population. Say which one you are quoting.
+
+============================================================================================
+HOW TO READ THIS
+============================================================================================
+  static_now is the existing static_arb with one-way costs. If it is
+  positive here and negative in the round-trip script, the entire
+  difference is the exit leg -- a cost-structure result, not a
+  forecasting one, and it must not be reported as the model working.
+
+  The model's contribution is ONLY the model_timed - random_timed row.
+  Everything else differs in more than the forecast.
+
+  A basket held to settlement captures |dev| whatever the path, so the
+  model is not predicting convergence -- it is predicting whether
+  waiting one step buys a wider dislocation. That is the entire claim
+  this script can support.
+
+  If maker execution shows a net credit, check the unfilled count and
+  the capital-lockup line before believing it. Whelan measured Kalshi
+  makers at -9.64% on average, so a model that shows makers earning
+  the spread with no adverse selection is modelling something easier
+  than the real venue.
+exit: 0

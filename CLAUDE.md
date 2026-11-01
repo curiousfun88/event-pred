@@ -9,20 +9,73 @@ Deadline: late Oct 2026.
 ## State
 
 **Established (positive)**
-- Model beats an optimal shrinkage oracle by ~15%: **0.851x** val, 0.853x
-  test. Oracle's alpha* was fitted on the scored split.
-- Graph ablation: no-graph 0.988x vs full 0.851x -> **graph supplies ~92%**
-  of the margin. Node-level is 0.991x; the gain is in the basket aggregate.
-- Model beats randomised-timing control: **+$0.170/trade, CI [+0.107,
-  +0.247]**, cluster-bootstrapped by basket. Identical across three cost
-  models, because the spread term cancels in a paired comparison -> this
-  result is **provably cost-model invariant**. Strongest number in project.
+- **Headline qualified 2026-09-27 (bid-side re-score, runs/README.md).** On
+  test the pooled 0.909x has a cluster CI that includes 1.0 on every seed.
+  The whole margin comes from the 18.6% of positions whose basket settles by
+  t+h, where the target is exactly $1. On unsettled test positions the model
+  scores **1.034x** the oracle (1.006-1.057; val 0.887x). On the bid-side
+  target, unsettled, R=1h, it scores **1.465x** (1.42-1.54, CI excludes 1;
+  n=117, k=56). The pre-registered rule gives the claim "forecasts basket
+  microstructure and settlement convergence", not bid-side dislocation.
+- Model beats an optimal shrinkage oracle by ~9%: **0.909x** test (range
+  0.883-0.941 over 4 seeds), 0.823x val. This is the causal rerun
+  `runs/v2_mece_causal_s0..s3`, pre-registered, with test scored once per
+  seed. It replaces 0.851x/0.853x from `v2_mece`, whose inputs leaked
+  (RESEARCH_LOG Revisions §7). Oracle's alpha* was fitted on the scored split
+  (0.552 test). Under the old partial-basket `legacy` rule the same
+  checkpoints score 1.21-1.66x.
+- **Graph ablation, re-run on the causal setup 2026-09-27 (pre-registered).**
+  The old "~92% from the graph" is retired.
+  - Timing skill: no-graph +$0.156/trade (4/4 CIs above 0) vs full +$0.192.
+    That is "graph not needed" by the rule, marginally (cut-off 0.154). Most
+    of the timing skill is per-leg temporal.
+  - Forecasting: no-graph 1.128x the single-alpha oracle (full 0.909x), and
+    1.224x the family oracle on unsettled positions. The graph is what makes
+    price-level forecasts competitive with the constraint baselines.
+- **Model beats randomised-timing control: REPLICATED ON TEST 2026-09-27.**
+  +$0.192/trade (4 seeds: 0.179-0.211, every CI above 0, k=312). Causal
+  checkpoints, measured spreads, `--min-ttc 3600`, pre-registered. The paired
+  design makes it cost-model invariant. It concentrates near resolution
+  (+0.254 at ttc 1s, +0.037 at 24h, all 4/4 CIs above 0). The old +$0.170 was
+  val-only on the leaky checkpoint; provenance is in
+  `logs/v2_forecast/settlement_pnl_val_ttc_sweep.log`. **Strongest positive
+  result -- at last-print pricing.**
+  - **At quoted top of book (pre-registered, 2026-09-27):** model beats random
+    by +$0.867/trade (3/4 CIs above 0).
+  - **But the model loses to never waiting on every seed** (-$0.96/trade, 4/4
+    CIs below 0). Waiting is costly at quotes, and the control's wait rate is
+    not matched to the model's.
+  - Report it as timing skill against a coin flip, **not** as executable
+    timing value.
+- **Bid-side at quoted bids (80% coverage): 1.822x the oracle** (4/4 CIs
+  above 1). This settles it: no bid-side forecasting skill.
+- **Economics at quotes:** gross is negative on about 97% of trades. The cost
+  gate fired once in 2,090 events ($0.07). Profitability stays withdrawn, now
+  at executable prices.
+- **Unsettled-only retrain (last retrain): no skill beyond constraint + family.**
+  Test 1.052x the per-series x horizon oracle (1.024-1.074, 0/4 CIs exclude 1),
+  0.950x single-alpha, 0.781x persistence.
 
 **Established (negative, and the central contribution)**
-- **92.5% of apparent basket deviation is the overround, not mispricing.**
+- **The apparent basket deviation is the overround, not mispricing.**
   68.7% of trade prints are ask-side; with half-spread 2.8c that predicts
   +6.3c signed mean on a 6-leg basket. *Predicted before measured.*
-  Measured +5.25c.
+  Measured +5.25c, with **92.5% of 4,891 baskets summing above $1** (4.9%
+  below): the one-sided overround pattern. 92.5% is a share of BASKETS, not
+  of the deviation. The share of the deviation carried by the print side was
+  measured later with quotes: 54% pooled, 87% (val 82%) in two-sided
+  baskets; the rest is one-sided-book artefact (correction: RESEARCH_LOG,
+  2026-10-20).
+- **Quoted top of book (2026-09-27; RESEARCH_LOG §7 end).** Hourly best
+  bid/ask for 10,981 legs, `data/quotes/`. With direct quotes, two-sided
+  baskets sum to **$1 within +0.34c at mid** (test). In those baskets the
+  print side is 82-87% of last-print deviation; the rest of the pooled
+  deviation is one-sided-book artefact. Quoted bid sum **$0.944**, ask sum
+  **$1.093**. Selling at the bids beats $1 in only 1.8% of basket-snapshots
+  (about 2c, before fees). Quoted spread median 2.0c, mean 2.9c: the
+  trade-based 4.68-5.61c overstates it. The trade-print bid proxy is biased
+  about +1.1c per leg. The trade-based figures below are superseded where
+  they conflict.
 - Executable (legs within 1h, both sides priced, n=662): buy at ask
   **$1.1334**, sell at bid **$0.9993**, settles $1.0000. Selling nets
   **-0.07c gross** before fees. Kalshi taker fee on a 6-leg basket is
@@ -32,17 +85,25 @@ Deadline: late Oct 2026.
   spread and wide-spread baskets execute worse.
 - **Profitability claim WITHDRAWN.** Do not reintroduce. Never write
   "arbitrage"; write "dislocation in traded prices".
-- Ladder forecast undeployable: all-pairs ratio minimised at epoch 0
-  (1.0015), rises monotonically under every mover weight, approaches 1.0
-  *from above* as weight -> 0. Reprice timing is not in the features.
-  FINAL, closed.
+- **Ladder closure STALE (2026-09-27).** "All-pairs ratio minimised at
+  epoch 0 (1.0015)" was measured on the leaky cache. There, 57% of scored
+  ladder pairs (h=1) were sub-1.5h contracts replayed after close: 583 pairs,
+  about 85k frozen copies, 0% moved. Persistence is exact on them, so learned
+  reversion could only lose. `cache_causal/` removes them (past-close 0%, was
+  66%). The causal MECE checkpoints (ladder weight 0, never selected on the
+  ladder) score **0.982-0.993x oracle, 0.966-0.977x persistence** on test
+  ladder pairs (n=99,646). This is exploratory: not pre-registered, no val
+  figure, no CI, and the moved-pairs lead is 0.4-0.9% (s3 loses at 1.004x).
+  Evidence: `logs/v2_forecast/ladder_timing{,_causal}.log`. Reprice timing
+  is still not in the features. The no-pivot decision stands. Sub-2h ladders
+  are out of scope, because contracts shorter than the 2h grid cannot be
+  forecast on it; this is a limitation, not a task.
 
 **Open, in priority order**
-1. **Re-score existing checkpoint with target = bid-side basket sum** (not
-   mixed last prints). The 0.851x is on the basket aggregate, which is the
-   92.5%-overround quantity. This decides whether the headline is
-   "forecasts mispricing" or "forecasts microstructure". Re-score, not
-   retrain. **Do this before anything else.**
+1. ~~Bid-side re-score~~ **DONE 2026-09-27**: model loses on the bid side;
+   the last-print margin is settlement convergence (above). Open follow-up:
+   what lets the model detect imminent settlement with `time_to_close`
+   zeroed? Check for a legitimate cue (prices near 0/1) versus a leak.
 2. Rebuild `cache/` for 2024-11..2025-11; move `PILOT_MONTHS` off
    2025-05..09; retrain.
 3. Walk-forward: 7 expanding folds inside 2024-11..2025-11, strictly
@@ -63,7 +124,9 @@ Deadline: late Oct 2026.
 | `TIME_TO_CLOSE` is slot 8, in **SECONDS** ("0 if past") | `--min-ttc 24` is 24 seconds, not hours. 15.9% of the population sat at `ttc==0`: markets already closed |
 | `taker_side="yes"` = taker lifted the **ask**; `"no"` = sold into the **bid** | Verified: median `mean(yes)-mean(no)` = **+3.82c** per ticker |
 | `--spreads` default was the **ladder** results file (crypto/financials only) | Zero MECE legs matched; everything fell to a global median from another mechanism while being described as "measured". Default now `mece_leg_spreads.parquet`. A coverage guard banners below 50% measured |
-| Graph grid is **hourly**; consecutive snapshots of one basket are frozen | Effective independent unit is the **basket-day** (5,806 in block B), not the ~46,000 basket-hours |
+| STGAT graph grid is **2-hourly** (`FixedWindowTemporal(every="2h")`, `train_forecast.WINDOW`); consecutive snapshots of one basket are frozen | Horizons {1,2,3,6,12} are snapshots = 2-24 h; the temporal chunk of 168 is two weeks; the timing control waits one snapshot (2 h). Effective independent unit is the **basket-day** (5,806 in block B), not the ~46,000 basket-snapshots. The maker simulator, quotes, mid-move head and live test are hourly |
+| Ch4's 662 executable basket-days = `mece_spread_artefact_check --max-basket-span 60` | A **cross-leg** filter (legs' last ask prints within 60 min of each other, likewise bids), not a per-leg ask-bid gap (`--max-side-gap`, unused) |
+| Maker fee in `simulate_maker.py` rounds up to a **whole cent** | Kalshi (and `taker_fee_dollars`) round up to a centicent, so backtest maker fees are slightly overstated (conservative; charged series only) |
 | Basket sums from daily **means** are unusable | Legs trade at different times of day; median cross-leg span is **406 min**. Use last prints, and constrain cross-leg span, not within-leg gap |
 | Cost is a **sum over ~6 legs** | Reasoning from a median per-leg spread is wrong twice over; the mean governs and the distribution is right-skewed |
 | `model/spatial_attention.py` reads only 3 adjacency keys | `mece_leg_to_basket`, `mece_basket_to_leg`, `ladder_monotonic`. Four other edge builders are dead code |
@@ -110,7 +173,8 @@ cache/ data/  local only
 ```
 
 Run every script from the repo root; all paths are root-relative.
-Headline checkpoint: `runs/v2_mece/best.pt` (was `checkpoints_mece/`).
+Headline checkpoints: `runs/v2_mece_causal_s{0..3}/best.pt` on `cache_causal/`.
+`runs/v2_mece/best.pt` is superseded (leaky inputs).
 
 Key scripts: `examples/mece_sum_to_one_check.py` (basket identification),
 `examples/mece_spread_artefact_check.py` (the overround test),
@@ -123,6 +187,7 @@ Key scripts: `examples/mece_sum_to_one_check.py` (basket identification),
    by the overround; bid/ask decomposition; executable edge; fees.
 3. Forecasting accuracy vs persistence and the shrinkage oracle + ablation.
 4. Model vs control, and its cost-model invariance.
-5. Ladder as diagnosed negative control.
+5. Ladder: how the post-close leak manufactured a false negative, with the
+   small positive result on live pairs as exploratory.
 6. Limitations: funnel (11,607 -> 3,354 -> 257), composition (58% weather
    above 5c), cross-leg non-simultaneity (406 min), no order-book data.

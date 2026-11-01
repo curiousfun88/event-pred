@@ -1,0 +1,16 @@
+  2024-10:         28 candles       28 tickers
+  2024-11:     37,389 candles    1,689 tickers
+  2024-12:     42,380 candles    2,827 tickers
+  2025-01:     36,426 candles    2,781 tickers
+  2025-02:     33,722 candles    2,450 tickers
+  2025-03:     37,702 candles    2,441 tickers
+  2025-04:     43,063 candles    2,579 tickers
+  2025-05:     75,240 candles    3,144 tickers
+  2025-06:     85,969 candles    3,233 tickers
+  2025-07:    105,961 candles    3,562 tickers
+  2025-08:    140,519 candles    3,985 tickers
+  2025-09:    156,964 candles    3,976 tickers
+  2025-10:     97,307 candles    4,208 tickers
+  2025-11:     77,884 candles    2,774 tickers
+wrote 14 monthly files to data/quotes/by_month
+exit: 0

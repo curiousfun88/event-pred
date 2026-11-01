@@ -211,6 +211,8 @@ def main():
         raise SystemExit(f"no '{args.split}' chunks")
 
     model = STGATBackbone(padded_feature_width=store.feature_width,
+                          zero_input_slots=getattr(cfg, "zero_input_slots", ()),
+                          zero_ladder_edge_features=getattr(cfg, "zero_ladder_edge_features", False),
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
                           max_len=cfg.chunk_len)
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=horizons)

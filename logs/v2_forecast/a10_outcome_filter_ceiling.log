@@ -1,0 +1,16 @@
+
+DEVELOPMENT: 345 fills, net $+180.92; losing fills 187
+    AUC   mean net after skipping riskiest 20%    change  share of sims better
+   0.55                                +157.65    -23.27                   11%
+   0.60                                +170.96     -9.96                   30%
+   0.65                                +182.94     +2.02                   56%
+   0.70                                +195.02    +14.10                   81%
+   0.80                                +216.30    +35.38                   99%
+
+TEST: 83 fills, net $+1.87; losing fills 67
+    AUC   mean net after skipping riskiest 20%    change  share of sims better
+   0.55                                  +4.01     +2.14                   60%
+   0.60                                  +5.95     +4.08                   70%
+   0.65                                  +7.86     +5.99                   79%
+   0.70                                  +9.74     +7.87                   88%
+   0.80                                 +12.24    +10.37                   95%

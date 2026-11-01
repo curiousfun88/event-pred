@@ -1,0 +1,50 @@
+15 simulations requested; 0 cached; 15 to run on 3 workers
+loaded universe=mece 2025-08..2025-11: 14,132 legs, 3,512 events; running 15 simulations
+  done: OPT  univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 min_ttc=24h -> ret +1.80% (83 fills)
+  done: STRICT univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 min_ttc=24h -> ret +28.53% (27 fills)
+  done: PESS univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 min_ttc=24h -> ret +1.80% (83 fills)
+  done: STRICT univ=mece sides=ask improve=1 band=85-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 -> ret -23.81% (1,238 fills)
+  done: PESS univ=mece sides=ask improve=1 band=85-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 -> ret -10.62% (1,852 fills)
+  done: OPT  univ=mece sides=ask improve=1 band=85-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 -> ret -10.62% (1,852 fills)
+  done: STRICT univ=mece sides=both improve=0 band=1-99 minspr=2 series=all liq24h>=0 inv=50 basket=0 -> ret -1.53% (74,317 fills)
+  done: PESS univ=mece sides=both improve=0 band=1-99 minspr=2 series=all liq24h>=0 inv=50 basket=0 -> ret -1.53% (74,317 fills)
+  done: OPT  univ=mece sides=both improve=0 band=1-99 minspr=2 series=all liq24h>=0 inv=50 basket=0 -> ret +1.02% (119,662 fills)
+  done: OPT  univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 stgat=s4 min_ttc=24h -> ret +1.80% (83 fills)
+  done: PESS univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 stgat=s4 min_ttc=24h -> ret +1.80% (83 fills)
+  done: STRICT univ=mece sides=both improve=1 band=85-99 minspr=4 series=taker_only liq24h>=0 inv=25 basket=0 stgat=s4 min_ttc=24h -> ret +28.53% (27 fills)
+  done: OPT  univ=mece sides=both improve=1 band=1-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 stgat=s5 -> ret +24.21% (49 fills)
+  done: PESS univ=mece sides=both improve=1 band=1-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 stgat=s5 -> ret +24.21% (49 fills)
+  done: STRICT univ=mece sides=both improve=1 band=1-99 minspr=4 series=all liq24h>=0 inv=25 basket=0 stgat=s5 -> ret +27.96% (37 fills)
+PRIMARY base (frozen)          OPT  ret   +1.80%  CI95 [ -48.49,  +62.40]  net $     1.87  fills     83  contracts     437  events    29  1h markout +5.01c/ct
+PRIMARY base (frozen)          PESS ret   +1.80%  CI95 [ -48.49,  +62.40]  net $     1.87  fills     83  contracts     437  events    29  1h markout +5.01c/ct
+PRIMARY base (frozen)          STRICT ret  +28.53%  CI95 [ -66.98, +145.83]  net $    11.10  fills     27  contracts     190  events    16  1h markout +1.98c/ct
+SECONDARY base (A6 winner)     OPT  ret  -10.62%  CI95 [ -32.73,  +13.35]  net $   -96.63  fills  1,852  contracts  11,668  events   754  1h markout +5.16c/ct
+SECONDARY base (A6 winner)     PESS ret  -10.62%  CI95 [ -32.73,  +13.35]  net $   -96.63  fills  1,852  contracts  11,668  events   754  1h markout +5.16c/ct
+SECONDARY base (A6 winner)     STRICT ret  -23.81%  CI95 [ -46.13,   +0.50]  net $  -185.12  fills  1,238  contracts   9,118  events   656  1h markout +3.53c/ct
+S1 (pre-registered reference)  OPT  ret   +1.02%  CI95 [  +0.61,   +1.41]  net $ 3,737.85  fills 119,662  contracts 741,969  events 1,608  1h markout +0.96c/ct
+S1 (pre-registered reference)  PESS ret   -1.53%  CI95 [  -2.04,   -1.00]  net $-3,761.91  fills 74,317  contracts 490,969  events 1,597  1h markout -0.06c/ct
+S1 (pre-registered reference)  STRICT ret   -1.53%  CI95 [  -2.04,   -1.00]  net $-3,761.91  fills 74,317  contracts 490,969  events 1,597  1h markout -0.06c/ct
+S4 (base + STGAT filter)       OPT  ret   +1.80%  CI95 [ -48.49,  +62.40]  net $     1.87  fills     83  contracts     437  events    29  1h markout +5.01c/ct
+S4 (base + STGAT filter)       PESS ret   +1.80%  CI95 [ -48.49,  +62.40]  net $     1.87  fills     83  contracts     437  events    29  1h markout +5.01c/ct
+S4 (base + STGAT filter)       STRICT ret  +28.53%  CI95 [ -66.98, +145.83]  net $    11.10  fills     27  contracts     190  events    16  1h markout +1.98c/ct
+S5 (STGAT-led)                 OPT  ret  +24.21%  CI95 [ -36.69,  +90.70]  net $    14.94  fills     49  contracts     330  events    32  1h markout +6.39c/ct
+S5 (STGAT-led)                 PESS ret  +24.21%  CI95 [ -36.69,  +90.70]  net $    14.94  fills     49  contracts     330  events    32  1h markout +6.39c/ct
+S5 (STGAT-led)                 STRICT ret  +27.96%  CI95 [ -30.77, +103.81]  net $    15.66  fills     37  contracts     272  events    26  1h markout +7.45c/ct
+
+A6.3 comparisons against the frozen base (event-resampled, same draw for both):
+  S4 (base + STGAT filter)   - base  PESS     +0.00pp  CI95 [  +0.00,   +0.00]  (k=29 events)
+  S4 (base + STGAT filter)   - base  OPT      +0.00pp  CI95 [  +0.00,   +0.00]  (k=29 events)
+  S4 (base + STGAT filter)   - base  STRICT   +0.00pp  CI95 [  +0.00,   +0.00]  (k=16 events)
+  S5 (STGAT-led)             - base  PESS    +22.41pp  CI95 [ -64.96, +101.30]  (k=60 events)
+  S5 (STGAT-led)             - base  OPT     +22.41pp  CI95 [ -64.96, +101.30]  (k=60 events)
+  S5 (STGAT-led)             - base  STRICT   -0.57pp  CI95 [-151.76, +129.08]  (k=42 events)
+
+A9 secondary (fills from quotes at signal hours only, H on the 2 h grid):
+  S4 (base + STGAT filter)   - base  PESS     +0.00pp  CI95 [  +0.00,   +0.00]  (k=21 events)
+  S4 (base + STGAT filter)   - base  OPT      +0.00pp  CI95 [  +0.00,   +0.00]  (k=21 events)
+  S4 (base + STGAT filter)   - base  STRICT   +0.00pp  CI95 [  +0.00,   +0.00]  (k=9 events)
+  S5 (STGAT-led)             - base  PESS    +24.92pp  CI95 [ -45.77, +109.49]  (k=53 events)
+  S5 (STGAT-led)             - base  OPT     +24.92pp  CI95 [ -45.77, +109.49]  (k=53 events)
+  S5 (STGAT-led)             - base  STRICT  +11.82pp  CI95 [-115.08, +139.19]  (k=35 events)
+
+exit: 0

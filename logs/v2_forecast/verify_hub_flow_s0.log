@@ -1,0 +1,66 @@
+checkpoint runs/tune/final_d32_h4_lr0.001_do0_wm1_q0_wmid1_s0/best.pt (epoch 10), test chunk of ['2025-08']: T=168 snapshots, N=8298 nodes
+  A. MECE edges into legs: 19,321, max |alpha - 1| = 0.00e+00 -> PASS
+     (edges into hubs: 19,321, of which 19,096 have some head with alpha < 1: the hub's attention is genuinely spread over its legs)
+    [backbone] projection done  T=168 N=8298  0.34s  rss=1926MB
+      [spatial] t=   0/168  active=  447  mece_edges=  178  ladder_edges=   11  elapsed=   0.0s
+      [spatial] t=  20/168  active=  517  mece_edges=  230  ladder_edges=   66  elapsed=   0.0s
+      [spatial] t=  40/168  active=  549  mece_edges=  216  ladder_edges=   49  elapsed=   0.1s
+      [spatial] t=  60/168  active=  518  mece_edges=  230  ladder_edges=   51  elapsed=   0.1s
+      [spatial] t=  80/168  active=  653  mece_edges=  294  ladder_edges=   89  elapsed=   0.1s
+      [spatial] t= 100/168  active=  317  mece_edges=  144  ladder_edges=   73  elapsed=   0.1s
+      [spatial] t= 120/168  active=  598  mece_edges=  280  ladder_edges=   58  elapsed=   0.1s
+      [spatial] t= 140/168  active=  767  mece_edges=  308  ladder_edges=  100  elapsed=   0.2s
+      [spatial] t= 160/168  active=  377  mece_edges=  158  ladder_edges=   71  elapsed=   0.2s
+      [spatial] t= 167/168  active=  726  mece_edges=  346  ladder_edges=   86  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=768 (at t=165)  total_elapsed=0.2s
+    [backbone] spatial done     0.23s  rss=1926MB
+      [temporal] n_active=8298  node_batch_size=512  -> 17 batch(es)  T=168
+      [temporal] batch   1/17  b= 512  ckpt=False  elapsed=   1.2s
+      [temporal] batch   6/17  b= 512  ckpt=False  elapsed=   5.1s
+      [temporal] batch  11/17  b= 512  ckpt=False  elapsed=   9.6s
+      [temporal] batch  16/17  b= 512  ckpt=False  elapsed=  14.4s
+      [temporal] batch  17/17  b= 106  ckpt=False  elapsed=  14.5s
+    [backbone] temporal done    14.59s  rss=2614MB
+    [backbone] projection done  T=168 N=8298  0.32s  rss=2614MB
+      [spatial] t=   0/168  active=  447  mece_edges=  178  ladder_edges=   11  elapsed=   0.0s
+      [spatial] t=  20/168  active=  517  mece_edges=  230  ladder_edges=   66  elapsed=   0.0s
+      [spatial] t=  40/168  active=  549  mece_edges=  216  ladder_edges=   49  elapsed=   0.0s
+      [spatial] t=  60/168  active=  518  mece_edges=  230  ladder_edges=   51  elapsed=   0.1s
+      [spatial] t=  80/168  active=  653  mece_edges=  294  ladder_edges=   89  elapsed=   0.1s
+      [spatial] t= 100/168  active=  317  mece_edges=  144  ladder_edges=   73  elapsed=   0.1s
+      [spatial] t= 120/168  active=  598  mece_edges=  280  ladder_edges=   58  elapsed=   0.1s
+      [spatial] t= 140/168  active=  767  mece_edges=  308  ladder_edges=  100  elapsed=   0.2s
+      [spatial] t= 160/168  active=  377  mece_edges=  158  ladder_edges=   71  elapsed=   0.2s
+      [spatial] t= 167/168  active=  726  mece_edges=  346  ladder_edges=   86  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=768 (at t=165)  total_elapsed=0.2s
+    [backbone] spatial done     0.40s  rss=2614MB
+      [temporal] n_active=8298  node_batch_size=512  -> 17 batch(es)  T=168
+      [temporal] batch   1/17  b= 512  ckpt=False  elapsed=   1.0s
+      [temporal] batch   6/17  b= 512  ckpt=False  elapsed=   5.1s
+      [temporal] batch  11/17  b= 512  ckpt=False  elapsed=   9.5s
+      [temporal] batch  16/17  b= 512  ckpt=False  elapsed=  14.7s
+      [temporal] batch  17/17  b= 106  ckpt=False  elapsed=  14.9s
+    [backbone] temporal done    14.91s  rss=2654MB
+  B. noise on every hub row after the spatial layer: max change in a LEG forecast = 0 (over 86,101 leg-snapshots), in a hub's own output = 0.725 -> PASS
+    [backbone] projection done  T=168 N=8298  0.32s  rss=2654MB
+      [spatial] t=   0/168  active=  447  mece_edges=  178  ladder_edges=   11  elapsed=   0.1s
+      [spatial] t=  20/168  active=  517  mece_edges=  230  ladder_edges=   66  elapsed=   0.1s
+      [spatial] t=  40/168  active=  549  mece_edges=  216  ladder_edges=   49  elapsed=   0.2s
+      [spatial] t=  60/168  active=  518  mece_edges=  230  ladder_edges=   51  elapsed=   0.2s
+      [spatial] t=  80/168  active=  653  mece_edges=  294  ladder_edges=   89  elapsed=   0.2s
+      [spatial] t= 100/168  active=  317  mece_edges=  144  ladder_edges=   73  elapsed=   0.3s
+      [spatial] t= 120/168  active=  598  mece_edges=  280  ladder_edges=   58  elapsed=   0.3s
+      [spatial] t= 140/168  active=  767  mece_edges=  308  ladder_edges=  100  elapsed=   0.3s
+      [spatial] t= 160/168  active=  377  mece_edges=  158  ladder_edges=   71  elapsed=   0.3s
+      [spatial] t= 167/168  active=  726  mece_edges=  346  ladder_edges=   86  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=768 (at t=165)  total_elapsed=0.3s
+    [backbone] spatial done     0.43s  rss=2654MB
+      [temporal] n_active=8298  node_batch_size=512  -> 17 batch(es)  T=168
+      [temporal] batch   1/17  b= 512  ckpt=False  elapsed=   0.8s
+      [temporal] batch   6/17  b= 512  ckpt=False  elapsed=   5.0s
+      [temporal] batch  11/17  b= 512  ckpt=False  elapsed=  10.4s
+      [temporal] batch  16/17  b= 512  ckpt=False  elapsed=  15.3s
+      [temporal] batch  17/17  b= 106  ckpt=False  elapsed=  15.5s
+    [backbone] temporal done    15.55s  rss=2681MB
+  control: the same noise on one LEG row changes that leg's forecast by 0.129 -> PASS (the test can detect an effect)
+ALL CHECKS PASSED

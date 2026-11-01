@@ -1,0 +1,4 @@
+candidates 437,268; scored 437,268
+{"G": {"ret": 3.4781272891493433, "lo": 2.4343660523698776, "hi": 4.527684051045591, "fills": 34044, "events": 1325, "net_c": 366792.0, "posted_share": 0.1966802967516489}}
+{"REPRODUCTION": {"got": {"ret": 3.48, "fills": 34044, "events": 1325}, "A12": {"ret": 3.55, "fills": 34086, "events": 1325}, "ok": false}}
+A16 gate: G does not reproduce A12; nothing reported as a result

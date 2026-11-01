@@ -1,0 +1,18 @@
+
+=== Building month 2024-11 ===
+Loading markets/trades for ['2024-11'] ...
+  41218 market rows, 765894 trade rows across 1 month(s)
+
+  ticker metadata: 3,987 of 3,987 traded tickers found across 54 markets files (0 without a markets row)
+  dropped 0 trade row(s) timestamped at/after their market's close_time
+  MECE membership: /home/fyp/event-pred/results/mece/mece_membership.parquet under the HINDSIGHT rule (train month)
+2026-09-29 01:37:18,764 [INFO] stg.builders.builder: Temporal slicing produced 311 windows (0.2s)
+2026-09-29 01:40:52,921 [INFO] stg.builders.builder: Build complete — 311 snapshots in 195.7s
+{'num_snapshots': 311, 'time_range': (datetime.datetime(2024, 11, 1, 0, 0), datetime.datetime(2024, 11, 30, 22, 0)), 'nodes_min': 95, 'nodes_max': 469, 'edges_min': 48, 'edges_max': 368}
+Built graph for 2024-11: {'num_snapshots': 311, 'time_range': (datetime.datetime(2024, 11, 1, 0, 0), datetime.datetime(2024, 11, 30, 22, 0)), 'nodes_min': 95, 'nodes_max': 469, 'edges_min': 48, 'edges_max': 368}
+Bundle 2024-11: T=311  N=4225  F=10  mask_coverage=7.1%
+  [guard] no post-close nodes: 4,225 nodes checked, 238 without a close_time (unverifiable)
+Cached to cache_724/bundle_month_2024-11.pt
+Freed build state for 2024-11: RSS 3005MB -> 2635MB
+
+--build-only: bundles written, not training.

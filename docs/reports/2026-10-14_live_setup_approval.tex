@@ -1,0 +1,269 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue!50!black}
+\setlist{itemsep=2pt,topsep=4pt}
+\newcommand{\pos}[1]{\textcolor{green!45!black}{#1}}
+\newcommand{\negv}[1]{\textcolor{red!65!black}{#1}}
+
+\title{Forward Test: Request for Approval Before Live Paper Trading}
+\author{FYP: Learned Market Making on Kalshi Event Contracts \\ Justyn}
+\date{14 October 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+\paragraph{Purpose.} Before I officially start live paper trading, I would like your approval on two things: the
+\textbf{live paper-trading setup} (Section~\ref{sec:infra}) and the \textbf{baselines} it is compared against
+(Section~\ref{sec:baselines}). Sections~\ref{sec:evidence}--\ref{sec:tuning} summarise the evidence behind the
+headline model and the decision not to tune it. The specific questions are in Section~\ref{sec:questions}.
+
+\section{Strategy and headline model}
+The strategy is a passive market maker on Kalshi's multi-outcome markets. Every hour it considers posting a buy or
+sell limit order (10 contracts) on each leg, and a learned model decides which orders to post: an order is posted
+only if its predicted net profit after fees exceeds 1\,c per contract. The headline model, \textbf{G2}, is a
+gradient-boosted tree model on 14 market features (price, spread, recent trades, basket structure, fees,
+category), retrained on all data up to August 2026. Its predecessor \textbf{G} (trained on Nov 2024--May 2025)
+passed a pre-registered test on Aug--Nov 2025 (Section~\ref{sec:evidence}). G2 was trained on 23 market series;
+the live test covers every series the strategy quotes (290 non-weather series plus the daily temperature
+series). Weather markets were first excluded on one validation month, then re-included after a pre-registered check
+over six walk-forward months (weather +1.60\% per month on average, positive in 5 of 6; other markets +4.94\%).
+The model's edge on weather declined in August--September (net per contract on its picks +1.96\,c in July,
++0.28\,c in August, $-0.99$\,c in September, while the market itself was no harder), so weather and non-weather
+results are also reported separately. All rules, models and statistics were fixed and timestamped publicly before
+any live result.
+
+\section{Live paper-trading setup}\label{sec:infra}
+\noindent\fbox{\parbox{\dimexpr\linewidth-2\fboxsep-2\fboxrule}{%
+\textbf{No knowledge of the future at any step.} This is live paper trading, not a replay: the forward-test
+result is the ledger as recorded hour by hour during the test, never a recomputation after the fact.
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=2pt]
+  \item \textbf{Models} were trained and frozen before live trading (their hashes are public); nothing is retrained
+    or adjusted during the test.
+  \item \textbf{Decisions} for each hour use only data available at the live market snapshot taken at the start
+    of that hour (about two minutes in); only trades \emph{after} the snapshot can fill the hour's orders. Each
+    decision is timestamped when made, and results are also reported counting only trades after that timestamp.
+  \item \textbf{Fills} for each hour are determined only from Kalshi trades that occurred \emph{during} that hour,
+    after it has ended; no later trade, price or outcome is used.
+  \item \textbf{Profit} becomes realised only when a market actually settles; until then, open positions are valued
+    at the latest recorded market mid-price.
+  \item \textbf{Every record is timestamped} on Lumid Research Fleet shortly after its hour, contains only that
+    hour's data, and is never revised afterwards, so no result can be adjusted with hindsight.
+\end{itemize}}}
+\medskip
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Live decisions.} A producer on a Lumid sandbox scores every candidate order each hour from Kalshi's
+    live data and records every candidate's features and the main models' scores before outcomes are known; the
+    baseline rules and models are applied to these same logged features. Each hour's record is posted to Lumid
+    Research Fleet with a SHA-256 hash, giving an independent timestamp.
+  \item \textbf{Live fills, in hourly batches.} The strategy itself is hourly: it posts its orders once per hour,
+    and they rest until the end of that hour. Fills are therefore processed in the same hourly batches. Shortly
+    after each trading hour ends (typically within 1--2 hours), a paper trader determines that hour's fills
+    \emph{only from the Kalshi trades that occurred during it}, records them and timestamps them; they are never
+    revised. Because an hour's fills depend only on that hour's trades, processing them trade by trade would give
+    the same fills, apart from rare cases where a position limit is reached within the hour. The fill rules are the
+    same as the backtest's:
+    \begin{itemize}
+      \item an order joining the best price fills only if real trades go \emph{through} its price (others are ahead
+        in the queue); an order that improves the price by 1\,c fills on trades at its price;
+      \item position limits (50 contracts per leg, 200 per event), Kalshi maker fees, full collateral;
+      \item positions are held to settlement and valued at the actual results.
+    \end{itemize}
+  \item \textbf{Append-only ledger.} Each hour's fills are written to a ledger entry that is never revised. Entries
+    are hash-chained (each contains the previous entry's hash). Every round re-checks the recorded fills of markets
+    active in the last four days against a recomputation; any mismatch is logged, never overwritten. Settlement
+    profit is added as markets resolve.
+  \item \textbf{Hourly reporting.} Each hour, for every strategy, Research Fleet receives the
+    \emph{cumulative} realised P\&L (settled markets), unrealised P\&L (open positions at the latest recorded mid),
+    total P\&L, capital committed and return (pessimistic fills; the other fill assumptions are kept in the ledger),
+    plus the ledger entry's hash. Hourly P\&L is the change in total P\&L.
+  \item \textbf{Fill assumptions.} Pessimistic fills (above) decide the verdicts; optimistic fills (trades at our
+    price also count) and strict fills (competitors match our price improvements) are reported as bounds.
+  \item \textbf{What counts.} Only hours recorded live, from the first ledger entry onwards, count towards the
+    forward-test result. The hours before the start (11--14 October), when decisions were live but fills were not
+    yet recorded live, are shown separately for reference only and do not count. The interim cut for the report is
+    28 October; quoting ends 11 November.
+  \item \textbf{Verdicts (pre-registered, one-sided 5\%).} (a) G2 is profitable live: the lower 95\% bound of its net
+    return is above zero; (b) G2 adds value: G2 minus random selection at the same volume is above zero. Confidence
+    intervals are bootstrapped by event (and by day, as a sensitivity check).
+\end{enumerate}
+\noindent\textbf{Checks done.} The paper trader reproduced exactly the 1.1 million orders the producer logged
+(0 mismatches); two blind test rounds in the production sandbox (no P\&L viewed) confirmed the ledger, the hash
+chain, re-verification and an unchanged producer.
+
+\section{Baselines}\label{sec:baselines}
+All baselines run on the same hours, candidates, fill rules and statistics as G2.
+\begin{center}
+\small
+\begin{tabular}{@{}p{3.0cm}p{5.5cm}p{7.0cm}@{}}
+\toprule
+Baseline & Rule & Question it answers \\
+\midrule
+Random selection & random orders at G2's posting volume & Is profit from choosing well, or from trading less? \\
+Quote everything & every candidate order & Does any selection help at all? \\
+Wide spreads & post if spread $\ge$ 3\,c & Is G2 just a spread filter? \\
+Liquid markets & post if recent trades $\ge$ hourly median & Is G2 just a liquidity filter? \\
+Linear model & ridge regression, same data and features & Is a nonlinear model needed? \\
+Neural network & 2-layer MLP, same data and features & Does another model family do better? \\
+Previous model (G) & 2025 model, unchanged & Has the edge decayed? \\
+S\&P 500, 3-month T-bill & index and risk-free rate & Better than passive investment? \\
+\bottomrule
+\end{tabular}
+\end{center}
+Secondary variants (reported, never verdicts): G2 trained on shorter windows, a two-price-level version, and a
+weekly category-selection variant.
+
+\section{Evidence before the live test}\label{sec:evidence}
+\paragraph{2025 test (Aug--Nov 2025, pre-registered; full simulator, pessimistic fills).}
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Strategy & Return & 95\% CI & Fills & Net P\&L \\
+\midrule
+\textbf{G (headline 2025)} & \pos{\textbf{+3.55\%}} & [+2.51, +4.60] & 34,086 & \pos{+\$3,748} \\
+Linear model & \pos{+4.03\%} & [+2.94, +5.14] & 18,305 & \pos{+\$2,427} \\
+Neural network & \pos{+2.11\%} & [+1.30, +2.92] & 43,975 & \pos{+\$3,104} \\
+Wide spreads & +0.07\% & [$-$0.45, +0.55] & 97,517 & +\$206 \\
+Liquid markets & $-$0.05\% & [$-$0.51, +0.39] & 99,930 & \negv{$-$\$145} \\
+Random (5 seeds, mean) & \negv{$-$0.23\%} & each includes 0 & $\approx$24,400 & \\
+Quote everything & \negv{$-$0.34\%} & [$-$0.77, +0.10] & 110,867 & \negv{$-$\$1,133} \\
+\bottomrule
+\end{tabular}
+\end{center}
+G minus each baseline (paired by event): random +3.2 to +4.4 (all five 95\% CIs exclude 0); wide spreads +3.47
+[+2.50, +4.45]; liquid +3.60 [+2.64, +4.55]; neural +1.43 [+0.47, +2.38]; linear $-$0.48 [$-$1.73, +0.81]
+(no significant difference). Under strict fills, G's edge falls to +0.39\% [$-$0.96, +1.78].
+
+\paragraph{2026 walk-forward (Apr--Sep 2026, each month trained only on earlier months; offline scoring,
+pessimistic fills).} Return on capital per month (\%); net P\&L summed over the six months:
+\begin{center}
+\small\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Strategy & Apr & May & Jun & Jul & Aug & Sep & Mean & Pos.\ months & Net P\&L \\
+\midrule
+\textbf{G2 (headline)} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.36} & \pos{\textbf{+2.65}} & \textbf{6/6} & \pos{\textbf{+\$3,291}} \\
+Linear model & +3.13 & +5.59 & +3.73 & +2.84 & +3.76 & +3.49 & \pos{+3.76} & 6/6 & \pos{+\$1,455} \\
+Neural network & +2.83 & +3.81 & $-$0.56 & +1.47 & $-$0.93 & $-$0.63 & \pos{+1.00} & 3/6 & \\
+Random (same volume) & $-$0.66 & $-$0.72 & $-$0.48 & $-$1.30 & $-$1.72 & $-$2.04 & \negv{$-$1.15} & 0/6 & \negv{$-$\$924} \\
+Wide spreads & $-$0.23 & $-$0.56 & $-$0.25 & $-$0.52 & $-$2.01 & $-$1.72 & \negv{$-$0.88} & 0/6 & \\
+Liquid markets & $-$0.60 & $-$0.94 & $-$0.47 & $-$1.53 & $-$1.51 & $-$0.76 & \negv{$-$0.97} & 0/6 & \\
+Quote everything & $-$0.73 & $-$0.79 & $-$0.26 & $-$1.07 & $-$1.67 & $-$1.45 & \negv{$-$0.99} & 0/6 & \negv{$-$\$4,495} \\
+\bottomrule
+\end{tabular}
+\end{center}
+G2 made money in every month; random selection, both rules and quoting everything lost money in every month. The
+linear model's higher return comes with about a third of G2's capital and less than half its profit
+(Section~\ref{sec:linear}). Offline scoring leaves out the simulator's inventory limits, so live returns are
+expected to be lower: on September 2026 in the full simulator, G2 made +1.41\% [$-$1.47, +4.31] (offline +2.36\%).
+
+\section{Why G2 stays the headline model (and why not linear model)}\label{sec:linear}
+The linear model shows a higher return on capital because it trades less: in the 2025 test it posted 13.5\% of
+candidate orders against 19.7\% for G, and had about half as many fills (18,305 vs 34,086). G earns more total profit (2025: +\$3,748 vs +\$2,427; 2026: more profit
+in every month), and their returns do not differ significantly. When both models post the \emph{same} number of
+orders, G2 earns more than both the linear model and the neural network at every volume tested in 2026. In 2025, G
+leads at the volume it actually trades (about 20\% of candidates: +5.30\% vs +4.59\% linear and +4.36\% neural);
+the models converge at very high volumes, which I interpret as the easier 2025 market rather than overlapping
+picks (overlap rises similarly in both years). G2 is therefore kept as the headline model.
+
+\section{Hyperparameters: fixed, not tuned}\label{sec:tuning}
+\paragraph{Decision.} Model settings were fixed in advance and written into the pre-registration before any test.
+Instead of tuning them, I measured how much tuning could gain, using the same procedure tuning would use: each
+setting is trained only on earlier months and scored on the next month (walk-forward), over several months.
+
+\paragraph{Boosted model (G2).} Fourteen settings: G2's default and 13 variants, each changing one parameter.
+Return on capital per test month (offline scoring, pessimistic fills):
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Setting & Apr & May & Jun & Jul & Aug & Mean & Worst \\
+\midrule
+Leaves 15 (best) & +2.61 & +3.08 & +2.71 & +3.60 & +2.56 & +2.91 & +2.56 \\
+L2 regularisation 10 & +2.52 & +2.36 & +2.61 & +3.87 & +2.32 & +2.73 & +2.32 \\
+\textbf{G2 default} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.71} & \textbf{+1.95} \\
+Feature sampling 0.8 & +2.84 & +2.46 & +2.56 & +3.46 & +1.91 & +2.65 & +1.91 \\
+Min.\ leaf 1000 & +2.41 & +2.56 & +2.02 & +3.71 & +1.37 & +2.41 & +1.37 \\
+Min.\ leaf 100 & +1.85 & +3.63 & +1.85 & +3.51 & +0.93 & +2.35 & +0.93 \\
+800 trees & +2.18 & +1.11 & +3.26 & +3.50 & +1.72 & +2.35 & +1.11 \\
+Early stop on last month & +3.73 & +2.65 & +2.66 & +1.44 & +0.93 & +2.28 & +0.93 \\
+Leaves 63 & +2.16 & +2.92 & +2.27 & +2.09 & +1.66 & +2.22 & +1.66 \\
+Recency weight (3 months) & +1.61 & +3.41 & +2.68 & +1.27 & +2.11 & +2.22 & +1.27 \\
+Bagging (5 models) & +1.81 & +2.26 & +2.96 & +2.35 & +1.50 & +2.18 & +1.50 \\
+Learning rate 0.1, 120 trees & +2.70 & +2.05 & +2.53 & +2.66 & +0.90 & +2.17 & +0.90 \\
+Recency weight (6 months) & +0.78 & +2.95 & +1.63 & +1.36 & +0.99 & +1.54 & +0.78 \\
+Absolute-error loss & $-$0.51 & $-$0.07 & +0.48 & $-$0.47 & $-$0.29 & $-$0.17 & $-$0.51 \\
+\midrule
+Quote everything (reference) & $-$0.73 & $-$0.79 & $-$0.26 & $-$1.07 & $-$1.67 & $-$0.90 & $-$1.67 \\
+\bottomrule
+\end{tabular}
+\end{center}
+All values in \%. The default ranks third of fourteen. Every variant using the same (squared-error) loss is
+profitable in every month; only the change of loss function removes the edge.
+
+\paragraph{Neural network (baseline).} Eight settings: the default and 7 variants, one change each, on the same
+months plus September 2026; G2 shown for reference:
+\begin{center}
+\small\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+Setting & Apr & May & Jun & Jul & Aug & Sep & Mean & Worst & Months $>$0 \\
+\midrule
+Larger (128, 64) & +2.04 & +3.69 & +0.38 & +3.50 & $-$0.77 & $-$0.16 & +1.45 & $-$0.77 & 4/6 \\
+L2 1e-2 & +1.98 & +5.20 & $-$0.20 & +1.30 & $-$0.57 & $-$0.48 & +1.21 & $-$0.57 & 3/6 \\
+Deeper (64, 32, 16) & +3.78 & +4.53 & $-$2.03 & +1.31 & +0.42 & $-$1.27 & +1.12 & $-$2.03 & 4/6 \\
+L2 1e-3 & +1.97 & +4.36 & +0.33 & +1.44 & $-$0.82 & $-$0.62 & +1.11 & $-$0.82 & 4/6 \\
+Default (64, 32) & +2.83 & +3.81 & $-$0.56 & +1.47 & $-$0.93 & $-$0.38 & +1.04 & $-$0.93 & 3/6 \\
+tanh activation & +2.61 & +4.97 & $-$1.90 & +0.36 & $-$1.45 & $-$0.13 & +0.74 & $-$1.90 & 3/6 \\
+Learning rate 3e-4 & +1.32 & +3.77 & $-$0.42 & +1.87 & $-$0.75 & $-$1.56 & +0.71 & $-$1.56 & 3/6 \\
+Smaller (32) & +1.26 & +2.58 & $-$0.31 & +1.81 & $-$1.00 & $-$1.49 & +0.47 & $-$1.49 & 3/6 \\
+\midrule
+\textbf{G2 (reference)} & \textbf{+1.95} & \textbf{+2.30} & \textbf{+3.26} & \textbf{+3.46} & \textbf{+2.59} & \textbf{+2.36} & \textbf{+2.65} & \textbf{+1.95} & \textbf{6/6} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Why the settings were not tuned.}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{The possible gain is small.} The best of the fourteen boosted settings beat the default by
+    0.2 percentage points per month (+2.91\% vs +2.71\%), much less than G2's own month-to-month variation
+    (+1.95\% to +3.46\%). A difference this small cannot be told apart from noise over five months.
+  \item \textbf{The best setting's lead is partly luck.} Choosing the top scorer among many settings inflates its
+    apparent advantage (Cawley \& Talbot, 2010); on new data the expected gain is smaller still.
+  \item \textbf{Tuning carries overfitting risk in finance.} Each extra search on short, noisy, changing financial
+    data is another chance to fit noise (Bailey et al., 2017; Arnott, Harvey \& Markowitz, 2019). With a negligible
+    expected gain, fixed settings are the safer choice; where tunability is low, defaults are appropriate
+    (Probst, Boulesteix \& Bischl, 2019).
+  \item \textbf{Tuning the neural network could not change the comparison.} Its best setting is about 1.2 points
+    behind G2 and still loses money in two of six months; tuning chooses among such settings. On the broader 2025
+    data the default network does better (+2.11\%) but G remains significantly ahead (+1.43, CI [+0.47, +2.38]).
+  \item \textbf{Fixed settings keep the tests credible.} Settings were recorded before any test; changing them
+    after seeing results would weaken the pre-registered tests for almost no expected gain.
+\end{enumerate}
+Reporting results across all reasonable settings, rather than a single tuned best, follows the logic of
+specification-curve analysis (Simonsohn, Simmons \& Nelson, 2020). \textbf{Limitation:} settings were varied one at
+a time, so combinations were not searched; a joint search is left as future work. The training window was chosen
+by a six-month walk-forward (all history +2.65\% per month vs 3-month +1.53\% and 6-month +1.88\%).
+
+\section{Questions for your approval}\label{sec:questions}
+\begin{enumerate}[leftmargin=*]
+  \item[$\square$] Does the live paper-trading setup (fills recorded in hourly batches, matching the strategy's
+    hourly quotes, from trades that have already happened; append-only ledger; hourly Research Fleet reports) meet
+    the live paper-trading requirement?
+  \item[$\square$] Are the baselines in Section~\ref{sec:baselines} sufficient?
+  \item[$\square$] Is it acceptable to keep the fixed model settings for G, G2 and neural network, given the sensitivity checks in
+    Section~\ref{sec:tuning} which justifies that there is no need to tune the model?
+  \item[$\square$] Is G2 as the headline model acceptable, given that the linear model has a higher return but
+    lower total profit?
+  \item[$\square$] Is anything else you would like reported each hour or at the cuts (28 October, 11 November)?
+\end{enumerate}
+If you approve, I will start the live ledger immediately; every hour from that point counts towards the result.
+
+\end{document}

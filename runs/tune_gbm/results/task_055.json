@@ -1,0 +1,15 @@
+{
+ "amendment": "A15",
+ "task": 55,
+ "setting": "recency_hl6",
+ "test_month": "2026-04",
+ "device": "cpu",
+ "n_train": 479338,
+ "n_test": 44862,
+ "fit_s": 6.8,
+ "kept": 10540,
+ "share": 0.23494271320939772,
+ "ret": 0.7836388640985501,
+ "ret_all": -0.7299026110664525,
+ "net_c_per_contract": 0.5258636558875867
+}

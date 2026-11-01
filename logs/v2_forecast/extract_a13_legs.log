@@ -1,0 +1,14 @@
+Running as unit: run-r8e182a0702fd4d808503c742f3f702d0.scope; invocation ID: ce4f8067d55649c88f85155d43f09682
+{"2024-11": {"legs": 1277, "events": 186, "quote_rows": 30361, "trades": 301310, "sha1": "69520a2f53d5ae55"}}
+{"2024-12": {"legs": 1443, "events": 250, "quote_rows": 30451, "trades": 290869, "sha1": "c8e49df446e43245"}}
+{"2025-01": {"legs": 1471, "events": 265, "quote_rows": 28906, "trades": 224722, "sha1": "9b1ffeb9bd0e492a"}}
+{"2025-02": {"legs": 1457, "events": 252, "quote_rows": 29404, "trades": 242662, "sha1": "7fccf0794d8895d9"}}
+{"2025-03": {"legs": 1649, "events": 280, "quote_rows": 33303, "trades": 245249, "sha1": "4a3e80172bd0eb80"}}
+{"2025-04": {"legs": 1709, "events": 278, "quote_rows": 37578, "trades": 229761, "sha1": "7a5308535bf1c4c7"}}
+{"2025-05": {"legs": 1660, "events": 295, "quote_rows": 56170, "trades": 244487, "sha1": "827a4125c87fd957"}}
+{"2025-06": {"legs": 1758, "events": 336, "quote_rows": 65017, "trades": 245837, "sha1": "a8b8d99f73e404d4"}}
+{"2025-07": {"legs": 1880, "events": 373, "quote_rows": 89787, "trades": 366206, "sha1": "17109700fcb2cd95"}}
+{"2025-08": {"legs": 1977, "events": 408, "quote_rows": 116545, "trades": 427027, "sha1": "d9586247d5c66dc3"}}
+{"2025-09": {"legs": 2270, "events": 505, "quote_rows": 135907, "trades": 640641, "sha1": "59ddc8e698ca0cbf"}}
+{"2025-10": {"legs": 1797, "events": 335, "quote_rows": 74003, "trades": 637776, "sha1": "90b6ebbb3060d098"}}
+{"2025-11": {"legs": 1201, "events": 193, "quote_rows": 32239, "trades": 316425, "sha1": "2666b58c9520a08c"}}

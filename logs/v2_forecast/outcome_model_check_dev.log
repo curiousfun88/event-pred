@@ -1,0 +1,24 @@
+  2024-11: 7 rows so far
+  2024-12: 42 rows so far
+  2025-01: 58 rows so far
+  2025-02: 68 rows so far
+  2025-03: 74 rows so far
+  2025-04: 116 rows so far
+  2025-05: 161 rows so far
+  2025-06: 236 rows so far
+  2025-07: 317 rows so far
+
+DEVELOPMENT MONTHS ONLY. MECE legs at 85-99c, >24h to close, one row per leg-day:
+  train 161 rows / 75 events; validation 156 / 27
+  upset rate (settles NO): train 7.5%, validation 14.7%; mean implied upset (100-mid): validation 8.3%
+
+VALIDATION log-loss (lower is better):
+  price (mid)                    : 0.3770
+  isotonic calibration of price  : 0.4170
+  GBM on features                : 0.4489
+  GBM - isotonic: +0.0318  CI95 [+0.0117, +0.0757]  (k=27; negative = features add information)
+
+VALIDATION upset AUC (predicting settles NO):
+  price alone         : 0.841
+  GBM                 : 0.500
+  WITHIN 2c price bands (skill beyond price): GBM 0.500   price 0.564   <- A10 needs ~0.65-0.70

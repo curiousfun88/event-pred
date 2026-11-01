@@ -1,0 +1,54 @@
+  KXHIGHLAX 2026-07: 186 legs in 31 events  (calls 818, 372s)
+  KXHIGHLAX 2026-06: 180 legs in 30 events  (calls 1446, 637s)
+  KXHIGHMIA 2026-08: 186 legs in 31 events  (calls 2024, 948s)
+  KXHIGHMIA 2026-07: 186 legs in 31 events  (calls 2574, 1191s)
+  KXHIGHMIA 2026-06: 180 legs in 30 events  (calls 3041, 1388s)
+  KXNASDAQ100 2026-08: 630 legs in 21 events  (calls 4526, 2162s)
+  KXNASDAQ100 2026-07: 660 legs in 22 events  (calls 5946, 2809s)
+  KXNASDAQ100 2026-06: 630 legs in 21 events  (calls 7278, 3399s)
+  KXF1RACE 2026-08: 22 legs in 1 events  (calls 7350, 3433s)
+  KXF1RACE 2026-07: 66 legs in 3 events  (calls 7564, 3519s)
+  KXF1RACE 2026-06: 66 legs in 3 events  (calls 7769, 3605s)
+  KXFEAR 2026-08: 20 legs in 4 events  (calls 7831, 3627s)
+  KXFEAR 2026-07: 25 legs in 5 events  (calls 7881, 3648s)
+  KXFEAR 2026-06: 0 legs in 0 events  (calls 7881, 3648s)
+  KXFEDDECISION 2026-08: 0 legs in 0 events  (calls 7883, 3648s)
+  KXFEDDECISION 2026-07: 5 legs in 1 events  (calls 7939, 3674s)
+  KXFEDDECISION 2026-06: 5 legs in 1 events  (calls 7958, 3682s)
+  KXHMONTHRANGE 2026-08: 6 legs in 1 events  (calls 7978, 3689s)
+  KXHMONTHRANGE 2026-07: 6 legs in 1 events  (calls 7990, 3694s)
+  KXHMONTHRANGE 2026-06: 6 legs in 1 events  (calls 8003, 3699s)
+  KXLAGODAYS 2026-08: 5 legs in 1 events  (calls 8015, 3703s)
+  KXLAGODAYS 2026-07: 5 legs in 1 events  (calls 8025, 3710s)
+  KXLAGODAYS 2026-06: 5 legs in 1 events  (calls 8035, 3713s)
+  KXHIGHLAX 2026-05: 186 legs in 31 events  (calls 593, 293s)
+  KXHIGHLAX 2026-04: 180 legs in 30 events  (calls 1139, 546s)
+  KXHIGHLAX 2026-03: 186 legs in 31 events  (calls 1745, 840s)
+  KXHIGHMIA 2026-05: 186 legs in 31 events  (calls 2236, 1085s)
+  KXHIGHMIA 2026-04: 178 legs in 30 events  (calls 2681, 1284s)
+  KXHIGHMIA 2026-03: 186 legs in 31 events  (calls 3151, 1491s)
+  KXNASDAQ100 2026-05: 600 legs in 20 events  (calls 4385, 1988s)
+  KXNASDAQ100 2026-04: 630 legs in 21 events  (calls 5667, 2527s)
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 189, in <module>
+    main()
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 185, in main
+    run(a)
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 121, in run
+    cd = k.get(path, start_ts=s_, end_ts=c // 10**9 + 3600, period_interval=60)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/live_signal_producer.py", line 245, in get
+    raise RuntimeError(f"Kalshi GET failed: {path} {params}")
+RuntimeError: Kalshi GET failed: historical/markets/KXNASDAQ100-26MAR30H1600-B22150/candlesticks {'start_ts': 1774665000, 'end_ts': 1774904400, 'period_interval': 60}
+Traceback (most recent call last):
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 189, in <module>
+    main()
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 185, in main
+    run(a)
+  File "/home/fyp/event-pred/stg_infra/fetch_kalshi_api_months.py", line 102, in run
+    cut = k.get("historical/cutoff")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fyp/event-pred/stg_infra/live_signal_producer.py", line 245, in get
+    raise RuntimeError(f"Kalshi GET failed: {path} {params}")
+RuntimeError: Kalshi GET failed: historical/cutoff {}
+DONE

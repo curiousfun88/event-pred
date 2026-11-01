@@ -1,0 +1,15 @@
+  2024-11 (local): 17,120 fills
+  2024-12 (local): 20,575 fills
+  2025-01 (local): 21,300 fills
+  2025-02 (local): 20,934 fills
+  2025-03 (local): 23,280 fills
+  2025-04 (local): 22,143 fills
+  2025-05 (local): 22,712 fills
+  2025-06 (local): 24,184 fills
+  2025-07 (local): 27,703 fills
+  2025-08 (local): 28,896 fills
+  2025-09 (local): 29,818 fills
+  2025-10 (local): 29,445 fills
+  2025-11 (local): 18,588 fills
+  2025-12..2026-08 (API): 372,702 fills
+wrote /home/fyp/event-pred/runs/tune_gbm/features.npz : 679,400 rows, 14 features, months 2024-11..2026-08

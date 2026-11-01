@@ -1,0 +1,41 @@
+  full        2026-04:  +1.95%  kept  9,912 (22.1%)
+  full        2026-05:  +2.30%  kept  9,299 (21.0%)
+  full        2026-06:  +3.26%  kept  8,402 (21.5%)
+  full        2026-07:  +3.46%  kept  6,182 (15.7%)
+  full        2026-08:  +2.59%  kept  5,337 (16.5%)
+  no_order    2026-04:  +0.68%  kept  6,579 (14.7%)
+  no_order    2026-05:  +3.20%  kept  5,420 (12.3%)
+  no_order    2026-06:  +2.31%  kept  3,141 ( 8.0%)
+  no_order    2026-07:  +3.07%  kept  1,944 ( 4.9%)
+  no_order    2026-08:  +3.12%  kept  2,563 ( 7.9%)
+  no_market   2026-04:  +2.31%  kept  8,466 (18.9%)
+  no_market   2026-05:  +3.07%  kept  8,941 (20.2%)
+  no_market   2026-06:  +1.58%  kept  7,479 (19.1%)
+  no_market   2026-07:  +2.81%  kept  6,290 (15.9%)
+  no_market   2026-08:  +0.96%  kept  5,205 (16.1%)
+  no_basket   2026-04:  +2.30%  kept 10,203 (22.7%)
+  no_basket   2026-05:  +1.85%  kept  8,828 (20.0%)
+  no_basket   2026-06:  +1.62%  kept  8,168 (20.9%)
+  no_basket   2026-07:  +1.91%  kept  6,173 (15.6%)
+  no_basket   2026-08:  +1.18%  kept  5,943 (18.4%)
+  no_context  2026-04:  +2.20%  kept 10,087 (22.5%)
+  no_context  2026-05:  +1.89%  kept  9,862 (22.3%)
+  no_context  2026-06:  +2.66%  kept  8,383 (21.4%)
+  no_context  2026-07:  +2.55%  kept  6,832 (17.3%)
+  no_context  2026-08:  +0.57%  kept  6,144 (19.0%)
+
+ABLATION (1c rule; mean and worst of 5 folds; full minus variant, 95% interval)
+  full        mean  +2.71%  worst  +1.95%  share  19.3%  net $   +2,963
+  no_order    mean  +2.48%  worst  +0.68%  share   9.6%  net $     +967  full-minus +0.24 [-1.48, +2.13]
+  no_market   mean  +2.14%  worst  +0.96%  share  18.0%  net $   +2,470  full-minus +0.57 [-0.33, +1.49]
+  no_basket   mean  +1.77%  worst  +1.18%  share  19.5%  net $   +2,032  full-minus +0.94 [+0.05, +1.87]
+  no_context  mean  +1.97%  worst  +0.57%  share  20.5%  net $   +2,388  full-minus +0.74 [-0.04, +1.51]
+
+THRESHOLD (full model)
+  >   0c  mean  +1.61%  worst  +0.52%  share  37.3%  net $   +3,441
+  > 0.5c  mean  +2.02%  worst  +1.71%  share  27.2%  net $   +3,187
+  >   1c  mean  +2.71%  worst  +1.95%  share  19.3%  net $   +2,963
+  >   2c  mean  +4.48%  worst  +3.44%  share   9.7%  net $   +2,327
+  >   4c  mean  +9.38%  worst  +2.48%  share   3.4%  net $   +1,554
+
+wrote /home/fyp/event-pred/results/maker/ablation_g2_2026.json

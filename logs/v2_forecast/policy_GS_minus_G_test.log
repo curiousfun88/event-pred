@@ -1,0 +1,4 @@
+A12 item 3 -- STGAT contribution on the TEST months (G+S minus G), event-cluster bootstrap (4000 draws)
+  PESS   G+S - G: return -0.65 pp  CI95 [-1.40, +0.09]   net $-513.37  CI95 [-1316.44, +289.75]  (k=1372 events)
+  OPT    G+S - G: return -0.70 pp  CI95 [-1.45, +0.05]   net $-603.91  CI95 [-1459.60, +240.30]  (k=1401 events)
+  STRICT G+S - G: return -0.38 pp  CI95 [-1.31, +0.54]   net $-283.92  CI95 [-998.25, +416.89]  (k=1288 events)

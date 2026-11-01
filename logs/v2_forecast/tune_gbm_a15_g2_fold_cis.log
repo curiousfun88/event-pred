@@ -1,0 +1,8 @@
+G2's model (A12 settings), walk-forward, offline, pessimistic; event-cluster 95% CIs
+  2026-04: kept +1.95% [-0.36, +4.23] (496 events) | minus all +2.68 [+0.40, +4.97] | non-weather +0.95% [-2.90, +4.72] weather +2.66% [-0.15, +5.40]
+  2026-05: kept +2.30% [-0.43, +5.02] (496 events) | minus all +3.09 [+0.48, +5.68] | non-weather +2.62% [-1.68, +7.01] weather +2.12% [-1.04, +5.40]
+  2026-06: kept +3.26% [-0.38, +6.84] (303 events) | minus all +3.52 [-0.18, +7.12] | non-weather +4.04% [+0.71, +7.21] weather +2.94% [-1.75, +7.64]
+  2026-07: kept +3.46% [+0.09, +6.90] (344 events) | minus all +4.53 [+1.42, +7.76] | non-weather +4.65% [-0.04, +9.75] weather +2.80% [-1.34, +6.77]
+  2026-08: kept +2.59% [-0.90, +5.89] (418 events) | minus all +4.25 [+0.90, +7.62] | non-weather +5.84% [+0.83, +10.65] weather +0.43% [-3.98, +5.00]
+  POOLED 5 folds: kept +2.63% [+1.25, +3.94] (2012 events) | minus all +3.49 [+2.20, +4.78]
+                 non-weather +3.12% [+1.22, +5.01]  weather +2.34% [+0.61, +4.05]

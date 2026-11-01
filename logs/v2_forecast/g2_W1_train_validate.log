@@ -1,0 +1,38 @@
+  2026-06..2026-08 (API): 111,033 training fills
+trained G2-W1 on 111,033 fills (6 categories); sha1 e14a70b183731891
+  2026-06..2026-08 (API): 142,552 training fills
+trained G2P-W1 on 142,552 fills (6 categories); sha1 5f569e6fdbd76684
+VALIDATION 2026-09-07..2026-10-05 (A13/A14)
+  quote everything [pess  ] ret  -1.45% CI [ -2.40,  -0.53]  fills 29,452  events  386  net $ -869.25  markout -0.42c
+  quote everything [opt   ] ret  -0.38% CI [ -1.17,  +0.45]  fills 37,199  events  420  net $ -289.71  markout +0.06c
+  quote everything [strict] ret  -2.67% CI [ -3.83,  -1.56]  fills 22,598  events  371  net $-1317.87  markout -1.41c
+
+== G2: 149,948 candidates
+ G2-G (scores 43% of candidates above 1c)
+  G   [pess  ] ret  -1.41% CI [ -4.10,  +1.36]  fills 10,599  events  329  net $ -289.52  markout -0.15c
+      minus quote-everything (pessimistic, event-paired): +0.04 pts CI [-2.35, +2.63]
+      random at the same share (5 seeds): mean -1.95%  range [-2.60, -1.09]
+  G   [opt   ] ret  -0.45% CI [ -3.10,  +2.18]  fills 12,476  events  353  net $ -103.37  markout +0.18c
+  G   [strict] ret  -2.77% CI [ -5.86,  +0.52]  fills  8,527  events  313  net $ -481.15  markout -1.22c
+ G2-W1 (scores 40% of candidates above 1c)
+  W1  [pess  ] ret  +1.25% CI [ -0.70,  +3.35]  fills  9,293  events  354  net $ +286.94  markout +0.24c
+      minus quote-everything (pessimistic, event-paired): +2.70 pts CI [+0.73, +4.51]
+      random at the same share (5 seeds): mean -1.92%  range [-2.48, -1.15]
+  W1  [opt   ] ret  +1.28% CI [ -0.88,  +3.37]  fills 11,979  events  405  net $ +375.72  markout +0.59c
+  W1  [strict] ret  +0.94% CI [ -1.42,  +3.27]  fills  7,300  events  330  net $ +179.58  markout -0.84c
+  W2: not trained
+  W3: not trained
+
+  A13/A14 SELECTION for G2: W1
+
+== G2P: 251,206 candidates
+ G2P-W1 (scores 45% of candidates above 1c)
+  W1  [pess  ] ret  +0.44% CI [ -1.60,  +2.34]  fills  9,533  events  328  net $ +100.85  markout +0.04c
+      minus quote-everything (pessimistic, event-paired): +1.89 pts CI [+0.08, +3.63]
+      random at the same share (5 seeds): mean -1.56%  range [-2.18, -1.02]
+  W1  [opt   ] ret  +0.93% CI [ -0.97,  +2.84]  fills 12,834  events  378  net $ +282.06  markout +0.72c
+  W1  [strict] ret  -0.41% CI [ -2.59,  +1.74]  fills  8,333  events  317  net $  -85.42  markout -0.54c
+  W2: not trained
+  W3: not trained
+
+  A13/A14 SELECTION for G2P: W1

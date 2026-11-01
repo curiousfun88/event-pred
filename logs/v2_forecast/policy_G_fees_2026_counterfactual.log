@@ -1,0 +1,7 @@
+G test fills re-priced under the CURRENT Kalshi fee schedule (fetched 2026-09-28); dollars
+fill model      gross  fees (as run, 2025)  net (as run)  fees (2026)  net (2026)  2026 fee-charged fills
+opt          +4021.64                32.64      +3989.00        36.91    +3984.73                    4.0%
+pess         +3769.70                21.26      +3748.44        22.77    +3746.93                    2.7%
+strict        +309.84                15.27       +294.57        16.83     +293.01                    3.0%
+
+series in G's fills: 25; charging makers TODAY: 8 -> [('KXLALIGAGAME', 200), ('KXEPLGAME', 171), ('KXF1RACE', 157), ('KXNASCARRACE', 122), ('KXLIGUE1GAME', 96), ('KXLLM1', 83), ('KXBUNDESLIGAGAME', 61), ('KXFEDDECISION', 35)]

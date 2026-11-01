@@ -1,0 +1,101 @@
+Running as unit: run-r55d8fe144ce34bebab6f7808d3575536.scope; invocation ID: d32589b8d87c442bbf41c66740571ee1
+23,356 leg-price rows across 4,891 basket-days
+scanning trades for 10 month(s): 2025-02..2025-11
+  2025-02: 229,722 candidate-leg trades
+  2025-03: 234,013 candidate-leg trades
+  2025-04: 244,212 candidate-leg trades
+  2025-05: 236,419 candidate-leg trades
+  2025-06: 305,232 candidate-leg trades
+  2025-07: 339,072 candidate-leg trades
+  2025-08: 389,198 candidate-leg trades
+  2025-09: 543,027 candidate-leg trades
+  2025-10: 577,130 candidate-leg trades
+  2025-11: 312,881 candidate-leg trades
+taker_side values seen: ['yes', 'no']
+saved per-basket detail to results/mece/mece_spread_artefact_check.parquet
+
+============================================================================================
+POPULATION
+============================================================================================
+  full-basket (event, day) snapshots      : 4,891
+  with BOTH taker sides on EVERY leg      : 662 (13.5%)
+  missing an ask print on some leg        : 656
+  missing a bid print on some leg         : 2,165
+  dropped: a leg's two prints too far apart: 1,736
+  median worst-leg ask/bid print gap      : 245 min  (within a leg)
+  median CROSS-LEG print span             : 406 min  (across the basket)
+  Requiring both sides selects toward two-sided, better-traded legs,
+  so the surviving population is MORE liquid than the full one. Read
+  every number below as conditional on that.
+
+============================================================================================
+TEST 1 -- SIGN ASYMMETRY (last-trade basis, all snapshots)
+============================================================================================
+  n=4,891   sum > $1: 92.5%   sum < $1: 7.5%
+  signed mean +5.25c   signed median +4.00c   median |dev| 4.00c
+
+  A genuine mispricing population is roughly BALANCED between
+  sum > $1 and sum < $1. A strong positive skew is the classic
+  betting-market OVERROUND: every leg printing at the ask.
+  -> 92.5% positive is a MARKED skew. Treat the
+     last-trade deviation as contaminated by the ask side.
+
+============================================================================================
+TEST 2 -- THE SAME BASKETS PRICED FOUR WAYS
+============================================================================================
+  basis                          n  signed mean  median |dev|  % sum>$1  % |dev|>5c
+  last trade (mixed)           662        +2.60          1.00      95.2        10.0
+  ask side  (taker=yes)        662       +13.34          4.00      93.2        45.9
+  bid side  (taker=no)         662        -0.07          1.00      83.7        11.3
+  MID (last-based)             662        +6.64          3.00      90.9        39.0
+  MID (mean-based, diag)       662       +11.31          9.66      93.5        69.3
+
+  median summed per-leg spread across the basket: 15.05c
+  The ask and bid rows should straddle $1 by about half this each.
+  If they do, and the MID row collapses toward zero, the deviation
+  measured from mixed last prints is mostly spread, not mispricing.
+
+  VERDICT: median |dev| 1.00c -> 3.00c at mid.
+  -> The mid estimate is LARGER than the last-trade one, which no
+     unbiased mid can be. The mid is contaminated, almost always by
+     cross-leg non-simultaneity: summing per-leg daily statistics
+     taken at different times of day does not produce a basket.
+     Re-run with --max-basket-span to force the legs to be
+     contemporaneous before reading anything into the mid rows.
+     Until then, read the ASK and BID rows, not the MID rows.
+
+  EXECUTABLE READING (no mid required):
+    buying every leg at the ask  costs  $1.1334 per basket
+    selling every leg at the bid yields $0.9993 per basket
+    a basket settles at exactly $1.00.
+    -> Selling at the bid nets -0.07c gross: ZERO edge before
+       fees. The apparent deviation in last prints is the spread,
+       and it is not capturable at executable prices.
+
+============================================================================================
+TEST 3 -- EXECUTABLE EDGE ON THE GATED TAIL (|dev_last| > 10c)
+============================================================================================
+  The cost gate does not trade the average basket, it trades the tail.
+  So ask the tail the executable question directly, with no mid and no
+  cross-leg averaging: a basket priced ABOVE $1 is SOLD, which means
+  hitting the bid on every leg; one priced BELOW $1 is BOUGHT at the ask.
+  Either way it settles at exactly $1.00.
+
+  baskets the gate would fire on : 37 (5.6% of two-sided baskets)
+    of which SOLD (sum > $1)     : 32
+    of which BOUGHT (sum < $1)   : 5
+
+  GROSS edge at executable prices, before any fee:
+    median  +1.00c per basket
+    mean    -4.08c
+    share positive  54.1%
+    share above 5c  24.3%
+
+  This is the whole PnL question in one number. A gross edge at or
+  below zero means the gate's deviations are not capturable at the
+  prices actually available, whatever the last-trade series shows,
+  and no fee model can rescue it. A clearly positive gross edge means
+  the tail is real and fees decide the rest.
+
+  For contrast, the SAME calculation on all 662 two-sided
+  baskets: median +1.00c, share positive 84.0%

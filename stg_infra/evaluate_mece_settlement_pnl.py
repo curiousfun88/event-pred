@@ -81,7 +81,7 @@ from model.forecast_head import ResidualForecastHead                 # noqa: E40
 from model.month_store import MonthlyBundleStore, build_month_paths  # noqa: E402
 from model.run_guards import format_verdict                          # noqa: E402
 from model.train import STGATBackbone, true_prices                   # noqa: E402
-from train_forecast import PILOT_MONTHS                              # noqa: E402
+from train_forecast import PILOT_MONTHS, WINDOW                      # noqa: E402
 
 # Reuse the round-trip script's primitives so the two cannot disagree about
 # what a fee, a spread or a bootstrap is.
@@ -110,6 +110,71 @@ TIME_TO_CLOSE_SLOT = 8
 # 1.6x the TAKER fee on a 20c leg and 5.3x on a 5c leg. Since this determines
 # whether maker execution helps or hurts, it should be checked against the
 # published schedule rather than inherited.
+
+
+def _ns(d) -> int:
+    """Naive-UTC datetime -> epoch ns (the quotes file's end_ts convention)."""
+    import numpy as np
+    return int(np.datetime64(d, "ns").astype(np.int64))
+
+
+def exec_at_quotes(bids_c, asks_c, side, C):
+    """Hold-to-settlement entry at QUOTED top of book, taker. A basket pays
+    exactly $1 per contract set at settlement, so:
+      sell (side -1): receive sum of bids now, pay $1 later -> gross (sum_bid - 1) * C
+      buy  (side +1): pay sum of asks now, receive $1 later -> gross (1 - sum_ask) * C
+    Gross can be NEGATIVE: the quote, not |dev|, sets what is captured. The
+    fee is Kalshi's taker fee on the executed price. There is no separate
+    spread charge, because the quote already is the far side of the spread."""
+    if side < 0:
+        return (sum(bids_c) / PRICE_SCALE - 1.0) * C, sum(taker_fee_dollars(b, C) for b in bids_c)
+    return (1.0 - sum(asks_c) / PRICE_SCALE) * C, sum(taker_fee_dollars(a, C) for a in asks_c)
+
+
+def attach_quotes(events, path):
+    """Attach quoted bid/ask (cents) at t and t+h to every event; drop any
+    event with a leg unquoted at either end (both strategies' candidate
+    entries must be priceable, or the paired comparison is not paired).
+    A bid of 0 / ask of 100 is a real one-sided book and is kept."""
+    import polars as pl
+    q = pl.read_parquet(path)
+    idx = {(t, int(e)): (b, a) for t, e, b, a in zip(
+        q["ticker"].to_list(), q["end_ts"].cast(pl.Datetime("ns")).cast(pl.Int64).to_list(),
+        q["bid_close"].to_list(), q["ask_close"].to_list())}
+    kept, dropped = [], 0
+    for e in events:
+        qt = [idx.get((tk, e["end_t_ns"])) for tk in e["tickers"]]
+        qh = [idx.get((tk, e["end_h_ns"])) for tk in e["tickers"]]
+        if any(x is None or x[0] is None or x[1] is None for x in qt + qh):
+            dropped += 1
+            continue
+        e["bid_t"] = [x[0] * PRICE_SCALE for x in qt]
+        e["ask_t"] = [x[1] * PRICE_SCALE for x in qt]
+        e["bid_h"] = [x[0] * PRICE_SCALE for x in qh]
+        e["ask_h"] = [x[1] * PRICE_SCALE for x in qh]
+        kept.append(e)
+    print(f"\nquoted execution: {len(kept):,} events fully quoted at t and t+h; "
+          f"{dropped:,} dropped ({dropped / max(len(events), 1):.1%}) for a missing quote")
+    return kept
+
+
+def self_test() -> int:
+    fails = 0
+
+    def check(name, ok):
+        nonlocal fails
+        print(f"  [{'PASS' if ok else 'FAIL'}] {name}")
+        fails += 0 if ok else 1
+
+    g, f = exec_at_quotes([52.0, 50.0], [55.0, 53.0], -1, 10)
+    check("sell at bids summing to $1.02: gross +$0.20 on 10 sets", abs(g - 0.20) < 1e-9)
+    check("sell fee charged on the bid prices", abs(f - (taker_fee_dollars(52, 10) + taker_fee_dollars(50, 10))) < 1e-12)
+    g, _ = exec_at_quotes([45.0, 50.0], [48.0, 53.0], 1, 10)
+    check("buy at asks summing to $1.01: gross -$0.10 (negative allowed)", abs(g + 0.10) < 1e-9)
+    g, _ = exec_at_quotes([0.0, 96.0], [3.0, 97.0], -1, 1)
+    check("one-sided book: bid 0 kept -> selling gets 96c for a $1 liability", abs(g + 0.04) < 1e-9)
+    print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
+    return 1 if fails else 0
 
 
 def collect_events(store, chunks, model, head, hi, h):
@@ -165,6 +230,8 @@ def collect_events(store, chunks, model, head, hi, h):
                     "vol_later": [float(features[t + h, l, VOLUME_SLOT]) for l in idx],
                     "flow_in": [float(features[t, l, NET_FLOW_SLOT]) for l in idx],
                     "ttc": float(features[t, L, TIME_TO_CLOSE_SLOT].max()),
+                    "end_t_ns": _ns(ct["timestamps"][t] + WINDOW),
+                    "end_h_ns": _ns(ct["timestamps"][t + h] + WINDOW),
                 })
         del ct
         print(f"  chunk {ci + 1}/{len(chunks)} scanned  ({len(events):,} events)",
@@ -272,6 +339,9 @@ def apply_filters(events, args):
         n = sum(1 for e in events if near_close(e))
         print(f"  --min-ttc {mt:g}             would drop {n:,} ({n / n0:.1%}) "
               f"-- near resolution, post-determination prints possible")
+        print(f"      NOTE: time_to_close comes from the ACTUAL close_time, recorded after "
+              f"the fact. For early-closing markets this filter uses information a trader "
+              f"would not have at entry: label any result run with it as ex-post cleaned.")
     if fams:
         n = sum(1 for e in events if excluded(e))
         by = {}
@@ -372,7 +442,10 @@ def main():
                          "snapshots, where a post-determination print can land in "
                          "the price series: KXHIGHCHI-25APR02 shows two ADJACENT "
                          "temperature brackets at $0.99 and $0.72 within 1.06h, "
-                         "which no partition can do. 0 = off.")
+                         "which no partition can do. 0 = off. EX-POST: time_to_close "
+                         "is computed from the actual (after-the-fact) close_time, so "
+                         "for early-closing markets this is a data-cleaning filter, not "
+                         "a rule a trader could apply at entry.")
     ap.add_argument("--exclude-families", nargs="*", default=[],
                     help="basket families to drop, matched on the segment before "
                          "the first hyphen of the basket ticker. Intended for "
@@ -386,7 +459,16 @@ def main():
                          "before excluding; regular-season MLS/EPL, where a draw "
                          "is a terminal outcome, is a genuine partition and must "
                          "NOT be excluded.")
+    ap.add_argument("--prices", choices=["last", "quotes"], default="last",
+                    help="last: last print, cost = fee + modelled half-spread (as before). "
+                         "quotes: fill at QUOTED top of book at the window end (taker only)")
+    ap.add_argument("--quotes", default="data/quotes/candles_1h_2025-07_09.parquet")
+    ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
+    if args.self_test:
+        sys.exit(self_test())
+    if args.prices == "quotes" and args.execution != "taker":
+        raise SystemExit("--prices quotes supports taker execution only")
 
     # ---- load -----------------------------------------------------------
     ck_path = None
@@ -398,6 +480,10 @@ def main():
     if ck_path is None:
         raise SystemExit(f"checkpoint not found: {args.checkpoint}")
     ck = torch.load(ck_path, weights_only=False, map_location="cpu")
+    if ck.get("split"):
+        # score on the split the checkpoint was trained under (older checkpoints: constants)
+        from data_windows import set_split
+        set_split(*ck["split"])
     cfg, horizons = ck["config"], list(ck["horizons"])
     if args.horizon not in horizons:
         raise SystemExit(f"--horizon {args.horizon} not among trained horizons {horizons}")
@@ -409,10 +495,14 @@ def main():
     store = MonthlyBundleStore(build_month_paths(args.months or PILOT_MONTHS, cache),
                                verbose=False)
     model = STGATBackbone(padded_feature_width=store.feature_width,
+                          zero_input_slots=getattr(cfg, "zero_input_slots", ()),
+                          zero_ladder_edge_features=getattr(cfg, "zero_ladder_edge_features", False),
                           embed_dim=cfg.embed_dim, n_heads=cfg.n_heads,
                           max_len=cfg.chunk_len)
     head = ResidualForecastHead(embed_dim=cfg.embed_dim, horizons=horizons)
     model.load_state_dict(ck["model"], strict=True)
+    model.drop_edges = tuple(ck.get("drop_edges") or ())
+    print(f"  backbone drops edge types: {list(model.drop_edges) or 'none'}")
     head.load_state_dict(ck["head"], strict=True)
     model.eval(); head.eval()
 
@@ -457,6 +547,9 @@ def main():
     if not events:
         raise SystemExit("every basket was removed by the robustness filters -- "
                          "loosen --min-leg-volume / --min-ttc")
+    if args.prices == "quotes":
+        qp = Path(args.quotes)
+        events = attach_quotes(events, qp if qp.is_absolute() else _REPO_ROOT / qp)
 
     # ---- strategies -----------------------------------------------------
     #
@@ -511,12 +604,17 @@ def main():
         side_now = -1 if e["dev_t"] > 0 else 1
         side_later = -1 if e["dev_h"] > 0 else 1
 
-        cost_now, filled_now = costs_at(e["entry_cents"], e["tickers"], C,
-                                        e["flow_in"], side_now)
-        cost_later, filled_later = costs_at(e["later_cents"], e["tickers"], C,
-                                            e["flow_in"], side_later)
-        gross_now = abs(e["dev_t"]) * C
-        gross_later = abs(e["dev_h"]) * C
+        if args.prices == "quotes":
+            gross_now, cost_now = exec_at_quotes(e["bid_t"], e["ask_t"], side_now, C)
+            gross_later, cost_later = exec_at_quotes(e["bid_h"], e["ask_h"], side_later, C)
+            filled_now = filled_later = True
+        else:
+            cost_now, filled_now = costs_at(e["entry_cents"], e["tickers"], C,
+                                            e["flow_in"], side_now)
+            cost_later, filled_later = costs_at(e["later_cents"], e["tickers"], C,
+                                                e["flow_in"], side_later)
+            gross_now = abs(e["dev_t"]) * C
+            gross_later = abs(e["dev_h"]) * C
 
         if not filled_now:
             n_unfilled += 1
@@ -570,7 +668,10 @@ def main():
     w = 92
     print("\n" + "=" * w)
     print(f"HOLD-TO-SETTLEMENT MECE ARBITRAGE -- {args.split.upper()} split, "
-          f"execution={args.execution}")
+          f"execution={args.execution}, prices={args.prices}")
+    if args.prices == "quotes":
+        print("  PRICES = QUOTED TOP OF BOOK at the window end. Spread-source lines below do not apply;")
+        print("  depth is unknown, so fills beyond the best price at size C are ASSUMED.")
     print("=" * w)
     print(f"  spread sources: " + ", ".join(f"{k}={v:,}" for k, v in
                                             sorted(legspread.sources.items()))
@@ -588,7 +689,7 @@ def main():
               f"p90 {float(s.quantile(0.9)):.1f}")
     if ttcs:
         tt = torch.tensor(ttcs) / 86400.0
-        print(f"  CAPITAL LOCKUP -- time_to_close at entry, days: "
+        print(f"  CAPITAL LOCKUP -- time_to_close at entry (ex post, from actual close_time), days: "
               f"median {float(tt.median()):.1f}  p90 {float(tt.quantile(0.9)):.1f}  "
               f"max {float(tt.max()):.1f}")
         print("    (a position held to settlement is committed for this long; the "
@@ -629,6 +730,8 @@ def main():
     pt, lo, hi_ = _gap_bootstrap(books["model_timed"], books["random_timed"],
                                  n_boot=args.n_boot, seed=args.seed)
     print("  " + format_verdict("model_timed - random_timed", lo, hi_, pt))
+    print(f"    clusters: k={len({*books['model_timed'].baskets, *books['random_timed'].baskets}):,} "
+          f"baskets (bootstrap resamples baskets, applied to both books)")
 
     for n in ("static_now", "cost_gated", "model_timed_gated"):
         if books[n].n and books["model_timed"].n:

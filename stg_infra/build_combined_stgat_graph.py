@@ -35,6 +35,8 @@ def build_combined_graph(
     markets_df: pl.DataFrame,
     mece_leg_prices_df: pl.DataFrame,
     ladder_pairs_df: pl.DataFrame,
+    node_markets_df: pl.DataFrame = None,
+    mece_mode: str = None,
 ):
     """
     Parameters
@@ -50,6 +52,19 @@ def build_combined_graph(
         (or equivalent) -- defines validated ladder pairs. leg_a/leg_b
         required; historical violation columns optional but recommended
         as edge features.
+    node_markets_df : per-ticker metadata (close_time above all) for
+        KalshiTickerNodes, covering EVERY ticker in trades_df. Defaults to
+        markets_df, which is only correct if markets_df holds a row for
+        every traded ticker. A per-month markets_df does not: a contract
+        created in an earlier month but still trading has no close_time,
+        so it is never evicted and is replayed frozen until the
+        max_staleness fallback (measured: 62-72% of scored ladder pairs,
+        17-33% of MECE leg observations, May-Aug 2025 -- see
+        diagnose_ladder_timing.py).
+    mece_mode : None for a static membership table (every listed leg always
+        belongs); "hindsight" or "causal" for build_mece_membership.py output
+        -- see stg.nodes.kalshi.MeceMembership. The caller picks the mode per
+        month: hindsight for training months, causal for val/test.
     """
     # Every ticker either mechanism actually cares about -- passed to
     # KalshiTickerNodes so ONLY these specific tickers carry forward across
@@ -66,9 +81,12 @@ def build_combined_graph(
     builder = (
         GraphBuilder()
         .with_temporal(FixedWindowTemporal(every="2h"))  # match whatever window size the rest of the pipeline uses
-        .with_nodes(KalshiTickerNodes(markets_df=markets_df, tracked_tickers=tracked_tickers))
-        .with_nodes(KalshiMeceBasketNodes(mece_leg_prices_df))
-        .with_edges(KalshiMeceHyperedges(mece_leg_prices_df))
+        .with_nodes(KalshiTickerNodes(
+            markets_df=node_markets_df if node_markets_df is not None else markets_df,
+            tracked_tickers=tracked_tickers,
+        ))
+        .with_nodes(KalshiMeceBasketNodes(mece_leg_prices_df, mode=mece_mode))
+        .with_edges(KalshiMeceHyperedges(mece_leg_prices_df, mode=mece_mode))
         .with_edges(KalshiLadderChainEdges(
             ladder_pairs_df,
             feature_cols=["same_side_yes_violation", "same_side_yes_gap"],

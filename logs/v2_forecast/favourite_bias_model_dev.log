@@ -1,0 +1,27 @@
+DEVELOPMENT MONTHS ONLY. A10 candidates, one row per leg-day: train 371 (134 events), validation 199 (86 events)
+favourite bias (win rate - mid): train -14.39c, validation -16.75c
+
+VALIDATION log-loss (lower is better):
+  price (mid)                     : 0.7478
+  isotonic calibration on price   : 0.8806
+  GBM on features                 : 0.8200
+  GBM - isotonic: -0.0606  CI95 [-0.1746, +0.0625]  (k=86 events; negative = features add information)
+
+VALIDATION value IF FILLED, cents/contract, by model edge decile (model_p - mid):
+  decile      n  mean edge  win rate - mid   buy@bid+1  sell@ask-1
+/home/fyp/event-pred/stg_infra/examples/favourite_bias_model.py:174: RuntimeWarning: Mean of empty slice
+  f" {np.nanmean(buy[s_]):>+11.2f} {np.nanmean(sell[s_]):>+11.2f}")
+       1     20     -38.05           -9.20        +nan      +48.45
+       2     20     -30.26          -17.12        +nan      +54.45
+       3     20     -23.67          -17.38        +nan      +53.95
+       4     20     -19.18          -24.60        +nan      +62.50
+       5     19     -10.83          -13.55      -85.00      +45.58
+       6     20      -4.36          -24.75        +nan      +53.55
+       7     20      +1.78          -17.08      -13.56      +29.00
+       8     20      +5.24          -23.05       -1.00      +31.70
+       9     20      +9.81           -7.67      +13.00      +14.35
+      10     20     +18.13          -12.95      +15.00      +35.70
+  buy, model top 30%      : +4.73c  CI95 [-40.50, +12.57]  (n=15, k=4)
+  buy, all                : -5.44c  CI95 [-65.12, +7.54]  (n=25, k=7)
+  sell, model bottom 30%  : +52.28c  CI95 [+41.60, +63.70]  (n=60, k=42)
+  sell, all               : +42.91c  CI95 [+31.33, +56.24]  (n=199, k=86)

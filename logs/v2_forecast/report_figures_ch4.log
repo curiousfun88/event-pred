@@ -1,0 +1,18 @@
+  gate ok  trade baskets: 4891.0000 (reported 4891)
+  gate ok  mean deviation (c): 5.2494 (reported 5.25)
+  gate ok  share above $1: 0.9250 (reported 0.925)
+  legs   3: n= 2047  measured  +2.54c [+2.22, +2.89]  predicted +3.14c  above $1 88.6%
+  legs   5: n=  235  measured  +0.97c [-0.59, +2.36]  predicted +5.24c  above $1 87.7%
+  legs   6: n= 2569  measured  +7.56c [+7.28, +7.85]  predicted +6.28c  above $1 96.0%
+  legs  7+: n=   40  measured +21.00c [+17.80, +24.43]  predicted +16.39c  above $1 100.0%
+wrote ../fyp-report/figures/fig_overround.pdf
+  gate ok  quote basket-snapshots: 7532.0000 (reported 7532)
+  gate ok  mean last-print sum: 1.0405 (reported 1.0405)
+  gate ok  mean mid sum: 1.0185 (reported 1.0185)
+  gate ok  two-sided share: 0.6872 (reported 0.69)
+  gate ok  two-sided mid gap (c): 0.3373 (reported 0.34)
+  gate ok  one-sided bid sum: 0.8930 (reported 0.893)
+  gate ok  one-sided ask sum: 1.2107 (reported 1.2107)
+  gate ok  two-sided bid sum: 0.9674 (reported 0.9674)
+  gate ok  two-sided ask sum: 1.0393 (reported 1.0393)
+wrote ../fyp-report/figures/fig_basket_sums.pdf

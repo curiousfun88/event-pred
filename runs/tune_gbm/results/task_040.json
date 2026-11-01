@@ -1,0 +1,15 @@
+{
+ "amendment": "A15",
+ "task": 40,
+ "setting": "features0.8",
+ "test_month": "2026-04",
+ "device": "cpu",
+ "n_train": 479338,
+ "n_test": 44862,
+ "fit_s": 6.2,
+ "kept": 9269,
+ "share": 0.20661138602826445,
+ "ret": 2.837875353513184,
+ "ret_all": -0.7299026110664525,
+ "net_c_per_contract": 1.8838977825481285
+}

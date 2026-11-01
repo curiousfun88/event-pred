@@ -1,0 +1,8 @@
+G test (Aug-Nov 2025): net = gross trading P&L at settlement - maker fees  (dollars)
+fill model     fills  contracts      gross     fees        net fees/gross  fee-charged fills    capital
+G opt         35,822    208,818   +4021.64    32.64   +3989.00       0.8%               3.4%  112067.36
+G pess        34,086    198,504   +3769.70    21.26   +3748.44       0.6%               2.4%  105691.30
+G strict      22,739    144,770    +309.84    15.27    +294.57       4.9%               2.6%   74997.16
+quote opt    128,310    782,808   +1069.27   354.04    +715.23      33.1%               9.3%  392445.73
+quote pess   110,867    666,232    -956.28   177.10   -1133.38       nan%               5.5%  332858.28
+quote strict  74,317    490,969   -7509.67   146.35   -7656.02       nan%               6.5%  249159.67

@@ -1,0 +1,13 @@
+Settled legs per series closing 2026-09-07 00:00 .. 2026-10-05 00:00 UTC (Kalshi public API GET /markets,
+status=settled, min_close_ts/max_close_ts, all pages). Run 2026-10-24 on the Lumid office sandbox (read-only).
+Used in the report (Ch7 universe paragraph, Appendix H) for the two crypto series excluded from the 23.
+
+KXETH legs 189860 events 657 legs/event 289.0
+KXDOGE legs 34983 events 657 legs/event 53.2
+
+The 23 kept series:
+KXHIGHLAX 168 | KXHIGHMIA 168 | KXHIGHNY 168 | KXHIGHCHI 168 | KXHIGHAUS 168 | KXHIGHPHIL 168 | KXHIGHDEN 168
+KXINX 570 | KXNASDAQ100 570 | KXNASCARRACE 335 | KXEURUSD 285 | KXMLSGAME 189 | KXLALIGAGAME 93 | KXF1RACE 66
+KXEPLGAME 60 | KXBUNDESLIGAGAME 54 | KXLIGUE1GAME 54 | KXLLM1 34 | KXAPRPOTUS 32 | KXFEAR 20 | KXHMONTHRANGE 6
+KXLAGODAYS 5 | KXFEDDECISION 5
+TOTAL 3554

@@ -1,0 +1,1458 @@
+{
+ "first_hour": "20261011T15",
+ "last_hour": "20261013T02",
+ "n_files": 72,
+ "series": [
+  {
+   "series": "KXACTBLUETOP",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXAFCCL1H",
+   "cat": "Sports",
+   "events": 16
+  },
+  {
+   "series": "KXAFCCLFTTS",
+   "cat": "Sports",
+   "events": 16
+  },
+  {
+   "series": "KXAFCCLGAME",
+   "cat": "Sports",
+   "events": 30
+  },
+  {
+   "series": "KXAFCCLSCORE",
+   "cat": "Sports",
+   "events": 16
+  },
+  {
+   "series": "KXALEAGUEGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXALLSVENSKANGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXAPFDDHGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXAPRPOTUS",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXARGNACBGAME",
+   "cat": "Sports",
+   "events": 27
+  },
+  {
+   "series": "KXARGPREMDIVGAME",
+   "cat": "Sports",
+   "events": 15
+  },
+  {
+   "series": "KXATP",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXATPEXACTMATCH",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXBELGIANPLGAME",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXBILLBOARDRUNNERUPSONG",
+   "cat": "Entertainment",
+   "events": 2
+  },
+  {
+   "series": "KXBNB",
+   "cat": "Crypto",
+   "events": 36
+  },
+  {
+   "series": "KXBOLPDIVGAME",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXBOXINGMOV",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXBRASILEIRO1H",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXBRASILEIROB1H",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXBRASILEIROBGAME",
+   "cat": "Sports",
+   "events": 19
+  },
+  {
+   "series": "KXBRASILEIROC1H",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXBRASILEIROCGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXBRASILEIROFTTS",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXBRASILEIROGAME",
+   "cat": "Sports",
+   "events": 24
+  },
+  {
+   "series": "KXBRASILEIROSCORE",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXBTC",
+   "cat": "Crypto",
+   "events": 4
+  },
+  {
+   "series": "KXBUNDESLIGA1HSCORE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXBUNDESLIGA2GAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXBUNDESLIGA2H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXBUNDESLIGAFTTS",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXBUNDESLIGAGAME",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXBUNDESLIGASCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXCABOUT",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXCANPLGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXCBDECISIONAUSTRALIA",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCBDECISIONBRAZIL",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCBDECISIONCANADA",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXCBDECISIONENGLAND",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXCBDECISIONEU",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXCBDECISIONINDIA",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCBDECISIONJAPAN",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXCBDECISIONKOREA",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCBDECISIONMEXICO",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXCBDECISIONRUSSIA",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCHAMPTOUR",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXCHINAAI",
+   "cat": "Science and Technology",
+   "events": 4
+  },
+  {
+   "series": "KXCHLLDPGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXCHNL1GAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXCHNSLGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXCODEAI",
+   "cat": "Science and Technology",
+   "events": 1
+  },
+  {
+   "series": "KXCONMEBOLLIBGAME",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXCONMEBOLSUD1H",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXCONMEBOLSUDGAME",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXCPICOMBO",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXCRYPTOLEAD15M",
+   "cat": "Crypto",
+   "events": 36
+  },
+  {
+   "series": "KXCZEFLGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXCZEFNLGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXDENSUPERLIGAGAME",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXDFBPOKALGAME",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXDIMAYORGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXDOGE",
+   "cat": "Crypto",
+   "events": 12
+  },
+  {
+   "series": "KXECONPATH",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXECONSTATCORECPIYOY",
+   "cat": "Economics",
+   "events": 3
+  },
+  {
+   "series": "KXECONSTATCPICORE",
+   "cat": "Economics",
+   "events": 4
+  },
+  {
+   "series": "KXECONSTATCPIYOY",
+   "cat": "Economics",
+   "events": 3
+  },
+  {
+   "series": "KXECONSTATU3",
+   "cat": "Economics",
+   "events": 2
+  },
+  {
+   "series": "KXECULPGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXEERSTEDIVGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXEFLCHAMPIONSHIP1H",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXEFLCHAMPIONSHIPGAME",
+   "cat": "Sports",
+   "events": 25
+  },
+  {
+   "series": "KXEFLL1GAME",
+   "cat": "Sports",
+   "events": 23
+  },
+  {
+   "series": "KXEGYPLGAME",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXEKSTRAKLASAGAME",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXELITESERIENGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXEPL1H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXEPL1HSCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXEPL2H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXEPLFTTS",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXEPLGAME",
+   "cat": "Sports",
+   "events": 21
+  },
+  {
+   "series": "KXEPLSCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXEREDIVISIE1H",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXEREDIVISIEGAME",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXESOCCERGAME",
+   "cat": "Sports",
+   "events": 706
+  },
+  {
+   "series": "KXETH",
+   "cat": "Crypto",
+   "events": 4
+  },
+  {
+   "series": "KXETTANGAME",
+   "cat": "Sports",
+   "events": 13
+  },
+  {
+   "series": "KXEURUSD",
+   "cat": "Financials",
+   "events": 1
+  },
+  {
+   "series": "KXEWSLGAME",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXF1TOPCONSTRUCTOR",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXFEAR",
+   "cat": "Financials",
+   "events": 4
+  },
+  {
+   "series": "KXFEDCOMBO",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXFEDDECISION",
+   "cat": "Economics",
+   "events": 10
+  },
+  {
+   "series": "KXFIFAWGAME",
+   "cat": "Sports",
+   "events": 16
+  },
+  {
+   "series": "KXFINYLGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXFOMCDISSENTCOUNT",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXFROPLGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXG7LEADEROUT",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXGER3LGAME",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXGRAMAOTY",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXGRAMBNA",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXHMONTHRANGE",
+   "cat": "Climate and Weather",
+   "events": 1
+  },
+  {
+   "series": "KXHNLGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXHORMUZMAX",
+   "cat": "Politics",
+   "events": 2
+  },
+  {
+   "series": "KXHOUSERACE",
+   "cat": "Elections",
+   "events": 5
+  },
+  {
+   "series": "KXHYPE",
+   "cat": "Crypto",
+   "events": 3
+  },
+  {
+   "series": "KXIDNSLGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXIMAGEAI",
+   "cat": "Science and Technology",
+   "events": 1
+  },
+  {
+   "series": "KXINX",
+   "cat": "Financials",
+   "events": 2
+  },
+  {
+   "series": "KXINXY",
+   "cat": "Financials",
+   "events": 2
+  },
+  {
+   "series": "KXISRNLGAME",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXISRPLGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXJ2LEAGUEGAME",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXJLEAGUEGAME",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXJOINCLUB",
+   "cat": "Sports",
+   "events": 8
+  },
+  {
+   "series": "KXK2LEAGUEGAME",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXKFTOUR",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXKLEAGUEGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXLAGODAYS",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXLALIGA1H",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLALIGA1HSCORE",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXLALIGA2GAME",
+   "cat": "Sports",
+   "events": 11
+  },
+  {
+   "series": "KXLALIGA2H",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXLALIGAFTTS",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXLALIGAGAME",
+   "cat": "Sports",
+   "events": 23
+  },
+  {
+   "series": "KXLALIGASCORE",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXLIGAEXP1H",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXLIGAEXPGAME",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXLIGAMX1H",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGAMX1HSCORE",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGAMX2H",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGAMXFTTS",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGAMXGAME",
+   "cat": "Sports",
+   "events": 29
+  },
+  {
+   "series": "KXLIGAMXSCORE",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGAPORTUGAL1H",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXLIGAPORTUGALGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXLIGUE11H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXLIGUE11HSCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXLIGUE12H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXLIGUE1FTTS",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXLIGUE1GAME",
+   "cat": "Sports",
+   "events": 20
+  },
+  {
+   "series": "KXLIGUE1SCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXLIGUE2GAME",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXLLM1",
+   "cat": "Science and Technology",
+   "events": 4
+  },
+  {
+   "series": "KXLVAVIRGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXMARATHON",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXMARMAD",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXMLBF3",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXMLBF5",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXMLBF7",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXMLBINNINGWIN",
+   "cat": "Sports",
+   "events": 36
+  },
+  {
+   "series": "KXMLBNEXTTEAM",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXMLBSERIESSCORE",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXMLS1H",
+   "cat": "Sports",
+   "events": 11
+  },
+  {
+   "series": "KXMLS1HSCORE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXMLS2H",
+   "cat": "Sports",
+   "events": 11
+  },
+  {
+   "series": "KXMLSFTTS",
+   "cat": "Sports",
+   "events": 13
+  },
+  {
+   "series": "KXMLSGAME",
+   "cat": "Sports",
+   "events": 43
+  },
+  {
+   "series": "KXMLSSCORE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXMYSLGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXNASCARPOLE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNASCARRACE",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXNASCARTOPTEAM",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXNASDAQ100",
+   "cat": "Financials",
+   "events": 2
+  },
+  {
+   "series": "KXNASDAQ100Y",
+   "cat": "Financials",
+   "events": 1
+  },
+  {
+   "series": "KXNBA1H",
+   "cat": "Sports",
+   "events": 21
+  },
+  {
+   "series": "KXNBADRAFTPICK",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNBANEXTTEAM",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXNCAAF1H",
+   "cat": "Sports",
+   "events": 224
+  },
+  {
+   "series": "KXNCAAF1HFT",
+   "cat": "Sports",
+   "events": 11
+  },
+  {
+   "series": "KXNCAAF1Q",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNCAAF2H",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNCAAF2Q",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNCAAF3Q",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNCAAF4Q",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNCAAFAPRANK",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXNCAAFFIRSTTDTEAM",
+   "cat": "Sports",
+   "events": 25
+  },
+  {
+   "series": "KXNCAAMBNEXTCOACH",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXNETFLIXRANKMOVIE",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXNETFLIXRANKSHOW",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXNETFLIXRANKSHOWRUNNERUP",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXNEXTTEAMMLB",
+   "cat": "Sports",
+   "events": 10
+  },
+  {
+   "series": "KXNEXTTEAMNBA",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXNEXTTEAMNFL",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXNFL1H",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFL1HFT",
+   "cat": "Sports",
+   "events": 15
+  },
+  {
+   "series": "KXNFL1Q",
+   "cat": "Sports",
+   "events": 12
+  },
+  {
+   "series": "KXNFL2H",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFL2Q",
+   "cat": "Sports",
+   "events": 13
+  },
+  {
+   "series": "KXNFL3Q",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFL4Q",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFLDRAFTPICK",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNFLFFWEEKLEAD",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXNFLFIRSTTDTEAM",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFLMOSTRECYDS",
+   "cat": "Sports",
+   "events": 15
+  },
+  {
+   "series": "KXNFLMOSTRSHYDS",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFLNEXTTEAM",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXNFLRACE",
+   "cat": "Sports",
+   "events": 73
+  },
+  {
+   "series": "KXNFLWEEKHIGHSCORE",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXNFLWEEKMOSTPASSYDS",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNFLWEEKMOSTRECYDS",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNFLWEEKMOSTRSHYDS",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXNFLWINMARGIN",
+   "cat": "Sports",
+   "events": 15
+  },
+  {
+   "series": "KXNHL1P",
+   "cat": "Sports",
+   "events": 24
+  },
+  {
+   "series": "KXNHL2P",
+   "cat": "Sports",
+   "events": 24
+  },
+  {
+   "series": "KXNHL3P",
+   "cat": "Sports",
+   "events": 24
+  },
+  {
+   "series": "KXNJGOLFVISITCOUNT",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXNWSLGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXOPENINTAI",
+   "cat": "Science and Technology",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARACTO",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARACTR",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARANIMATED",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARASPLAY",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARDIR",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARSPLAY",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARSUPACTO",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXOSCARSUPACTR",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXPARDONSTRUMP",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXPERLIGA1GAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXPGATOUR",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXRUGBYFRA14MATCH",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXSAILGPRACE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXSAUDIPL1H",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXSAUDIPLGAME",
+   "cat": "Sports",
+   "events": 20
+  },
+  {
+   "series": "KXSCOTTISHPREMGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXSERIEA1H",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXSERIEA1HSCORE",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXSERIEA2H",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXSERIEAFTTS",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXSERIEAGAME",
+   "cat": "Sports",
+   "events": 26
+  },
+  {
+   "series": "KXSERIEASCORE",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXSERIEAWGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXSERIEBGAME",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXSERIECGAME",
+   "cat": "Sports",
+   "events": 23
+  },
+  {
+   "series": "KXSGPPLGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXSHIBA",
+   "cat": "Crypto",
+   "events": 3
+  },
+  {
+   "series": "KXSLGREECEGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXSOFRD",
+   "cat": "Economics",
+   "events": 1
+  },
+  {
+   "series": "KXSOLE",
+   "cat": "Crypto",
+   "events": 4
+  },
+  {
+   "series": "KXSPEECHAI",
+   "cat": "Science and Technology",
+   "events": 1
+  },
+  {
+   "series": "KXSRBSLGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXSTEAMTOPSELLER",
+   "cat": "Entertainment",
+   "events": 1
+  },
+  {
+   "series": "KXSUPERLIGGAME",
+   "cat": "Sports",
+   "events": 6
+  },
+  {
+   "series": "KXSURFCOMPETITION",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXSVK2LGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXSVKCUPGAME",
+   "cat": "Sports",
+   "events": 12
+  },
+  {
+   "series": "KXSVNPLGAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXSWISSLEAGUEGAME",
+   "cat": "Sports",
+   "events": 2
+  },
+  {
+   "series": "KXTACAPORTGAME",
+   "cat": "Sports",
+   "events": 14
+  },
+  {
+   "series": "KXTECHRANKLISTAICODE",
+   "cat": "Science and Technology",
+   "events": 3
+  },
+  {
+   "series": "KXTESTMATCH",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXTFF1LIGGAME",
+   "cat": "Sports",
+   "events": 12
+  },
+  {
+   "series": "KXTHAIL1GAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXTITLEDTUESDAY",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXTOPSONG",
+   "cat": "Entertainment",
+   "events": 2
+  },
+  {
+   "series": "KXTRUMPAPPROVE",
+   "cat": "Elections",
+   "events": 3
+  },
+  {
+   "series": "KXTRUMPPHOTO",
+   "cat": "Politics",
+   "events": 2
+  },
+  {
+   "series": "KXTRUTHSOCIAL",
+   "cat": "Politics",
+   "events": 1
+  },
+  {
+   "series": "KXTRUTHSOCIALD",
+   "cat": "Politics",
+   "events": 2
+  },
+  {
+   "series": "KXTWEEDEDIVGAME",
+   "cat": "Sports",
+   "events": 9
+  },
+  {
+   "series": "KXUAEPLGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXUCL1H",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXUCL1HSCORE",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXUCL2H",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXUCLFTTS",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXUCLGAME",
+   "cat": "Sports",
+   "events": 32
+  },
+  {
+   "series": "KXUCLSCORE",
+   "cat": "Sports",
+   "events": 18
+  },
+  {
+   "series": "KXUECLGAME",
+   "cat": "Sports",
+   "events": 36
+  },
+  {
+   "series": "KXUELGAME",
+   "cat": "Sports",
+   "events": 36
+  },
+  {
+   "series": "KXUFCMOF",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXUFCMOV",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXURYPDGAME",
+   "cat": "Sports",
+   "events": 7
+  },
+  {
+   "series": "KXUSDJPY",
+   "cat": "Financials",
+   "events": 1
+  },
+  {
+   "series": "KXUSLGAME",
+   "cat": "Sports",
+   "events": 15
+  },
+  {
+   "series": "KXUSOPENCUPGAME",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXVENFUTVEGAME",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXVHGCB",
+   "cat": "Politics",
+   "events": 3
+  },
+  {
+   "series": "KXVIDEOAI",
+   "cat": "Science and Technology",
+   "events": 1
+  },
+  {
+   "series": "KXVLEAGUE1GAME",
+   "cat": "Sports",
+   "events": 3
+  },
+  {
+   "series": "KXWMARMAD",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWNBA1HWINNER",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXWNBA1QWINNER",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWNBA2HWINNER",
+   "cat": "Sports",
+   "events": 4
+  },
+  {
+   "series": "KXWNBA2QWINNER",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWNBA3QWINNER",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWNBA4QWINNER",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWNBASERIESSCORE",
+   "cat": "Sports",
+   "events": 1
+  },
+  {
+   "series": "KXWTA",
+   "cat": "Sports",
+   "events": 5
+  },
+  {
+   "series": "KXWTIW",
+   "cat": "Commodities",
+   "events": 1
+  },
+  {
+   "series": "KXXRP",
+   "cat": "Crypto",
+   "events": 38
+  },
+  {
+   "series": "KXYTTOPVIDEOG2D",
+   "cat": "Entertainment",
+   "events": 3
+  }
+ ],
+ "note": "Amendment L4 candidate pool: every non-weather (not KXHIGH*/KXLOW*) series in the live producer scores (one_/two_ files), hours 20261011T15..20261013T02 UTC; category = the category logged with the candidate; events = distinct events seen in those hours. Frozen before any validation data for these series is fetched."
+}

@@ -1,0 +1,50 @@
+{
+ "amendment": "A12",
+ "variant": "GS",
+ "train_months": [
+  "2024-11",
+  "2024-12",
+  "2025-01",
+  "2025-02",
+  "2025-03",
+  "2025-04",
+  "2025-05"
+ ],
+ "n_train": 163128,
+ "features": [
+  "side",
+  "price",
+  "rel_price",
+  "spread",
+  "mid",
+  "trades_24h",
+  "dmid_24h",
+  "n_legs",
+  "n_quoted",
+  "basket_sum",
+  "second_mid",
+  "hour_utc",
+  "charged",
+  "cat_i",
+  "st_mid",
+  "st_d1",
+  "st_d2",
+  "st_d3",
+  "st_d6",
+  "st_d12"
+ ],
+ "hp": {
+  "max_iter": 400,
+  "learning_rate": 0.03,
+  "max_leaf_nodes": 31,
+  "min_samples_leaf": 300,
+  "l2_regularization": 1.0,
+  "random_state": 0
+ },
+ "threshold_c": 1.0,
+ "source_fills": "b85bd3c8cb9be1ee",
+ "model_sha1": "356c4102f5aafe01",
+ "stgat_features": "stgat_features_13mo.parquet",
+ "stgat_sha1": "49e45d646c4d012b",
+ "stgat_coverage_train": 0.9087710264332304
+}

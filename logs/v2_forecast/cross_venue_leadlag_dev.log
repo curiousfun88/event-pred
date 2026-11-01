@@ -1,0 +1,37 @@
+development months only; 42 matched events, 394 legs
+
+ALL: n=10,898 leg-hours, 40 events; share of hours with Kalshi mid unchanged 67%
+  Kalshi next move ~ own last move (xk)    : 1.002x zero-move  CI95 [1.000, 1.004]  (k=40)
+  Kalshi next move ~ PM last move (xp)     : 1.001x zero-move  CI95 [0.999, 1.004]  (k=40)
+  Kalshi next move ~ level gap (gap)       : 0.997x zero-move  CI95 [0.985, 1.008]  (k=40)
+  Kalshi next move ~ combined (xk+xp+gap)  : 0.997x zero-move  CI95 [0.986, 1.006]  (k=40)
+  REVERSE: PM next move ~ -gap (Kalshi leads): 0.815x zero-move  CI95 [0.738, 0.904]  (k=40)
+  trades (|pred| > half-spread): 61 of 10,898 leg-hours; median spread 1.0c
+    exit at mid, gross          : +0.61c/contract  CI95 [-1.00, +2.32]  (k=25)
+    exit at mid, - entry fee    : -1.07c/contract  CI95 [-2.70, +0.65]  (k=25)
+    exit at touch, gross        : -0.15c/contract  CI95 [-1.75, +1.49]  (k=25)
+    exit at touch, - both fees  : -3.44c/contract  CI95 [-5.08, -1.71]  (k=25)
+
+KXCLUBWCGAME: n=3,090 leg-hours, 28 events; share of hours with Kalshi mid unchanged 60%
+  Kalshi next move ~ own last move (xk)    : 1.001x zero-move  CI95 [0.991, 1.011]  (k=28)
+  Kalshi next move ~ PM last move (xp)     : 1.002x zero-move  CI95 [0.988, 1.020]  (k=28)
+  Kalshi next move ~ level gap (gap)       : 0.999x zero-move  CI95 [0.973, 1.027]  (k=28)
+  Kalshi next move ~ combined (xk+xp+gap)  : 1.002x zero-move  CI95 [0.979, 1.027]  (k=28)
+  REVERSE: PM next move ~ -gap (Kalshi leads): 0.874x zero-move  CI95 [0.789, 0.991]  (k=28)
+  trades (|pred| > half-spread): 47 of 3,090 leg-hours; median spread 2.0c
+    exit at mid, gross          : +1.15c/contract  CI95 [-1.68, +4.41]  (k=19)
+    exit at mid, - entry fee    : -0.49c/contract  CI95 [-3.39, +2.63]  (k=19)
+    exit at touch, gross        : -0.26c/contract  CI95 [-2.99, +3.29]  (k=19)
+    exit at touch, - both fees  : -3.43c/contract  CI95 [-6.26, +0.09]  (k=19)
+
+KXF1RACE: n=4,015 leg-hours, 10 events; share of hours with Kalshi mid unchanged 68%
+  Kalshi next move ~ own last move (xk)    : 1.004x zero-move  CI95 [0.998, 1.011]  (k=10)
+  Kalshi next move ~ PM last move (xp)     : 1.000x zero-move  CI95 [0.999, 1.001]  (k=10)
+  Kalshi next move ~ level gap (gap)       : 1.001x zero-move  CI95 [0.989, 1.013]  (k=10)
+  Kalshi next move ~ combined (xk+xp+gap)  : 1.003x zero-move  CI95 [0.991, 1.016]  (k=10)
+  REVERSE: PM next move ~ -gap (Kalshi leads): 0.717x zero-move  CI95 [0.568, 0.875]  (k=10)
+  trades (|pred| > half-spread): 27 of 4,015 leg-hours; median spread 2.0c
+    exit at mid, gross          : -0.48c/contract  CI95 [-0.96, -0.07]  (k=9)
+    exit at mid, - entry fee    : -2.04c/contract  CI95 [-2.63, -1.59]  (k=9)
+    exit at touch, gross        : -1.11c/contract  CI95 [-1.58, -0.69]  (k=9)
+    exit at touch, - both fees  : -4.22c/contract  CI95 [-4.94, -3.68]  (k=9)

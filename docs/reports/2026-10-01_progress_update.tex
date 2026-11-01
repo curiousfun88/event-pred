@@ -1,0 +1,198 @@
+% ---------------------------------------------------------------------------
+% Progress update for supervisor: test results of the learned maker policy
+% and a proposed next step. Same content as the Claude Docs version of
+% 1 Oct 2026. Compiles with pdflatex (Overleaf: New Project -> Upload Project).
+% Style and LaTeX notes follow data_window_memo.tex (cent signs via \text{}).
+% ---------------------------------------------------------------------------
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\newcommand{\cent}{\text{\textcent}}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\emergencystretch}{3em}   % lets TeX rebalance lines with long unbreakable words
+
+\title{FYP Progress Update: Test Results and Proposed Next Steps}
+\date{1 October 2026}
+\author{}
+
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+\noindent A learned market-making policy (a gradient-boosted model) made \textbf{+3.55\% net of fees} on the
+held-out test months (Aug--Nov 2025), with a 95\% confidence interval of +2.51\% to +4.60\% over 34,086
+simulated fills. Adding the STGAT's forecasts to it did not improve it. I would like your view on the proposed
+next step before continuing.
+
+\section{Headline result}
+
+The learned policy passed its pre-registered verdict (pessimistic-fill return above 0, with the event-clustered
+95\% CI excluding 0). Every strategy below was run once on the test months with its settings frozen in advance.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{L r c r c r}
+\toprule
+Strategy (test, Aug--Nov 2025) & \shortstack[r]{Return,\\pessimistic} & 95\% CI & Net P\&L & \shortstack{Return,\\strict} & \shortstack[r]{Fills /\\events} \\
+\midrule
+\textbf{G: learned policy (GBM)} & \textbf{+3.55\%} & +2.51 to +4.60\% & \textbf{+\$3,748} & +0.39\% & 34,086 / 1,325 \\
+G+S: learned policy + STGAT features & +2.90\% & +1.88 to +3.85\% & +\$3,235 & +0.01\% & 35,759 / 1,313 \\
+Quote every eligible order (no model) & $-$0.34\% & $-$0.77 to +0.10\% & $-$\$1,133 & $-$3.07\% & 110,867 / 1,609 \\
+A10: hand-set maker rules & +1.80\% & $-$48 to +62\% & +\$1.87 & +28.5\% & 83 / 29 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{itemize}
+  \item \textbf{The model does the work.} The same set of quotes posted without the model loses money; the
+        model's selection of which quotes to post makes +\$3,748.
+  \item \textbf{It held up out of sample.} Validation (Jun--Jul 2025) gave +3.73\%; test gave +3.55\%. The earlier
+        rule-based maker (A10) fell from +21.7\% to +1.8\% over the same step.
+  \item \textbf{It trades at scale.} 34,086 fills, against 83 for the rule-based maker, so the result does not
+        hinge on a few events.
+\end{itemize}
+
+\section{How it was tested}
+
+The policy predicts, for each candidate maker quote, its net P\&L per contract at settlement after fees, and posts
+the quote only if the prediction exceeds $1\cent$.
+
+\begin{enumerate}
+  \item \textbf{Data and split:} Kalshi MECE markets, Nov 2024 -- Nov 2025, split 7 / 2 / 4 months (train Nov--May,
+        validation Jun--Jul, test Aug--Nov), as you approved.
+  \item \textbf{Model:} scikit-learn \texttt{HistGradient\allowbreak{}Boosting\allowbreak{}Regressor} (histogram gradient boosting,
+        LightGBM-style), trained on 163,128 simulated fills from the training months only. Inputs are 14 features
+        known at the quoting hour: order side and price, spread, mid, recent trades, 24-hour price change, basket
+        context (basket size, sum of mids, best other leg), hour, fee status and category.
+  \item \textbf{Simulator:} a tape-driven replay of real Kalshi trades and hourly quotes, with inventory limits and
+        Kalshi's fee schedule. Fills are bounded by three queue-position models: optimistic,
+        \textbf{pessimistic (the pre-registered verdict)} and strict (competing makers also improve their price).
+  \item \textbf{Pre-registration:} the model, features, threshold, validation gate and verdict were committed
+        before any test-month run; the frozen model is hash-checked before scoring.
+  \item \textbf{Leak checks:} with shuffled training labels the edge disappears ($+0.05\cent$ per contract); it
+        survives removing time-to-close, fee status and category, and excluding sports markets (whose recorded
+        close time is the actual match end).
+  \item \textbf{Validation gate inside the simulator:} +3.73\% (CI +2.43\% to +5.03\%) on Jun--Jul 2025, before the
+        single test run.
+\end{enumerate}
+
+\noindent The test months were used earlier for the rule-based maker; this is disclosed, and no design choice for
+the learned policy used them.
+
+\section{Where the STGAT adds value}
+
+The STGAT forecasts basket prices well, but its forecasts carry almost no information for trading beyond simple
+market features.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.6cm} L L}
+\toprule
+Use of the STGAT & Result (pre-registered test unless noted) & Why \\
+\midrule
+Forecasting basket prices & \textbf{\boldmath Beats persistence ($0.635\times$ MSE) and the shrinkage oracle ($0.922\times$)}
+  & Anticipates convergence to \$1 as baskets settle \\
+Next-hour signal for the rule-based maker (S4/S5) & No improvement; the filter never fired
+  & The maker's P\&L is decided at settlement; even perfect next-hour foresight adds about \$1 \\
+Extra inputs to the learned policy (G+S) & \textbf{\boldmath $-0.65$ pp vs G} (CI $-1.40$ to $+0.09$)
+  & Signal inflated in-sample: correlation with later price moves 0.062 on training months, 0.016--0.025 out of sample \\
+Forecasting settlement outcomes (exploratory, development data) & No model beats the market price (log-loss 0.4589 vs 0.4577)
+  & Kalshi prices are already well calibrated to outcomes \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent This answers the thesis question directly: the learned model adds value in forecasting basket prices,
+but the trading profit comes from execution (which quotes to post given spread, favourite bias and informed flow),
+which a model on simple market features captures.
+
+\section{Other routes tested}
+
+Every route that relied on knowing more than the market failed; the only lasting edges were in execution.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{5.4cm} L}
+\toprule
+Route & Outcome \\
+\midrule
+Kalshi $\rightarrow$ Polymarket lead (pre-registered, fresh 2026 data, 768 matched soccer events)
+  & Kalshi leads Polymarket: \textbf{\boldmath $+0.70\cent$ per contract, CI $+0.47$ to $+0.97$}, but Polymarket's sports taker
+    fees turn it into $-0.53\cent$ to $-1.35\cent$ \\
+Weather brackets vs live station observations
+  & Kalshi reprices impossible brackets within the hour (99.2\% bid below $2\cent$ at the first quote) \\
+Predicting which basket quotes fill completely
+  & Fills are predictable (AUC 0.91), but the predictable fills lose money (adverse selection) \\
+Spotify \#1-song markets vs streaming data
+  & Not testable: no free daily streaming history for 2024--25 \\
+Rule-based maker A10 on the test months
+  & +1.8\%, not significant; its opportunities collapsed from about 63 to 5--7 eligible leg-days per month by
+    Oct--Nov 2025 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent The literature agrees: frontier AI models lost money trading Kalshi in 2026 (Prediction Arena), and
+Kalshi's weather prices beat public forecasts (Crosier, 2026).
+
+\section{Limitations}
+
+The main caveat is competition: under the strict fill model the edge is not significant.
+
+\begin{itemize}
+  \item \textbf{Strict fills:} if competing makers also improve their price, the learned policy's return falls to
+        +0.39\% (CI $-0.96\%$ to $+1.78\%$). The claim is ``profitable under pessimistic fills'', with strict reported
+        as the bound.
+  \item \textbf{Backtest, not live trading:} orders were never placed. Fills are inferred from historical trades;
+        market impact, faster competitors and larger order sizes are not modelled.
+  \item \textbf{Hourly resolution:} the simulator re-quotes once an hour; a live maker reacting in seconds could be
+        picked off more often.
+  \item \textbf{Reused test months:} Aug--Nov 2025 had already been used for the rule-based maker. Disclosed; no
+        learned-policy choice used them.
+  \item \textbf{Short window:} 13 months in total, two of them validation; one regime of a fast-growing market.
+\end{itemize}
+
+\section{Proposed next step: a model benchmark}
+
+I propose a small, pre-registered benchmark: do state-of-the-art models beat the gradient-boosted policy on the
+same task? Estimated 2--4 days, leaving about two and a half weeks for writing.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{4.4cm} L L}
+\toprule
+Challenger & Why include it & Expectation \\
+\midrule
+CatBoost & Strong gradient boosting with native categorical handling & Close to the current model \\
+A modern deep tabular model (TabM or FT-Transformer) & The strongest neural challengers to boosting on tabular data
+  & Likely below boosting (Grinsztajn et al., NeurIPS 2022) \\
+STGAT with a policy head & Tests whether the graph model itself can be the trading policy
+  & Likely below boosting, given the results above \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent Each model is tuned on validation only, then all are run once on the test months and reported, whatever
+they show. Deep reinforcement-learning market makers are left out: too data-hungry and unstable for the time left.
+
+\section{Questions for you}
+
+\begin{enumerate}
+  \item Does a learned (gradient-boosted) policy that is profitable out of sample meet the ``positive P\&L with a
+        model'' requirement, or must the STGAT itself be the trading model?
+  \item Is it acceptable to report profitability under the pessimistic fill model, with the strict-\allowbreak{}competition
+        result (not significant) stated as a limitation?
+  \item Should I run the model benchmark above, or go straight to writing up with the current results?
+\end{enumerate}
+
+\end{document}

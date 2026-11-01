@@ -1,0 +1,106 @@
+================================================================================================
+BID-SIDE RE-SCORE: v2_mece_causal_s0/best.pt ON TEST
+================================================================================================
+  checkpoint epoch 14, horizons [1, 2, 3, 6, 12], supervise active, rule whole_settle
+  Held-out split, scored once under the pre-registered protocol. No retry.
+  split months ['2025-09']; bid prints loaded from ['2025-08', '2025-09']
+  25,743 tickers with bid prints
+
+    [backbone] projection done  T=168 N=9346  0.33s  rss=2585MB
+      [spatial] t=   0/168  active=  407  mece_edges=  126  ladder_edges=   15  elapsed=   0.0s
+      [spatial] t=  20/168  active=  768  mece_edges=  262  ladder_edges=  125  elapsed=   0.0s
+      [spatial] t=  40/168  active=  382  mece_edges=  146  ladder_edges=   61  elapsed=   0.0s
+      [spatial] t=  60/168  active=  828  mece_edges=  294  ladder_edges=   79  elapsed=   0.1s
+      [spatial] t=  80/168  active=  740  mece_edges=  248  ladder_edges=   72  elapsed=   0.1s
+      [spatial] t= 100/168  active=  371  mece_edges=  116  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t= 120/168  active=  753  mece_edges=  290  ladder_edges=   77  elapsed=   0.1s
+      [spatial] t= 140/168  active=  924  mece_edges=  354  ladder_edges=  103  elapsed=   0.1s
+      [spatial] t= 160/168  active=  344  mece_edges=  208  ladder_edges=   65  elapsed=   0.2s
+      [spatial] t= 167/168  active=  817  mece_edges=  264  ladder_edges=   72  elapsed=   0.2s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=944 (at t=116)  total_elapsed=0.2s
+    [backbone] spatial done     0.21s  rss=2585MB
+      [temporal] n_active=9346  node_batch_size=512  -> 19 batch(es)  T=168
+      [temporal] batch   1/19  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/19  b= 512  ckpt=False  elapsed=   1.9s
+      [temporal] batch  11/19  b= 512  ckpt=False  elapsed=   3.2s
+      [temporal] batch  16/19  b= 512  ckpt=False  elapsed=   4.6s
+      [temporal] batch  19/19  b= 130  ckpt=False  elapsed=   5.2s
+    [backbone] temporal done    5.19s  rss=3234MB
+  chunk 1/3 done, 14,616 basket-positions so far
+    [backbone] projection done  T=168 N=10597  0.19s  rss=3234MB
+      [spatial] t=   0/168  active=  882  mece_edges=  250  ladder_edges=   75  elapsed=   0.0s
+      [spatial] t=  20/168  active=  886  mece_edges=  338  ladder_edges=  110  elapsed=   0.0s
+      [spatial] t=  40/168  active=  484  mece_edges=  152  ladder_edges=  101  elapsed=   0.1s
+      [spatial] t=  60/168  active=  870  mece_edges=  440  ladder_edges=   61  elapsed=   0.1s
+      [spatial] t=  80/168  active=  679  mece_edges=  328  ladder_edges=   66  elapsed=   0.1s
+      [spatial] t= 100/168  active=  395  mece_edges=  150  ladder_edges=   65  elapsed=   0.1s
+      [spatial] t= 120/168  active=  875  mece_edges=  420  ladder_edges=   83  elapsed=   0.2s
+      [spatial] t= 140/168  active=  976  mece_edges=  424  ladder_edges=  139  elapsed=   0.2s
+      [spatial] t= 160/168  active=  436  mece_edges=  218  ladder_edges=   64  elapsed=   0.2s
+      [spatial] t= 167/168  active=  821  mece_edges=  300  ladder_edges=   75  elapsed=   0.3s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1078 (at t=128)  total_elapsed=0.3s
+    [backbone] spatial done     0.28s  rss=3234MB
+      [temporal] n_active=10597  node_batch_size=512  -> 21 batch(es)  T=168
+      [temporal] batch   1/21  b= 512  ckpt=False  elapsed=   0.3s
+      [temporal] batch   6/21  b= 512  ckpt=False  elapsed=   1.6s
+      [temporal] batch  11/21  b= 512  ckpt=False  elapsed=   3.1s
+      [temporal] batch  16/21  b= 512  ckpt=False  elapsed=   4.5s
+      [temporal] batch  21/21  b= 357  ckpt=False  elapsed=   5.8s
+    [backbone] temporal done    5.83s  rss=3440MB
+  chunk 2/3 done, 36,148 basket-positions so far
+    [backbone] projection done  T=24 N=3504  0.00s  rss=3440MB
+      [spatial] t=   0/24  active=  842  mece_edges=  308  ladder_edges=   78  elapsed=   0.0s
+      [spatial] t=  20/24  active=  957  mece_edges=  320  ladder_edges=  130  elapsed=   0.0s
+      [spatial] t=  23/24  active= 1004  mece_edges=  398  ladder_edges=   83  elapsed=   0.0s
+      [spatial] snapshot loop done: max_active_in_one_snapshot=1240 (at t=11)  total_elapsed=0.0s
+    [backbone] spatial done     0.04s  rss=3440MB
+      [temporal] n_active=3504  node_batch_size=512  -> 7 batch(es)  T=24
+      [temporal] batch   1/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   6/7  b= 512  ckpt=False  elapsed=   0.0s
+      [temporal] batch   7/7  b= 432  ckpt=False  elapsed=   0.0s
+    [backbone] temporal done    0.03s  rss=3440MB
+  chunk 3/3 done, 37,392 basket-positions so far
+
+------------------------------------------------------------------------------------------------
+  REPRODUCTION GUARD PASSED on every chunk and horizon: last-print MECE 0.00242 vs persist 0.00390 (n=37,392)
+  score_forecast.py logged: 0.00242 vs 0.00390 (n=37,392) -> MATCH
+
+================================================================================================
+LAST-PRINT HEADLINE BY STRATUM, all whole_settle positions, no bid filter
+[ADDED AFTER VAL s0 WAS SEEN -- not pre-registered; a decomposition of the
+ already-reported figure, used for no choice. See runs/README.md.]
+================================================================================================
+  all         : model/oracle 0.921x  CI95 [0.786, 1.169]  k=348 | model/persist 0.621x | alpha 0.552 | n=37,392 (100.0%)
+  no_settled  : model/oracle 1.057x  CI95 [0.846, 1.447]  k=344 | model/persist 0.869x | alpha 0.697 | n=30,429 (81.4%)
+  some_settled: model/oracle undefined (target constant $1)  k=321 | model/persist 0.137x | alpha 0.000 | n=6,963 (18.6%)
+
+================================================================================================
+R = 1h  [PRIMARY]
+================================================================================================
+  all          : BID model/oracle 19.569x  CI95 [11.526, 49.660]  k=205 baskets | model/persist 2.186x | alpha 0.002 | n=1,754 (4.7% of whole_settle)
+                 last-print on same subset: model/oracle 2.163x, model/persist 0.396x, alpha 0.052
+  no_settled   : BID model/oracle 1.450x  CI95 [1.078, 2.216]  k=56 baskets | model/persist 1.063x | alpha 0.037 | n=117 (0.3% of whole_settle)
+                 last-print on same subset: model/oracle 0.904x, model/persist 0.900x, alpha 0.896
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.387x | k=204 | n=1,637 (4.4% of whole_settle)
+  per-horizon (all): h1: 6.623x (n=366)  h2: 14.457x (n=362)  h3: 91.370x (n=357)  h6: 15.275x (n=337)  h12: 47245.421x (n=332)
+  mean bid-side basket sum at t: 0.9842  (last-print: 1.0308)
+
+================================================================================================
+R = 0.5h  [sensitivity (not used for any choice)]
+================================================================================================
+  all          : BID model/oracle 108.724x  CI95 [40.552, 1045.471]  k=186 baskets | model/persist 2.147x | alpha 0.001 | n=1,407 (3.8% of whole_settle)
+                 last-print on same subset: model/oracle 40.290x, model/persist 0.401x, alpha 0.006
+  no_settled   : BID model/oracle 1.614x  CI95 [1.211, 2.416]  k=22 baskets | model/persist 1.037x | alpha 0.054 | n=45 (0.1% of whole_settle)
+                 last-print on same subset: model/oracle 1.750x, model/persist 1.024x, alpha 0.391
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.182x | k=186 | n=1,362 (3.6% of whole_settle)
+
+================================================================================================
+R = 2h  [sensitivity (not used for any choice)]
+================================================================================================
+  all          : BID model/oracle 12.391x  CI95 [8.235, 22.686]  k=230 baskets | model/persist 2.195x | alpha 0.018 | n=2,228 (6.0% of whole_settle)
+                 last-print on same subset: model/oracle 1.432x, model/persist 0.372x, alpha 0.098
+  no_settled   : BID model/oracle 1.604x  CI95 [1.229, 2.180]  k=88 baskets | model/persist 1.211x | alpha 0.184 | n=354 (0.9% of whole_settle)
+                 last-print on same subset: model/oracle 0.812x, model/persist 0.733x, alpha 0.605
+  some_settled : target constant at $1 (all legs settled) -> oracle (alpha 0.000) is exact, model/oracle undefined | model/persist 2.491x | k=227 | n=1,874 (5.0% of whole_settle)
+
+exit: 0

@@ -1,0 +1,23 @@
+# Two-level maker arm "ARM" for the Lumid forward test (amendment A14: G2+ and its random twin).
+# ARM_bid / ARM_ask: score of the better level per side (cents per contract; post where > 1c).
+# ARM_bid_lvl / ARM_ask_lvl: 1.0 = post 1c inside the touch, 0 = post at the touch.
+# Otherwise as maker_template.lqts: 10 lots per order, |net position| <= 50 per leg.
+strategy ARM_maker_v1 {
+  params { threshold: 0.01, min_spread: 0.02, improve_spread: 0.03, tick: 0.01, size_lots: 10, pos_cap: 50, lvl_cut: 0.5 }
+
+  when signal("ARM_bid") > params.threshold && signal("ARM_bid_lvl") > params.lvl_cut && market.bid > 0
+       && market.spread >= params.improve_spread && position.net_lots < params.pos_cap && ctx("instrument_tradable") > 0 {
+    buy min(params.size_lots, params.pos_cap - position.net_lots) lots @ market.bid + params.tick
+  } else if signal("ARM_bid") > params.threshold && signal("ARM_bid_lvl") < params.lvl_cut && market.bid > 0
+       && market.spread >= params.min_spread && position.net_lots < params.pos_cap && ctx("instrument_tradable") > 0 {
+    buy min(params.size_lots, params.pos_cap - position.net_lots) lots @ market.bid
+  }
+
+  when signal("ARM_ask") > params.threshold && signal("ARM_ask_lvl") > params.lvl_cut && market.ask < 1.0
+       && market.spread >= params.improve_spread && position.net_lots > 0 - params.pos_cap && ctx("instrument_tradable") > 0 {
+    sell min(params.size_lots, params.pos_cap + position.net_lots) lots @ market.ask - params.tick
+  } else if signal("ARM_ask") > params.threshold && signal("ARM_ask_lvl") < params.lvl_cut && market.ask < 1.0
+       && market.spread >= params.min_spread && position.net_lots > 0 - params.pos_cap && ctx("instrument_tradable") > 0 {
+    sell min(params.size_lots, params.pos_cap + position.net_lots) lots @ market.ask
+  }
+}

@@ -1,0 +1,15 @@
+{
+ "amendment": "A15",
+ "task": 4,
+ "setting": "hgb_a12",
+ "test_month": "2026-08",
+ "device": "cpu",
+ "n_train": 647015,
+ "n_test": 32385,
+ "fit_s": 7.1,
+ "kept": 5337,
+ "share": 0.1647985178323298,
+ "ret": 2.5887341428613655,
+ "ret_all": -1.666181061822914,
+ "net_c_per_contract": 1.6849285120895456
+}

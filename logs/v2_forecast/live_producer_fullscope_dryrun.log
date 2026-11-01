@@ -1,0 +1,1 @@
+{"H": "20261005T15", "events": 1320, "legs": 9415, "candidates": 6924, "scored": 6924, "gbt_selected": 2798, "share": 0.4041, "signal_rows": 20772, "q24h_known": 1010, "trade_legs": 861, "api_calls": 6891, "secs": 1960.9, "model_sha1": "e39cc4ca97bbebd4", "published": "dry-run"}

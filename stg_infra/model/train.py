@@ -68,6 +68,16 @@ def true_prices(features: torch.Tensor) -> torch.Tensor:
     return features[..., 0] / 100.0
 
 
+def _without_edge_features(e):
+    """A shallow copy of one snapshot's sparse edges with features zeroed."""
+    import copy
+    if e is None or getattr(e, "features", None) is None:
+        return e
+    z = copy.copy(e)
+    z.features = torch.zeros_like(e.features)
+    return z
+
+
 class STGATBackbone(nn.Module):
     """projection -> two-channel spatial attention -> temporal attention.
     Both output heads sit on top of this shared backbone, not inside it,
@@ -77,7 +87,8 @@ class STGATBackbone(nn.Module):
     this project's architecture discussion settled on."""
 
     def __init__(self, padded_feature_width: int, embed_dim: int = 32, n_heads: int = 4,
-                 ladder_edge_feature_dim: int = 2, max_len: int = 512):
+                 ladder_edge_feature_dim: int = 2, max_len: int = 512,
+                 zero_input_slots: tuple = (), zero_ladder_edge_features: bool = False):
         """``padded_feature_width`` is the FULL per-node feature width
         including the type-indicator slot (COMBINED_N_FEATURES = 10 in
         stg/nodes/kalshi.py) -- NOT the same thing as
@@ -87,6 +98,24 @@ class STGATBackbone(nn.Module):
         widths, two different names, deliberately not reused for each
         other."""
         super().__init__()
+        # Feature slots the model must never see, zeroed after
+        # standardization so they carry no information in ANY split. Not a
+        # buffer: checkpoints written before this existed must still load
+        # strictly, and they correctly default to () -- see
+        # TrainingConfig.zero_input_slots for why slot 8 is zeroed.
+        slots = tuple(int(i) % padded_feature_width for i in zero_input_slots)
+        if padded_feature_width - 1 in slots:
+            raise ValueError("zero_input_slots may not include the node-type indicator "
+                             "(last slot): TypeSpecificProjection routes on it")
+        self.zero_input_slots = slots
+        # Ladder edges carry each pair's WHOLE-LIFE mean gap and violation flag
+        # (pairwise_monotonicity_taker_side_check_v2.py), i.e. the pair's own
+        # future. Zeroed here, in every split, when set.
+        self.zero_ladder_edge_features = bool(zero_ladder_edge_features)
+        # ABLATION: edge types the backbone never reads (loss terms still use
+        # them). Set from the checkpoint's "drop_edges" by every scoring script,
+        # so a no-graph model is scored without the graph it was trained without.
+        self.drop_edges: tuple = ()
         # FEATURE STANDARDIZATION BUFFERS. Registered (not plain
         # attributes) so they travel with state_dict into the checkpoint
         # -- a model reloaded for inference MUST standardize its inputs
@@ -101,7 +130,12 @@ class STGATBackbone(nn.Module):
         self.projection = TypeSpecificProjection(padded_feature_width, embed_dim)
         self.spatial = TwoChannelSpatialAttention(embed_dim, n_heads=n_heads,
                                                    ladder_edge_feature_dim=ladder_edge_feature_dim)
-        self.temporal = TemporalAttention(embed_dim, n_heads=n_heads, max_len=max_len)
+        # Node batch sized so batch * heads stays at the 512 * 4 the default was
+        # measured for: an 8-head model at 512 doubled the attention transient
+        # and OOM-killed a 7.8GB machine. Attention is per node, so the batch
+        # size changes memory, not the result; h <= 4 keeps 512 exactly.
+        self.temporal = TemporalAttention(embed_dim, n_heads=n_heads, max_len=max_len,
+                                          node_batch_size=min(512, 2048 // n_heads))
         self.mece_head = MeceOutputHead(embed_dim)
         self.ladder_head = LadderOutputHead(embed_dim)
 
@@ -133,7 +167,11 @@ class STGATBackbone(nn.Module):
         """
         mean, std = self.feat_mean.clone(), self.feat_std.clone()
         mean[-1], std[-1] = 0.0, 1.0        # leave the type indicator alone
-        return (features - mean) / std
+        out = (features - mean) / std
+        if self.zero_input_slots:
+            out = out.clone()
+            out[..., list(self.zero_input_slots)] = 0.0
+        return out
 
     def fit_standardization(self, mean: torch.Tensor, std: torch.Tensor):
         """Installs per-slot statistics. ``std`` is floored away from zero
@@ -155,6 +193,12 @@ class STGATBackbone(nn.Module):
         snapshot entry. Returns h_final, (T, N, D)."""
         T, N, _ = features.shape
         t0 = time.time()
+        if self.drop_edges:
+            adjacency_by_type = {k: v for k, v in adjacency_by_type.items() if k not in self.drop_edges}
+        if self.zero_ladder_edge_features and "ladder_monotonic" in adjacency_by_type:
+            adjacency_by_type = dict(adjacency_by_type)
+            adjacency_by_type["ladder_monotonic"] = [_without_edge_features(e)
+                                                     for e in adjacency_by_type["ladder_monotonic"]]
         features = self.standardize(features)
         h0 = self.projection(features)
         t1 = time.time()
@@ -181,6 +225,21 @@ class TrainingConfig:
     checkpoint_dir: str = "runs/v1_reconstruction"
     raw_feature_width: int = 9    # _TICKER_RAW_FEATURES in stg/nodes/kalshi.py -- what select_and_mask replaces
     patience: int = 5             # stop after this many epochs with no val improvement; 0 disables
+    # Input slots zeroed before the model sees them, in every split alike.
+    # Slot 8 (time_to_close) is computed from close_time, which the markets
+    # data records AFTER the fact: for a market that closed early (an
+    # earnings mention, a hurricane landfall) it reveals when the outcome
+    # was decided. Measured: 43% of MECE leg observations on the fixed
+    # cache. Default () so checkpoints saved before this field existed
+    # reload exactly as they were trained; train_forecast.py sets (8,).
+    zero_input_slots: tuple = ()
+    # Ladder edge features are whole-life pair statistics (future information);
+    # zeroed when True. Default False keeps older checkpoints reproducible;
+    # train_forecast.py sets True.
+    zero_ladder_edge_features: bool = False
+    # MECE scoring rule (see MechanismForecastObjective). "legacy" for runs
+    # before 2026-09-27; train_forecast.py sets "whole_settle".
+    mece_rule: str = "legacy"
 
 
 @dataclass

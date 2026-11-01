@@ -1,0 +1,15 @@
+{
+ "amendment": "A15",
+ "task": 7,
+ "setting": "leaf100",
+ "test_month": "2026-06",
+ "device": "cpu",
+ "n_train": 568401,
+ "n_test": 39148,
+ "fit_s": 6.5,
+ "kept": 7620,
+ "share": 0.19464595892510472,
+ "ret": 1.8494366985731503,
+ "ret_all": -0.2573445805846584,
+ "net_c_per_contract": 1.227743335399876
+}

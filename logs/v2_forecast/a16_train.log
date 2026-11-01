@@ -1,0 +1,19 @@
+  2024-11: 18,790 training rows
+  2024-12: 44,219 training rows
+  2025-01: 69,510 training rows
+  2025-02: 91,788 training rows
+  2025-03: 115,854 training rows
+  2025-04: 139,731 training rows
+  2025-05: 163,128 training rows
+{"lin2": "fa45b1b80bdd3d0c"}
+{"mlp2": "676be7ad1458479e"}
+{
+ "amendment": "A16",
+ "n_train": 163128,
+ "train_months": "2024-11..2025-05 (G's rows)",
+ "lin2_2025_sha1": "fa45b1b80bdd3d0c",
+ "lin2_2025_train_share_posted": 0.1516,
+ "mlp2_2025_sha1": "676be7ad1458479e",
+ "mlp2_2025_train_share_posted": 0.3638,
+ "mlp2_2025_best_epoch": 3
+}

@@ -1,0 +1,24 @@
+Wed Sep 30 23:20:52 +08 2026 frozen model verified (e39cc4ca97bbebd4). 1. score candidates 2025-08..11
+  2025-08: 148,744 candidate orders scored; 20.6% above t=1c
+  2025-09: 176,408 candidate orders scored; 16.9% above t=1c
+  2025-10: 76,908 candidate orders scored; 21.5% above t=1c
+  2025-11: 35,208 candidate orders scored; 26.3% above t=1c
+-> /home/fyp/event-pred/runs/maker/policy_G_scores_2025-08_2025-11.parquet (437,268 scored orders; model sha1 e39cc4ca97bbebd4)
+Wed Sep 30 23:21:42 +08 2026 2. single test run
+9 simulations requested; 3 cached; 6 to run on 3 workers
+loaded universe=mece 2025-08..2025-11: 14,132 legs, 3,512 events; running 6 simulations
+
+A12 TEST RUN (2025-08..11; single pre-registered run; months previously used for A10/S4/S5 -- disclosed)
+  model sha1 e39cc4ca97bbebd4, trained on 2024-11..2025-05, t = 1c
+  quote everything (BROAD)   OPT    ret   +0.18%  CI95 [  -0.19,   +0.56]  net $  +715.23  fills 128,310  events 1,609  markout +0.47c/ct
+  quote everything (BROAD)   PESS   ret   -0.34%  CI95 [  -0.77,   +0.10]  net $ -1133.38  fills 110,867  events 1,609  markout +0.30c/ct
+  quote everything (BROAD)   STRICT ret   -3.07%  CI95 [  -3.57,   -2.55]  net $ -7656.02  fills  74,317  events 1,597  markout -0.85c/ct
+  G (learned policy)         OPT    ret   +3.56%  CI95 [  +2.53,   +4.57]  net $ +3989.00  fills  35,822  events 1,342  markout +1.70c/ct
+  G (learned policy)         PESS   ret   +3.55%  CI95 [  +2.51,   +4.60]  net $ +3748.44  fills  34,086  events 1,325  markout +1.70c/ct
+  G (learned policy)         STRICT ret   +0.39%  CI95 [  -0.96,   +1.78]  net $  +294.57  fills  22,739  events 1,237  markout +0.38c/ct
+  A10 (rules)                OPT    ret   +1.80%  CI95 [ -48.49,  +62.40]  net $    +1.87  fills      83  events    29  markout +5.01c/ct
+  A10 (rules)                PESS   ret   +1.80%  CI95 [ -48.49,  +62.40]  net $    +1.87  fills      83  events    29  markout +5.01c/ct
+  A10 (rules)                STRICT ret  +28.53%  CI95 [ -66.98, +145.83]  net $   +11.10  fills      27  events    16  markout +1.98c/ct
+
+  VERDICT (pessimistic return > 0 with event-cluster CI excluding 0): SUPPORTED
+Wed Sep 30 23:22:16 +08 2026 TEST DONE

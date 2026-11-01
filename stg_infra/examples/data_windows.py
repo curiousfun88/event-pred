@@ -96,13 +96,41 @@ VAL_END = "2025-08"    # last month included in val
 # test = everything after VAL_END through END_MONTH
 
 
+def active_split() -> tuple:
+    """(train_end, val_end) in force. Defaults to the constants above, so every
+    earlier figure reproduces exactly. A run can override them via
+    set_split(), which writes the FYP_SPLIT environment variable. It is read at
+    CALL time, because this module is imported under two paths
+    (examples.data_windows and data_windows) that may be separate module
+    objects; an override stored as a module global could be seen by one and
+    not the other, putting the chunker and the split guard on different
+    splits."""
+    import os
+    v = os.environ.get("FYP_SPLIT")
+    if v:
+        tr, va = (x.strip() for x in v.split(","))
+        if not (len(tr) == 7 and len(va) == 7 and tr < va):
+            raise ValueError(f"FYP_SPLIT must be 'YYYY-MM,YYYY-MM' with train_end < val_end, got {v!r}")
+        return tr, va
+    return TRAIN_END, VAL_END
+
+
+def set_split(train_end: str, val_end: str) -> None:
+    """Override the train/val boundaries for this process (and its children)."""
+    import os
+    if not (len(train_end) == 7 and len(val_end) == 7 and train_end < val_end):
+        raise ValueError(f"split must be 'YYYY-MM','YYYY-MM' with train_end < val_end, got {train_end!r}, {val_end!r}")
+    os.environ["FYP_SPLIT"] = f"{train_end},{val_end}"
+
+
 def split_for(month: str) -> str:
     """Returns 'train', 'val', or 'test' for a given 'YYYY-MM' month, on
     the shared master calendar. Every script should call this rather
     than defining its own split logic, so a boundary change only has to
     happen in this one file."""
-    if month <= TRAIN_END:
+    train_end, val_end = active_split()
+    if month <= train_end:
         return "train"
-    if month <= VAL_END:
+    if month <= val_end:
         return "val"
     return "test"

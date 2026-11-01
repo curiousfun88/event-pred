@@ -89,8 +89,12 @@ def to_torch_bundle(stg: SpatioTemporalGraph, dtype=None) -> TorchGraphBundle:
 
     dtype = dtype or torch.float32
 
-    feat_np, mask_np = stg.feature_tensor_padded()
-    feat_np = np.nan_to_num(feat_np, nan=0.0)
+    # Allocate directly in the target dtype and fill NaN in place: on the
+    # largest month the float64 tensor plus its copies exhausted a 7.8GB VM.
+    # Casting each row on assignment gives the same values as casting after.
+    np_dtype = torch.empty(0, dtype=dtype).numpy().dtype
+    feat_np, mask_np = stg.feature_tensor_padded(dtype=np_dtype)
+    np.nan_to_num(feat_np, nan=0.0, copy=False)
     features = torch.from_numpy(feat_np).to(dtype)
     mask = torch.from_numpy(mask_np)  # keep as bool, not cast to dtype
 

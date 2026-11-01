@@ -1,131 +1,78 @@
-# Forecasting constraint dislocations in Kalshi prediction markets
+# The Law of One Dollar: Machine Learning for Market Making in Kalshi Prediction Markets
 
-Final Year Project (AI in Finance). A spatio-temporal graph attention network
-(STGAT) is trained over two no-arbitrage constraints that hold on Kalshi by
-construction:
+Final Year Project (CP4101, NUS School of Computing). Code, pre-registrations and evidence for every result in the
+report.
 
-- **MECE baskets** — a mutually exclusive, collectively exhaustive set of
-  outcomes (exactly one leg resolves YES), so leg prices must sum to $1.
-- **Threshold ladders** — "above X" contracts on one underlying, so prices
-  must be monotone in the strike.
+On Kalshi, many questions are listed as a **basket** of contracts, one per outcome, exactly one of which pays $1. The
+legs' prices should therefore sum to $1, the *law of one dollar*. In traded prices they usually do not. The project
+asks **where a learned model adds value over this constraint, and where the constraint suffices**, and follows the
+answer from measurement to a live test:
 
-Both are routinely violated in traded prices. The published literature asks
-whether such violations can be *detected*; this project asks whether they can
-be *forecast*, and where a learned model adds value over the constraint itself.
+1. The apparent violations are not mispricing. They are the bid-ask spread.
+2. The opportunity is on the other side of the spread, in **market making**, and a learned policy that chooses
+   which maker quotes to post earns a positive return out of sample.
+3. Its edge decays within a year and is recovered by retraining.
+4. The retrained policy is tested forward in a **pre-registered live paper-trading test**, with every hourly decision
+   hash-chained into a public ledger.
 
-> **Status (26 Sep 2026).** Five-month pilot complete; awaiting supervisor
-> feedback on the [Recess Week consult](docs/reports/recess_week_consult.pdf)
-> and the [data-window memo](docs/reports/data_window_memo.tex). The live
-> handoff — established results, open items in priority order, known
-> gotchas — is [`CLAUDE.md`](CLAUDE.md).
+**Reproducing any result: see [`REPRODUCE.md`](REPRODUCE.md)**, which maps every table and figure in the report to
+its script and its committed evidence. `bash scripts/run_self_tests.sh` checks the code without any data.
 
-## Findings so far
+## Research flow
 
-| | Result | Evidence |
-|---|---|---|
-| MECE forecasting | **0.853×** the MSE of an optimal (hindsight-fitted) shrinkage oracle on held-out test; 0.851× on val | [`logs/v2_forecast/mece_test.log`](logs/v2_forecast/mece_test.log) |
-| Source of the edge | Removing the graph collapses the margin: ~92% of it comes from the cross-sectional structure | [`runs/v2_mece_nograph`](runs/README.md) |
-| Directional skill | Beats a coin-flip control with identical entries and costs; every CI excludes zero | [`logs/v2_forecast/mece_pnl_*.log`](logs/README.md) |
-| Measurement | 92.5% of apparent basket deviation is the bid/ask overround, not mispricing | [`mece_spread_artefact_check.py`](stg_infra/examples/mece_spread_artefact_check.py) |
-| Profitability | **Withdrawn.** No strategy is profitable net of Kalshi fees at executable prices | [data-window memo §5](docs/reports/data_window_memo.tex) |
-| Ladders | Diagnosed negative control: the size of a correction is forecastable, its timing is not | [`diagnose_ladder_conditional.py`](stg_infra/diagnose_ladder_conditional.py) |
+| Step | Question | Answer | Report | Evidence |
+|---|---|---|---|---|
+| 1. Measurement | Do basket prices really break the law of one dollar? | **No.** 68.7% of trades are buyers paying the ask, which predicts last prices summing above $1 before it was measured: 92.5% of baskets do, by +5.25¢ (predicted +6.3¢). At quoted mids, two-sided baskets sum to $1 within 0.34¢. Selling a basket at its bids nets −0.07¢ before fees of 1.3-5.8¢ | Ch 3 | [`spread-artefact-finding.md`](docs/3-economics/spread-artefact-finding.md), [`quote_validation_test.log`](logs/v2_forecast/quote_validation_test.log) |
+| 2. Forecasting (set aside) | Does a graph model of each family forecast better than the constraint? | Only near settlement. The STGAT scores 0.922× an optimal constraint-based oracle on the approved test, but shows no skill on unsettled positions and did not improve the trading policy | Not in the report | [`negative-results.md`](docs/negative-results.md), [`runs/README.md`](runs/README.md) |
+| 3. Policy G | Can learning choose which maker quotes to post? | **Yes.** Gradient-boosted policy, pre-registered test Aug-Nov 2025: **+3.55%** on committed capital (95% CI +2.51 to +4.60) over 1,325 events, against −0.23% for random quotes at the same share and −0.34% for quoting everything | Ch 4-5 | [`policy_G_TEST.log`](logs/v2_forecast/policy_G_TEST.log), [`a16_baselines_2025.json`](results/maker/a16_baselines_2025.json) |
+| 4. Decay and G2 | Does the edge last? | No: frozen G returned −1.41% in Sep 2026, after the market changed. Retrained G2, window chosen by a six-month walk-forward: +2.65% a month, positive in all six | Ch 4-5 | [`smoke_test_2026-09.log`](logs/v2_forecast/smoke_test_2026-09.log), [`l9_window_selection.json`](results/live/l9_window_selection.json) |
+| 5. Live test | Does G2 make money on data it has never seen? | **Yes, at the interim cut (28 Oct).** On 23 series, G2 earned **+$219.95 (+4.1%)** after fees over 147 events (one-sided 95% lower bound +0.8%), **+6.9 points** ahead of random quoting at the same share (bound +2.7): H1 and H2 both hold. Quoting everything lost −3.0%. The test runs to 11 Nov (final cut) | Ch 6 | [live dashboard](https://curiousfun88.github.io/event-pred-live/), [public ledger](https://github.com/curiousfun88/event-pred-live) |
 
-The full story, including every conclusion that was later overturned, is in
-[`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md).
+Every analysis that produced a reported result was pre-registered before its test data were examined, in dated
+plans with numbered amendments: [STGAT test](docs/planning/stgat-7-2-4-preregistration.md),
+[maker policy (A1-A16)](docs/planning/maker-simulator-preregistration.md),
+[live test (L1-L20, notes 1-10)](docs/planning/lumid-forward-test-preregistration.md).
+
+The work did not run in a straight line. Leaks were found and fixed (contracts replayed after they closed, and a
+time-to-close input that revealed when events ended), headline numbers moved when they were, and a profitability
+claim for taking dislocations was withdrawn. Every such revision is recorded in
+[`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md). Work left out of the final report (the STGAT forecasting model, threshold
+ladders, and the routes tried before policy G) is recorded with its figures in
+[`docs/negative-results.md`](docs/negative-results.md).
 
 ## Repository layout
 
 ```
-CLAUDE.md               Living handoff: state, open items, gotchas, closed decisions
-docs/                   Research documents; map in docs/REPO-LAYOUT.md
-  RESEARCH_LOG.md       Chronology, every research document by phase, and revisions
-  SCRIPTS.md            Every script by phase, plus investigation notes per thread
-  1-detection/ 2-model/ 3-economics/ 4-data/ 5-literature/ planning/
-  reports/              Supervisor reports (Week 3, Week 5, Recess Week, data-window memo)
-stg_infra/              Code (run everything from the repo root, see below)
-  stg/                  Graph-construction library (installable package `stg`)
-  model/                STGAT: backbone, heads, objectives, chunking, run guards
-  examples/             Detection probes, naive baselines, data audits (Phase 1-2)
-  train_*.py run_*.py   Training entry points
-  score_*.py evaluate_*.py   Held-out scoring and PnL evaluation
-  diagnose_*.py         Targeted investigations of specific results
-  verify_*.py           Synthetic-data checks with known answers
-scripts/                Raw data acquisition and month splitting
-results/                Result tables written by the scripts (see results/README.md)
-runs/                   Training runs: history committed, weights local (runs/README.md)
-logs/                   Console output of every reported run (logs/README.md)
-data/  cache/           Raw Kalshi data and per-month tensor cache (local, not committed)
+README.md               this overview
+REPRODUCE.md            every report table and figure -> script -> committed evidence; how to rerun
+docs/                   research documents (map: docs/REPO-LAYOUT.md)
+  RESEARCH_LOG.md       chronology of the project and every revised conclusion
+  SCRIPTS.md            index of every script, by phase
+  planning/             the three pre-registrations
+  1-detection/ ... 5-literature/   findings by question; reports/ = as sent to the supervisor
+stg_infra/              all code; run from the repository root
+  simulate_maker.py maker_policy.py   maker fill simulator and policy G
+  examples/             analyses: measurement, retraining (retrain_g2.py), walk-forward, baselines, case studies
+  live_signal_producer.py paper_trader.py paper_ledger.py cut_report.py   the live test
+  train_forecast.py score_forecast.py model/ stg/   the STGAT and its graph library
+  verify_*.py diagnose_*.py   synthetic checks and targeted investigations
+scripts/                raw data download, month splitting, run_self_tests.sh
+results/  logs/  runs/  result tables, console logs and training runs behind every reported figure (each has a README)
+data/  cache*/          raw Kalshi data and tensor caches (local, not committed; see REPRODUCE.md)
 ```
+
+Run every script from the repository root. Scripts written after the project adopted the convention take a
+`--self-test` that checks planted cases with known answers before touching real data.
 
 ## Setup
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-lock.txt      # the exact versions used (Python 3.12.3)
 pip install -e ./stg_infra
+bash scripts/run_self_tests.sh            # about 2-3 minutes, no data needed
 ```
 
-Raw data is not in the repository. Place the monthly Kalshi files under
-`data/{markets,trades}/{markets,trades}_kalshi_{even,odd}/{kind}_YYYY-MM.parquet`
-(the layout produced by `scripts/data_split_by_month.py`).
+Data download and the commands for each stage are in [`REPRODUCE.md`](REPRODUCE.md).
 
-## Reproducing the pipeline
-
-All scripts resolve paths relative to the **repository root**; run them from there.
-
-```bash
-# 1. Identify the constraint populations (writes results/mece, results/ladder)
-python stg_infra/examples/mece_sum_to_one_check.py
-python stg_infra/examples/pairwise_monotonicity_taker_side_check_v2.py
-
-# 2. Build the per-month graph cache (cache/bundle_month_*.pt); this also
-#    trains the superseded v1 reconstruction model into runs/v1_reconstruction
-python stg_infra/run_real_training.py --months 2025-05 2025-06 2025-07 2025-08 2025-09
-
-# 3. Train the forecasting model (MECE-selected configuration)
-python stg_infra/train_forecast.py --w-ladder 0 --supervise all --select-on mece \
-    --checkpoint-dir runs/v2_mece
-
-# 4. Score once on the held-out split, then evaluate trading
-python stg_infra/score_forecast.py --checkpoint runs/v2_mece/best.pt --split test
-python stg_infra/evaluate_mece_forecast_pnl.py --checkpoint runs/v2_mece/best.pt
-```
-
-Train/val/test boundaries live in one place,
-[`stg_infra/examples/data_windows.py`](stg_infra/examples/data_windows.py)
-(pilot: train May–Jun, val Jul–Aug, test Sep 2025).
-
-## The `stg` graph library
-
-`stg_infra/stg` is a strategy-pattern builder that turns trade/market tables
-into a time-sliced graph; the STGAT consumes it through `stg.bridge.to_torch_bundle`.
-
-```python
-from stg.builders.builder import GraphBuilder
-from stg.io.loaders import DatasetLoader
-from stg.nodes.kalshi import KalshiTickerNodes
-from stg.edges.kalshi import KalshiEventEdges
-from stg.edges.strategies import KNNEdges, CompositeEdges
-from stg.temporal.strategies import FixedWindowTemporal
-from stg.strategies.post_process import AddSelfLoops, Symmetrise
-
-markets = DatasetLoader("data/markets_*.parquet", sort_by="created_time").load()
-trades  = DatasetLoader("data/trades_*.parquet").load()
-
-stg = (
-    GraphBuilder()
-    .with_temporal(FixedWindowTemporal(every="1h"))
-    .with_nodes(KalshiTickerNodes())
-    .with_edges(CompositeEdges([KalshiEventEdges(weight=2.0), KNNEdges(k=5)]))
-    .with_post_process(Symmetrise())
-    .with_post_process(AddSelfLoops())
-    .build(trades, auxiliary={"markets": markets})
-)
-
-feat = stg.feature_tensor_padded()   # (T, N, F) numpy
-```
-
-For large datasets, `DatasetLoader(...).scan()` pushes column selection and
-filters down to Parquet, and `IncrementalGraphBuilder` builds out-of-core.
-The STGAT's own graph wiring (MECE hub hyperedges + directed ladder chains) is
-[`stg_infra/build_combined_stgat_graph.py`](stg_infra/build_combined_stgat_graph.py).
+`CLAUDE.md` holds the project's working notes (state, open items and pitfalls found along the way).

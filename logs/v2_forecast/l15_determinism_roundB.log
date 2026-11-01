@@ -1,0 +1,4 @@
+{"active_events": 2251}
+{"candidate_check": {"one_logged": 97328, "one_regenerated": 97328, "one_mismatch_share": 0.0, "two_logged": 179536, "two_regenerated": 179536, "two_mismatch_share": 0.0}}
+{"ledger": {"entries_written": ["20261015T17"], "fleet_job": null, "ots": null, "verification_issues": []}}
+{"BLIND_TEST": {"secs": 1061.3, "max_rss_mb": 858, "candidate_check": {"one_logged": 97328, "one_regenerated": 97328, "one_mismatch_share": 0.0, "two_logged": 179536, "two_regenerated": 179536, "two_mismatch_share": 0.0}, "entries": ["20261015T16", "20261015T17"], "chain_ok": true, "verification_issues": [], "arms": ["cand", "g", "g2", "g2_sel", "g2p", "g2w1", "g2w2", "lin2", "liq", "mlp2", "rnd2", "rnd2p", "wide3"]}}

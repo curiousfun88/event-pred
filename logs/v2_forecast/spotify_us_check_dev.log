@@ -1,0 +1,33 @@
+DEVELOPMENT MONTHS ONLY: 0 usable events (snapshot 22:00 UTC on day D)
+
+winner log-loss (lower is better), mean over events:
+/home/fyp/event-pred/stg_infra/examples/spotify_us_check.py:290: RuntimeWarning: Mean of empty slice
+  print(f"  {key:<6}: {ll(key).mean():.4f}")
+/home/fyp/event-pred/.venv/lib/python3.12/site-packages/numpy/_core/_methods.py:142: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+  mkt   : nan
+  model : nan
+  blend : nan
+/home/fyp/event-pred/stg_infra/examples/spotify_us_check.py:293: RuntimeWarning: Mean of empty slice
+  lo, hi = np.percentile(d[idx].mean(1), [2.5, 97.5])
+/home/fyp/event-pred/.venv/lib/python3.12/site-packages/numpy/_core/_methods.py:134: RuntimeWarning: invalid value encountered in divide
+  ret = um.true_divide(
+/home/fyp/event-pred/stg_infra/examples/spotify_us_check.py:294: RuntimeWarning: Mean of empty slice
+  print(f"  blend - market: {d.mean():+.4f}  CI95 [{lo:+.4f}, {hi:+.4f}]  (negative = data adds information)")
+  blend - market: +nan  CI95 [+nan, +nan]  (negative = data adds information)
+  pooling weight on the model (per held-out month): []
+/home/fyp/event-pred/.venv/lib/python3.12/site-packages/numpy/_core/fromnumeric.py:3824: RuntimeWarning: Mean of empty slice
+  return _methods._mean(a, axis=axis, dtype=dtype,
+  market favourite wins: nan%; model favourite wins: nan%
+
+taker rule: buy a leg when blend_p - ask >= edge (one trade per leg, at the snapshot)
+  edge  5c: no trades
+  edge 10c: no trades
+  edge 20c: no trades
+
+DIAGNOSIS (2026-09-30): 0 usable events is a DATA limitation, not a result.
+kworb.net track pages keep WEEKLY snapshots for older periods and daily rows only for recent days
+(e.g. 'Die With A Smile': 87 US rows since 2024-08, one per week in 2024-25; 'APT.': 9 US rows).
+Daily US streams for 2024-11..2025-07 are therefore not available from kworb. Spotify's own
+daily chart CSVs (charts.spotify.com) need a logged-in account. Check B closed as NOT FEASIBLE with free,
+automatable data; no statement about market efficiency is made.

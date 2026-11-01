@@ -242,7 +242,7 @@ class SpatioTemporalGraph:
         return np.array(times, dtype=np.float64), features
 
     # -- padded bulk export -------------------------------------------------
-    def feature_tensor_padded(self) -> Tuple[np.ndarray, np.ndarray]:
+    def feature_tensor_padded(self, dtype=np.float64) -> Tuple[np.ndarray, np.ndarray]:
         """(T, N, F) feature tensor over the union node set, with NaN for absent nodes.
 
         Returns
@@ -262,7 +262,7 @@ class SpatioTemporalGraph:
                 break
 
         T = len(self._snapshots)
-        tensor = np.full((T, N, F), np.nan, dtype=np.float64)
+        tensor = np.full((T, N, F), np.nan, dtype=dtype)
         mask = np.zeros((T, N), dtype=bool)
 
         for t, snap in enumerate(self._snapshots):

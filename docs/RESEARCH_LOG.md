@@ -122,6 +122,7 @@ constraint now lives only in the graph.
 
 Results on the 5-month pilot:
 - **MECE:** 0.851× (val) / **0.853× (test, scored once)** the shrinkage oracle.
+  *Superseded 2026-09-27: inputs leaked. The causal rerun gives 0.909× on test (Revisions §7).*
   Graph ablation: no-graph run loses ~92% of the margin. Ladder-edge ablation:
   no detectable effect.
 - **Ladder:** all-pairs ratio is best at initialisation under every mover
@@ -173,7 +174,7 @@ Results on the 5-month pilot:
 |---|---|
 | [`3-economics/settlement-arbitrage-result.md`](3-economics/settlement-arbitrage-result.md) | The hold-to-settlement reframe. Wording about "measured per-leg spreads" is corrected by the two documents below |
 | [`3-economics/settlement-pnl-robustness.md`](3-economics/settlement-pnl-robustness.md) | Filter sweep, the wrong-spread-table discovery, and a retraction of "the model worsens the profitable rule" |
-| [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md) | **The central result.** 92.5% of the deviation is the overround; the executable edge is one tick; the profitability claim is withdrawn |
+| [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md) | **The central result.** 92.5% of baskets sum above $1 at last prints, the overround pattern (the share of the deviation the print side carries was measured later with quotes: §7); the executable edge is one tick; the profitability claim is withdrawn |
 | [`4-data/mece-population-composition.md`](4-data/mece-population-composition.md) | The opportunity population is ~58% weather and ~24% sports above 5c, across four structurally distinct partition types. Not the 93% weather an earlier window suggested |
 | [`4-data/data-window-liquidity-regime.md`](4-data/data-window-liquidity-regime.md) | Platform notional grew 369x across the archive. The binding constraint on the window is liquidity stationarity, not calendar availability |
 | [`4-data/mece-yield-by-month.md`](4-data/mece-yield-by-month.md) | Usable basket-days per month across all 54 months. Two dense blocks around a 23-month trough whose apparent deviations are staleness |
@@ -245,7 +246,7 @@ model.
 
 → [`3-economics/spread-artefact-finding.md`](3-economics/spread-artefact-finding.md)
 
-### 2. The ladder conclusion, overturned then closed (2026-09-19)
+### 2. The ladder conclusion, overturned then closed (2026-09-19; closure stale, see §7)
 
 **Claimed:** ladder violations follow a near-random walk (pooled alpha ~0.99),
 so there is little to forecast.
@@ -350,14 +351,193 @@ three hours apart and proves the old limit accepts them.
 | Per-leg costing would improve measured PnL | It reduced it, twice. Both times the error was reasoning from a *median* spread where basket cost is a *sum* over legs, so the mean governs and the distribution is right-skewed |
 | `14+ leg families never achieve full coverage` | Holds only for the original two-month window. `KXF1RACE` (20 legs) and `KXNASCARRACE` (41 legs) achieve it on May–Sep |
 
-### 7. Still open
+### 7. The headline forecast was leaky; causal rerun replaces it (2026-09-27)
 
-- The primary forecasting result (0.851x against the shrinkage oracle) is on
-  the **basket aggregate** metric, which is the quantity now known to be
-  ~92.5% overround. The node-level figure is 0.991x. Re-scoring against
-  bid-side basket sums will determine whether the economic label survives.
-  Until then the result is stated as forecasting accuracy, not as arbitrage
-  detection.
+The 0.851x / 0.853x came from `v2_mece`, whose inputs leaked in four ways:
+- resolved markets were replayed after close;
+- `time_to_close` carried after-the-fact close times;
+- ladder edge features leaked;
+- MECE membership was selected with hindsight, using the event's own outcome.
+
+It was also scored on partial baskets. A first rerun (`v2_mece_clean_s*`) fixed
+only the first two. It was stopped before scoring and is not cited.
+
+The causal rerun (`v2_mece_causal_s0..s3`) was pre-registered before any result
+(`runs/README.md`). It has every fix in force and uses causal membership in
+val/test and the `whole_settle` scoring rule. Test was scored once per seed.
+
+| | val | test |
+|---|---|---|
+| model / oracle, mean (range) | 0.823x (0.813–0.834) | **0.909x (0.883–0.941)** |
+| model / persistence, mean | 0.577x | 0.613x |
+| oracle alpha | 0.556 | 0.552 |
+
+All four seeds beat the oracle, but the margin is ~9%, not ~15%. The
+same checkpoints scored under the old partial-basket rule are 1.21–1.66x (not
+used for any choice). The whole-basket target is far more mean-reverting
+(alpha 0.55 against 0.92 before), which helps both the model and the oracle.
+
+Figures computed on `v2_mece` are now stale: the graph ablation (~92%) and the
+model-vs-control PnL (+$0.170/trade). They need re-running on the causal
+checkpoints before they can be cited.
+
+**The ladder closure (Revision 2) is stale for the same reason.** On the old
+cache at h=1, 85,222 of 150,697 scored ladder pairs (57%) came from contracts
+that live 1.5h or less. The 2h grid never saw them live. They appeared only as
+replays after close: 583 pairs, 0% ever moved, and 66% of all scored pairs had
+a leg already closed by t+h. Persistence is exact on those pairs, so the
+all-pairs ratio could only be minimised by doing nothing. That is the
+"minimised at epoch 0" result. On `cache_causal/` the past-close share is 0%
+and the sub-1.5h class is gone. What remains (50,991 pairs) is essentially the
+old live-only subset (51,278). Evidence: `logs/v2_forecast/ladder_timing.log`
+vs `ladder_timing_causal.log` (train/val months only).
+
+On test, the causal MECE checkpoints score 0.982–0.993x the ladder shrinkage
+oracle (alpha 0.942, was 0.990) and 0.966–0.977x persistence, n = 99,646. They
+were trained with ladder weight 0 and ladder edge features zeroed, and selected
+on MECE. On moved pairs the range is 0.991–1.004x. This is **exploratory**:
+not pre-registered, no val counterpart (ladder val metrics are NaN at weight
+0), no CI. It retracts the negative closure; it does not establish a positive
+ladder result. Reprice timing is still absent from the features (hidden
+leg-age AUC 0.83 at h=1).
+
+Forecasting ladders that live under 2h would need a sub-2h grid, a new pipeline.
+It is recorded as a limitation, not pursued.
+
+**Bid-side re-score (pre-registered, 2026-09-27).** The 0.909x does not
+survive as a claim about traded-price dislocation:
+- On test, all of the 0.909x comes from the 18.6% of positions whose basket
+  settles by t+h, where the target is exactly $1. On unsettled positions the
+  model scores 1.034x (1.006–1.057; post-hoc decomposition, disclosed), and
+  every pooled test CI includes 1.0.
+- On the bid-side target (unsettled, R = 1h) it scores 1.465x (1.42–1.54),
+  with every CI excluding 1.0. That is on a thin sample: 117 positions, 56
+  baskets, because bid prints are sparse.
+- I predicted 0.97–1.03x; the result was worse.
+- Headline: forecasts basket microstructure and settlement convergence.
+Full tables: `runs/README.md`.
+
+**Quoted top of book replaces trade-side inference (2026-09-27).** Hourly best
+bid/ask come from Kalshi's historical candlesticks
+(`stg_infra/fetch_quote_candles.py`): 10,981 of 10,982 val/test MECE legs.
+Descriptive validation is in `stg_infra/diagnose_quote_candles.py` and
+`logs/v2_forecast/quote_validation_{test,val}.log`. Figures are test (val) on
+whole baskets with every leg live.
+- **Coverage.** 98.1% (97.5%) of leg-snapshots are quoted at the window end,
+  and 97.1% (95.6%) of baskets are fully quoted. Last print minus quoted mid
+  has a median of +0.5c, so the clocks align.
+- **Quoted spread.** Median 2.0c, mean 2.9c (4.4c). The trade-based estimates
+  of 4.68–5.61c overstate it, most on test.
+- **Trade-print bid proxy.** It overstates the quoted bid by +1.1c per leg on
+  average (median 0). It matches exactly in only 33–50% of cases. So the
+  earlier executable "bid sum $0.9993" was biased up about 5c: the quoted bid
+  sum is **$0.944 ($0.922)**.
+- **Revision to the 92.5% overround finding.** Pooled, the print side carries
+  54% (56%) of the mean last-print basket deviation (+2.19c of +4.05c). The
+  rest sits in the *mid* sum, and almost all of that comes from **one-sided
+  books**: a leg with no bid has an inflated mid. In baskets where every leg
+  is two-sided, which is 69% (56%) of them, the **mid sum is within +0.34c
+  (+0.50c) of $1**, and the print side carries 87% (82%) of the deviation.
+  - Conclusion strengthened: at quoted mids, two-sided baskets are coherent
+    to within half a cent.
+  - Number revised: "92.5%" applies to two-sided baskets only (82–87%). The
+    rest of the deviation is one-sided-book artefact, not mispricing.
+- **Executable.** Selling a basket at the bids beats $1 in 1.8% (2.6%) of
+  basket-snapshots, by about 2c before fees (1.3–5.8c). Buying at the asks
+  beats $1 in 0.2% (1.5%). No executable dislocation.
+
+**Quoted-price re-runs (pre-registered).** Full tables are in `runs/README.md`.
+- **Bid side:** 1.822x the oracle on 30,001 no-settled test positions, 4/4 CIs
+  above 1. This is conclusive.
+- **Timing:** the model beats random by +$0.867 at quotes (3/4 seeds), but
+  loses to entering immediately by -$0.957 (4/4). Waiting costs money at
+  executable prices, and the coin-flip control's wait rate is unmatched.
+- **Economics:** the cost gate fired once in 2,090 events. The profitability
+  withdrawal now holds at executable quotes.
+
+**Strategy-pathway screen (exploratory, May–June 2025 only, 2026-09-28).**
+Prompted by the supervisor's reply: a strategy must survive realistic costs on
+realistic tapes, and the student should judge which pathways are worth pursuing.
+`stg_infra/examples/taker_maker_return_screen.py`, log
+`logs/v2_forecast/taker_maker_screen_2025-05_06.log`. Inference resamples events.
+
+- **Fees, verified.**
+  - Taker: `0.07·C·P·(1−P)`, rounded up to the cent.
+  - Maker, before 2025-07: flat $0.0025 per contract. From 2025-07:
+    `0.0175·C·P·(1−P)`.
+  - Makers pay **only on series whose API `fee_type` charges them**: 163 of
+    14,399 series. Weather, MLS, crypto and Spotify are taker-only.
+  - The fee-change log starts 2025-10-04. Snapshots are in
+    `results/mece/kalshi_series_fee_{types.json,changes.json}`.
+  - The primary fee PDF is blocked on this network, so the maker rates rest on
+    secondary sources.
+- **Takers lose:** −5.6% contract-weighted, CI [−7.4%, −3.5%]. No price bucket
+  is reliably positive. The favourite–longshot pathway, taking liquidity, is
+  closed.
+- **Makers in aggregate earn** +2.2% net of maker fees, CI [+0.6%, +3.6%]. On
+  taker-only series it is **+1.5%, CI [+0.6%, +2.3%]**, broad-based: the top 10
+  events hold only 7% of stake.
+- **Not achievable as-is.** This is the average over whoever was filled, including
+  makers with queue priority. A newcomer faces adverse selection. It identifies
+  where an edge exists, not whether it can be captured. Next step: a
+  pre-registered, tape-driven maker fill simulator with optimistic and
+  pessimistic queue bounds, on months after June 2025.
+
+### 7a. Wording of the "92.5%" figure (correction, 2026-10-20)
+
+**What was measured.** `spread-artefact-finding.md` (§2): over 4,891 last-print basket-days (Feb–Nov 2025) the mean
+sum was $1.0525 (+5.25c against +6.3c predicted), and **92.5% of baskets summed above $1** (4.9% below, 2.6% exactly
+$1; recomputed from `results/mece/mece_spread_artefact_check.parquet` on 2026-10-20). 92.5% is a share of *baskets*:
+the evidence that the deviation is one-sided, as an overround is and mispricing is not.
+
+**How it drifted.** It was soon restated as "92.5% of the apparent deviation is the overround", a share of the
+*deviation*, which was never computed from trades (a trade-based mid is contaminated; the finding's bug 3). The §7
+quote revision then measured that share for the first time, 54% pooled and 87% (val 82%) in two-sided baskets, but
+its note "'92.5%' applies to two-sided baskets only (82–87%)" read 92.5% as a deviation share too.
+
+**Correct statement.** 92.5% of baskets sum above $1 at last prints; with quoted books the print side carries 54% of
+the mean deviation pooled and 87% in two-sided baskets (69% of baskets), and one-sided books most of the rest. No
+conclusion changes: two-sided baskets are coherent at mid (+0.34c) and nothing survives fees at executable prices.
+
+**Where the drifted wording was.** Corrected on 2026-10-20 in `CLAUDE.md`, `README.md`, `docs/SCRIPTS.md`,
+`runs/README.md`, the index row above and `stg_infra/score_mece_bidside.py`. Left as written, read with this entry:
+the dated findings in `docs/1-detection/`, `2-model/`, `3-economics/`, `4-data/` and `5-literature/`,
+`docs/superseded-findings-summary.md`, `docs/planning/four-week-plan-and-reframe.md`, and two documents already sent
+to the supervisor: `docs/reports/2026-10-12_week09_progress_report.tex` and `docs/reports/data_window_memo.tex`
+(line 71; its line 366 states the figure correctly). The final report uses the correct statement.
+
+### 8. Still open
+
+- ~~Settlement leak?~~ **Checked 2026-09-27, val s0 only: no leak found.**
+  - Scrambling every snapshot after t0 leaves predictions at t <= t0
+    bit-identical, and randomising slot 8 changes nothing.
+  - Within a horizon, the model's pull toward $1 rises *smoothly* as close
+    approaches (h=12: 0.93 within 26h, 0.88 at 26–52h where the basket does
+    *not* settle, 0.52 beyond 72h). There is no jump at the settlement
+    boundary.
+  - The highest leg price does not explain the pull.
+  - Reading: the model learned that short-lived basket families converge to
+    $1, which is visible ex ante. A shrinkage oracle fitted per series x
+    horizon absorbs about half the val margin (0.817x -> 0.920x; unsettled
+    0.861x -> 0.929x).
+  - Done (pre-registered): the unsettled-only retrain scores 1.052x the
+    family oracle on test (0/4 CIs exclude 1), so there is no forecasting
+    skill on traded prices beyond constraint + family.
+  - The settlement-timing control **replicates on test**: +$0.192/trade, 4/4
+    seed CIs above 0, k = 312. The old +$0.170 turned out to be val-only on
+    the leaky checkpoint. See `runs/README.md`.
+- Graph ablation re-run (pre-registered).
+  - Timing: no-graph keeps about 81% of the timing skill (+0.156 vs +0.192),
+    so the graph is "not needed" for timing, marginally. I predicted the
+    graph would carry most of it; that was wrong.
+  - Forecasting: without the graph the model falls behind both oracles
+    (1.128x single-alpha, 1.224x family on unsettled).
+  - The old "graph supplies ~92%" is retired.
+- The graph ablation and model-vs-control result must be re-run on
+  `v2_mece_causal_s*` (see revision 7).
+- Ladder on the causal cache: a val figure and a bootstrap CI would be needed
+  before the 0.98x is more than exploratory. `score_forecast.py` still prints
+  a hardcoded "ladder alpha ~0.99" paragraph that the causal numbers contradict.
 - `KXCLUBWCGAME` may not be a genuine partition: one snapshot shows sum $1.89
   with 369 trades on the thinnest leg at a 0.02h gap, which is not credible
   as a standing arbitrage. Knockout ties plausibly resolve "tie" and "winner"
