@@ -11,6 +11,7 @@ Contents:
 2. [The STGAT forecasting model](#2-the-stgat-forecasting-model)
 3. [Threshold ladders](#3-threshold-ladders)
 4. [The withdrawn taker backtest](#4-the-withdrawn-taker-backtest)
+5. [The full live universe](#5-the-full-live-universe)
 
 **Test-month reuse.** G's test months (August to November 2025) had been used before, for the rule-based makers of
 section 1. No design choice of G used them. The final report does not state this; it is recorded here.
@@ -161,6 +162,32 @@ at last trades, without regard to the side of the trade, invents profit that doe
 
 Evidence: `docs/RESEARCH_LOG.md`, Revisions §1 and Phase 5; `stg_infra/evaluate_mece_settlement_pnl.py`;
 `stg_infra/examples/mece_spread_artefact_check.py` → `results/mece/mece_spread_artefact_check.parquet`.
+
+---
+
+## 5. The full live universe
+
+**What it was.** The live test was planned with every qualifying series as its headline. From the live start (15 Oct
+2026, 19:00 UTC) the producer quoted the full universe. On 16 October an amendment (L18) moved the main result to the 23
+series G2 was trained and validated on, and on 17 October at 05:00 UTC Kalshi's throttling of the shared address forced
+the producer to the 23 series only (L19). The full universe was therefore quoted for **about 34 hours**, too short to
+report, and the final report omits it (one sentence in its limitations says why).
+
+**Figures at the interim cut** (full universe, live start to 17 Oct 05:00 UTC, settled positions, pessimistic fills,
+net of fees; from `results/live/cut_interim.json`):
+
+| | Net P&L | Return | 95% CI |
+|---|---|---|---|
+| G2 | −$728.84 | −5.7% | [−8.8%, −2.7%] |
+| Random at G2's share | −$1,284.30 | −8.8% | |
+| Quote everything | | −10.2% | |
+| G2 minus random | | +3.1 points | [−0.1, +6.3] |
+
+912 events, 5,627 settled fills for G2. G2 lost less than random and quote-everything, but every strategy lost in
+those 34 hours.
+
+Evidence: `results/live/cut_interim.json` (headline, full-universe keys); amendments L18 and L19 in
+`docs/planning/lumid-forward-test-preregistration.md`.
 
 ---
 
