@@ -140,6 +140,12 @@ figure below as a backtest artefact, not as realisable profit.**
 | `diagnose_ladder_conditional.py` | Ladder reversion conditional on a leg repricing (overturned α ≈ 0.99) |
 | `diagnose_basket_coverage.py` | How much of the MECE market can a naive real-time trader see? |
 | `diagnose_basket_composition.py` | What kind of market is the model actually trading? |
+| `tune_stgat.py` | Pre-registered STGAT tuning controller (7/2/4 plan §3) |
+| `score_mece_bidside.py` | Re-score a MECE checkpoint against the bid-side basket sum, once per split (`runs/README.md`) |
+| `select_signal_model.py` | B3: choose the model whose mid-move head supplies the S4/S5 signal (validation only) |
+| `export_mid_signal.py`, `export_stgat_features.py` | STGAT signal (A6.3/B1.5) and STGAT inputs for policy G+S (A12) |
+| `diagnose_ladder_timing.py` | Was ladder repricing timing unforecastable, or hidden from the model? |
+| `examples/verify_hub_flow.py` | Two properties of the one-spatial-layer STGAT used to describe it (MECE attention weights) |
 
 **Pipeline-wide:** `verify_pipeline.py` — 13 invariants (causality, residual head starts at persistence, ablation, baselines, reporting, identities, bootstrap coverage, splits); `--self-test` proves each check fails on a planted bug.
 
@@ -153,6 +159,12 @@ figure below as a backtest artefact, not as realisable profit.**
 | `examples/mece_yield_by_month.py` | Usable basket-days per month, all 54 months → `results/data_audit/mece_yield_by_month.parquet` |
 | `examples/sports_categorisation_check.py` | Is "sports first appears 2024-12" real? → `results/data_audit/sports_categorisation_check.parquet` |
 | `examples/taker_maker_return_screen.py` | What did takers, and the makers opposite them, earn at settlement? (the case for market making) |
+| `build_mece_membership.py` | Which events are MECE baskets, decided without looking at the future (causal membership) |
+| `fetch_kalshi_api_months.py` | A13: settled MECE legs for whole months from Kalshi's public API (Dec 2025 - Sep 2026) |
+| `fetch_quote_candles.py`, `partition_quotes.py` | Hourly best bid and ask for basket legs, merged into one file per month → `data/quotes/` |
+| `diagnose_quote_candles.py` | Descriptive validation of the fetched hourly quotes before any use |
+| `examples/report_figures_ch4.py` | Report figures for the measurement section (basket sums at last print, mid, bid and ask) |
+| `examples/diagnose_mid_predictability.py` | Is the next-hour quoted-mid move predictable at all? (validation only) |
 
 ## Phase 6 — Market making: simulator, policy G, retrained G2
 
@@ -179,6 +191,19 @@ Protocols: `docs/planning/maker-simulator-preregistration.md` (A1-A16) and, from
 | `examples/wf_risk_2026.py` | Note 8: risk metrics of the 2026 walk-forward → `results/live/wf_risk_2026.json` |
 | `examples/ablate_g2.py` | Note 9: **feature-group ablation and posting-threshold sensitivity** of G2 → `results/maker/ablation_g2_2026.json`, `logs/v2_forecast/ablation_g2_2026.log` |
 | `examples/diagnose_g2_event_timing.py` | Where in a market's life G2 makes and loses money (validation window) |
+| `examples/weather_edge_by_month.py` | Note 6: the weather edge month by month, 2025-05 to 2026-09 |
+| `examples/extract_a13_legs.py` | Compact 2024-11 to 2025-11 legs for the 23 series, so G2-W3's training rows can be rebuilt without the raw archive |
+| `examples/verify_g2_refit.py` | Checks that refitting G2-W3 from the rebuilt rows gives identical predictions to the frozen model (L3/L6) |
+
+**Exploratory routes, development months only, not in the report** (see `docs/negative-results.md`):
+
+| Script | Question |
+|---|---|
+| `examples/basket_fill_predict.py`, `examples/summarise_basket_explore.py` | Can whole-basket maker attempts be predicted to complete? Breakdown by category |
+| `examples/favourite_bias_model.py`, `examples/outcome_model_check.py`, `examples/settlement_forecast_check.py` | Can favourites' outcomes, or settlement, be predicted better than the price? |
+| `examples/diagnose_bracket_fair_value.py` | Is an external fair value for index and FX brackets worth adding to the maker? |
+| `examples/spotify_us_check.py`, `examples/weather_obs_lag.py` | Do public Spotify data or live weather observations lead Kalshi prices? |
+| `examples/fetch_kalshi_events.py`, `examples/match_polymarket_events.py`, `examples/cross_venue_leadlag.py`, `examples/cross_venue_backtest.py` | Does Polymarket lead Kalshi on matched legs? (cross-venue plan, `docs/planning/cross-venue-preregistration.md`) |
 
 ## Phase 7 — Live forward test
 
@@ -192,9 +217,25 @@ Protocol: `docs/planning/lumid-forward-test-preregistration.md` (L1-L20).
 | `verify_ledger_chain.py` | Checks the ledger's hash chain from its entry files alone (public backup repo); 284 entries to 27 Oct T14 verify |
 | `examples/validate_g2_sel.py` | L4: category selection of the `g2_sel` arm on the validation window |
 | `examples/diagnose_g2_sel_flags.py` | Why the ledger check flagged extra `g2_sel` fills from 25 Oct T15 (diagnostic) |
-| `examples/live_case_study.py` | Case study: the live 25 October weather day → `results/live/case_study_20261025.json` |
+| `examples/live_case_study.py` | Case study: the live 25 October weather day → `results/live/case_study_20261025.json`; `--fills`: every G2 and linear fill in its three worst events → `case_study_20261025_fills.json` |
+| `examples/live_day_breakdown.py` | G2 by quoting day, and without its most profitable day → `logs/v2_forecast/live_day_breakdown_interim.log` |
+| `examples/live_equity_curve.py` | The live cumulative P&L figure (G2, two-level, linear, random, quote-all) |
+| `examples/live_matched_share.py` | Note 10: G2, two-level and linear at equal shares of the live candidate fills → `results/live/note10_matched_share_interim.json` |
+| `examples/live_tradestore_bug_effect.py` | L2: effect of the trade-store bug on one pre-fix hour |
 | `cut_report.py` | **The cut report**: every pre-registered metric from the ledger → `results/live/cut_interim.json` |
 | `report_numbers.py` | Cut report → LaTeX macros for the report (`generated/numbers.tex` in the report repo) |
+
+**Operations** (plumbing; nothing here changes what is scored):
+
+| Script | Purpose |
+|---|---|
+| `live_backup.py` | L16: copy of the live records to the public backup repository |
+| `lumid_sandbox_keeper.py`, `failover.py` | Keep the producer running in Lumid sandboxes; move the test to the other Lumid site |
+| `l19_switch.py` | L19: detect the trigger and fall back to the 23 series |
+| `fleet_backfill.py` | Re-post to Research Fleet the hourly records whose live post failed |
+| `rebuild_markets_cache.py` | Rebuild the paper trader's settlement cache after a site move |
+| `examples/compare_producer_runs.py` | Do two producer instances give the same scores for the same hour? |
+| `examples/lumid_signal_probe.py` | Plumbing probe: does a published signal make a Lumid strategy trade? |
 
 ## Report evidence map (FYP report, tables)
 
