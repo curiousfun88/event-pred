@@ -149,7 +149,7 @@ Each table in the report also carries a `% source:` comment naming these files.
 | Ch 5 | `tab:g2-sensitivity`, `tab:retrain-sensitivity` | `tune_gbm.py`, `offline_baselines.py` | `logs/v2_forecast/tune_gbm_a15_summary.log`, `results/live/mlp_sensitivity.json`, `lin_sensitivity.json` |
 | Ch 6 | `tab:live-arms`, `tab:live-windows` | -- | `docs/planning/lumid-forward-test-preregistration.md` |
 | Ch 6 | `tab:live-main`, `tab:live-tests`, `tab:live-fills`; App. C tables | `cut_report.py`, `report_numbers.py` | `results/live/cut_interim.json` (written at the interim cut) |
-| Ch 6 | `tab:live-case` | `live_case_study.py` | `results/live/case_study_20261025.json` |
+| Ch 6, App C | `tab:live-case`, `tab:live-case-legs` | `live_case_study.py` | `results/live/case_study_20261025.json` |
 | Ch 6 | `fig:live-equity`; day-cluster paragraph | `live_equity_curve.py`, `live_day_breakdown.py` | `logs/v2_forecast/live_equity_curve_interim.log`, `logs/v2_forecast/live_day_breakdown_interim.log` |
 | Ch 6 | G2 against the linear policy (note 10) | `live_matched_share.py` | `results/live/note10_matched_share_interim.json` |
 | App. A | `tab:amendments`, `tab:notes` | -- | the three pre-registrations in `docs/planning/` |
