@@ -9,7 +9,10 @@ live start), and G2's fills per leg on the worst events. Nothing is recomputed: 
     python stg_infra/examples/live_case_study.py --self-test
     python stg_infra/examples/live_case_study.py --entries <clone>/runs/live/paper/ledger/entries
 
-Writes results/live/case_study_20261025.json.
+    python stg_infra/examples/live_case_study.py --entries <clone>/runs/live/paper/ledger/entries --fills
+
+Writes results/live/case_study_20261025.json, or with --fills results/live/case_study_20261025_fills.json: G2's and the
+linear policy's fills on the three worst events, hour by hour (the source of the case study's timings and prices).
 """
 from __future__ import annotations
 
@@ -25,6 +28,8 @@ sys.path.insert(0, str(_REPO / "stg_infra"))
 WINDOW = ("20261025T11", "20261026T12")
 ARMS = {"g2": "G2", "rnd2": "Random at G2's share", "cand": "Quote everything", "lin2": "Linear"}
 OUT = _REPO / "results/live/case_study_20261025.json"
+OUT_FILLS = _REPO / "results/live/case_study_20261025_fills.json"
+FILL_ARMS = ("g2", "lin2")
 N_DETAIL = 3
 
 
@@ -54,6 +59,34 @@ def legs(entries, event, arm="g2"):
                 a = acc[(f[1], "buy YES" if f[2] == 1 else "sell YES")]
                 a[0] += f[4]; a[1] += f[3] * f[4]
     return [{"ticker": k[0], "side": k[1], "contracts": v[0], "mean_price_c": round(v[1] / v[0], 1)} for k, v in sorted(acc.items())]
+
+
+def hourly(entries, event, arm):
+    """One arm's fills on one event, by (hour, ticker, side, price): contracts summed, in ledger order."""
+    acc = {}
+    for e in entries:
+        for f in e["new_fills"]["primary"].get(arm, []):
+            if f[0] == event:
+                k = (e["H"], f[1], "buy YES" if f[2] == 1 else "sell YES", f[3])
+                acc[k] = acc.get(k, 0) + f[4]
+    return [{"H": k[0], "ticker": k[1], "side": k[2], "price_c": k[3], "contracts": v} for k, v in acc.items()]
+
+
+def run_fills(entries_dir: Path):
+    from fetch_kalshi_api_months import SERIES_A13
+    entries = [json.loads(p.read_text()) for p in sorted(entries_dir.glob("*.json"))]
+    ev = settled_in_window(entries, set(SERIES_A13))
+    worst = sorted(ev, key=lambda k: ev[k]["g2"])[:N_DETAIL]
+    out = {"note": "the ledger's own fill records, primary window, pessimistic fills; H is the quoting hour (UTC)",
+           "window": WINDOW, "fills": {k: {a: hourly(entries, k, a) for a in FILL_ARMS} for k in worst},
+           "last_entry": entries[-1]["H"] if entries else None}
+    OUT_FILLS.parent.mkdir(parents=True, exist_ok=True)
+    OUT_FILLS.write_text(json.dumps(out, indent=1))
+    for k, by_arm in out["fills"].items():
+        for a, rows in by_arm.items():
+            for r in rows:
+                print(k, a, r["H"], r["ticker"].split("-")[-1], r["side"], r["price_c"], r["contracts"])
+    print("->", OUT_FILLS)
 
 
 def run(entries_dir: Path):
@@ -99,6 +132,14 @@ def self_test() -> bool:
     check("fills across entries pooled by leg and side, contract-weighted price",
           L == [{"ticker": "KXHIGHAUS-26OCT25-B83.5", "side": "buy YES", "contracts": 40, "mean_price_c": 63.0},
                 {"ticker": "KXHIGHAUS-26OCT25-B83.5", "side": "sell YES", "contracts": 5, "mean_price_c": 29.0}])
+    H = hourly(entries, "KXHIGHAUS-26OCT25", "g2")
+    check("hourly fills keep the hour, side and price, in ledger order",
+          H == [{"H": "20261024T10", "ticker": "KXHIGHAUS-26OCT25-B83.5", "side": "buy YES", "price_c": 60, "contracts": 10},
+                {"H": "20261025T15", "ticker": "KXHIGHAUS-26OCT25-B83.5", "side": "buy YES", "price_c": 64, "contracts": 30},
+                {"H": "20261025T15", "ticker": "KXHIGHAUS-26OCT25-B83.5", "side": "sell YES", "price_c": 29, "contracts": 5}])
+    entries[1]["new_fills"]["primary"]["g2"].append(fill("KXHIGHAUS-26OCT25", "KXHIGHAUS-26OCT25-B83.5", 1, 64, 2))
+    check("same hour, side and price summed", hourly(entries, "KXHIGHAUS-26OCT25", "g2")[1]["contracts"] == 32)
+    check("an arm with no fills gives an empty list", hourly(entries, "KXHIGHAUS-26OCT25", "lin2") == [])
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 
@@ -107,10 +148,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--self-test", action="store_true")
     ap.add_argument("--entries", type=Path)
+    ap.add_argument("--fills", action="store_true", help="write the hourly fills of the worst events instead")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    run(a.entries)
+    run_fills(a.entries) if a.fills else run(a.entries)
 
 
 if __name__ == "__main__":

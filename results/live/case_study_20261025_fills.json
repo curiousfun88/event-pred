@@ -1,0 +1,257 @@
+{
+ "note": "the ledger's own fill records, primary window, pessimistic fills; H is the quoting hour (UTC)",
+ "window": [
+  "20261025T11",
+  "20261026T12"
+ ],
+ "fills": {
+  "KXHIGHPHIL-26OCT25": {
+   "g2": [
+    {
+     "H": "20261024T14",
+     "ticker": "KXHIGHPHIL-26OCT25-B69.5",
+     "side": "sell YES",
+     "price_c": 25,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T02",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "sell YES",
+     "price_c": 9,
+     "contracts": 2
+    },
+    {
+     "H": "20261025T04",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "sell YES",
+     "price_c": 8,
+     "contracts": 3
+    },
+    {
+     "H": "20261025T05",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 78,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T06",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 74,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T08",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 65,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T10",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 66,
+     "contracts": 5
+    },
+    {
+     "H": "20261025T11",
+     "ticker": "KXHIGHPHIL-26OCT25-B69.5",
+     "side": "sell YES",
+     "price_c": 10,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T14",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 78,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T15",
+     "ticker": "KXHIGHPHIL-26OCT25-B69.5",
+     "side": "sell YES",
+     "price_c": 7,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "buy YES",
+     "price_c": 58,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "sell YES",
+     "price_c": 68,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 31,
+     "contracts": 5
+    }
+   ],
+   "lin2": [
+    {
+     "H": "20261024T14",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "buy YES",
+     "price_c": 12,
+     "contracts": 10
+    },
+    {
+     "H": "20261024T14",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "buy YES",
+     "price_c": 52,
+     "contracts": 1
+    },
+    {
+     "H": "20261024T14",
+     "ticker": "KXHIGHPHIL-26OCT25-B69.5",
+     "side": "sell YES",
+     "price_c": 25,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHPHIL-26OCT25-B65.5",
+     "side": "sell YES",
+     "price_c": 68,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHPHIL-26OCT25-B67.5",
+     "side": "sell YES",
+     "price_c": 38,
+     "contracts": 10
+    }
+   ]
+  },
+  "KXLALIGAGAME-26OCT25BARRMA": {
+   "g2": [
+    {
+     "H": "20261015T21",
+     "ticker": "KXLALIGAGAME-26OCT25BARRMA-RMA",
+     "side": "sell YES",
+     "price_c": 21,
+     "contracts": 10
+    },
+    {
+     "H": "20261017T23",
+     "ticker": "KXLALIGAGAME-26OCT25BARRMA-RMA",
+     "side": "sell YES",
+     "price_c": 22,
+     "contracts": 10
+    },
+    {
+     "H": "20261018T21",
+     "ticker": "KXLALIGAGAME-26OCT25BARRMA-RMA",
+     "side": "sell YES",
+     "price_c": 22,
+     "contracts": 10
+    }
+   ],
+   "lin2": []
+  },
+  "KXHIGHAUS-26OCT25": {
+   "g2": [
+    {
+     "H": "20261024T23",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 64,
+     "contracts": 1
+    },
+    {
+     "H": "20261025T02",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 69,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T08",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 72,
+     "contracts": 8
+    },
+    {
+     "H": "20261025T09",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 71,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T10",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 71,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T11",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 68,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T12",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 64,
+     "contracts": 1
+    },
+    {
+     "H": "20261025T15",
+     "ticker": "KXHIGHAUS-26OCT25-B81.5",
+     "side": "buy YES",
+     "price_c": 29,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T19",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "sell YES",
+     "price_c": 60,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T20",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "buy YES",
+     "price_c": 21,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T20",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "sell YES",
+     "price_c": 23,
+     "contracts": 10
+    },
+    {
+     "H": "20261025T21",
+     "ticker": "KXHIGHAUS-26OCT25-B83.5",
+     "side": "sell YES",
+     "price_c": 5,
+     "contracts": 10
+    }
+   ],
+   "lin2": []
+  }
+ },
+ "last_entry": "20261029T23"
+}
