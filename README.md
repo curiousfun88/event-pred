@@ -74,5 +74,3 @@ bash scripts/run_self_tests.sh            # about 2-3 minutes, no data needed
 ```
 
 Data download and the commands for each stage are in [`REPRODUCE.md`](REPRODUCE.md).
-
-`CLAUDE.md` holds the project's working notes (state, open items and pitfalls found along the way).

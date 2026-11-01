@@ -9,7 +9,7 @@ The second half, [Revisions](#revisions), records every conclusion that was
 later refined or withdrawn, with the evidence that changed it. Several
 documents below were superseded; the tables say so where that happened.
 
-For current state and next steps, read [`CLAUDE.md`](../CLAUDE.md). For every
+For the current state, read the [`README`](../README.md). For every
 script, read [`SCRIPTS.md`](SCRIPTS.md). For where each document lives, read
 [`REPO-LAYOUT.md`](REPO-LAYOUT.md).
 
@@ -194,7 +194,7 @@ Results on the 5-month pilot:
 | [`planning/four-week-plan-and-reframe.md`](planning/four-week-plan-and-reframe.md) | Current plan. v2; v1 was built around the withdrawn PnL headline |
 
 **Now:** awaiting supervisor response to the Recess consult and the memo.
-Open items are listed in priority order in [`CLAUDE.md`](../CLAUDE.md).
+Open items were then listed in priority order in `CLAUDE.md` (removed 2026-11-01).
 
 ---
 
