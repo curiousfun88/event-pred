@@ -50,7 +50,8 @@ docs/                   research documents (map: docs/REPO-LAYOUT.md)
   SCRIPTS.md            index of every script, by phase
   planning/             the three pre-registrations
   1-detection/ ... 5-literature/   findings by question; reports/ = as sent to the supervisor
-stg_infra/              all code; run from the repository root
+stg_infra/              all code, run from the repository root. The name is historical (spatio-temporal graph
+                        infrastructure, from the first phase). It now holds the simulator, policies and live system too
   simulate_maker.py maker_policy.py   maker fill simulator and policy G
   examples/             analyses: measurement, retraining (retrain_g2.py), walk-forward, baselines, case studies
   live_signal_producer.py paper_trader.py paper_ledger.py cut_report.py   the live test
