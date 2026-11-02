@@ -56,8 +56,9 @@ last prints fall within 30 minutes of each other (**n = 467**, 9.5% of
 before any fee.** Buying at the ask loses 14.92¢. The implied mid sits at
 $1.074, but nothing trades at mid.
 
-Stable across settings: bid-side sum is $1.0114 at a 60-minute span and
-$0.9993 with no span limit. The apparent +4¢ deviation lives entirely on the
+Stable across settings: the bid-side sum is $0.9987 at a 30-minute span (above)
+and $0.9993 at a 60-minute span (n = 662, `logs/v2_forecast/mece_spread_artefact_span60.log`,
+the figure the report uses). The apparent +4¢ deviation lives entirely on the
 ask side and **is not capturable on the average basket**.
 
 ## 4. The gated tail — RESOLVED, and it fails too
