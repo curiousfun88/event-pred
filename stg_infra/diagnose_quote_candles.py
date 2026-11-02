@@ -51,6 +51,13 @@ def basket_sums(legs):
     return last, bid, ask, 0.5 * (bid + ask)
 
 
+def taker_fees(legs):
+    """Kalshi taker fee (report Equation 2.1, 0.07 x C x P(1-P) per leg, C = 1, before rounding) for a taker who
+    sells every leg at its bid and for one who buys every leg at its ask. legs: list of (last, bid, ask). Dollars."""
+    f = lambda p: 0.07 * p * (1.0 - p)
+    return sum(f(b) for _, b, _ in legs), sum(f(a) for _, _, a in legs)
+
+
 def self_test() -> int:
     fails = 0
 
@@ -65,6 +72,10 @@ def self_test() -> int:
     check("one-sided book kept (bid 0)", quote_at(idx, "B", 100) == (0.0, 0.03))
     s = basket_sums([(0.46, 0.40, 0.45), (0.56, 0.52, 0.58)])
     check("basket sums", all(math.isclose(a, b) for a, b in zip(s, (1.02, 0.92, 1.03, 0.975))))
+    fs, fb = taker_fees([(0, 1 / 6, 1 / 6)] * 6)
+    check(f"taker fee, six legs at 1/6: 6 x 0.07 x (1/6)(5/6) = 5.83c ({100 * fs:.2f}c)", math.isclose(fs, 0.07 * 5 / 6) and fs == fb)
+    fs, _ = taker_fees([(0, 0.0, 0.02), (0, 1.0, 1.0)])
+    check("taker fee is zero at prices 0 and 1", fs == 0.0)
     print(f"\nself-test: {'ALL PASS' if not fails else f'{fails} FAILURE(S)'}")
     return 1 if fails else 0
 
@@ -137,7 +148,7 @@ def run(args) -> int:
                 if len(rows) == len(members):
                     n_bk_full += 1
                     two_sided = all(0 < b_ < a_ < 1 for _, b_, a_ in rows)
-                    bk.append(basket_sums(rows) + (len(rows), float(two_sided)))
+                    bk.append(basket_sums(rows) + (len(rows), float(two_sided)) + taker_fees(rows))
         del ct
 
     c = lambda x: 100.0 * np.asarray(x)
@@ -181,6 +192,19 @@ def run(args) -> int:
             print(f"     [{name}: n={len(sb):,} ({len(sb) / len(b):.0%})] mid-sum dev mean "
                   f"{100 * (sb[:, 3] - 1).mean():+.2f}c | last-print dev mean {100 * (sb[:, 0] - 1).mean():+.2f}c | "
                   f"bid sum {sb[:, 1].mean():.4f}, ask sum {sb[:, 2].mean():.4f}")
+    fs, fb, nl = c(b[:, 6]), c(b[:, 7]), b[:, 4]
+    print("6. taker fees (report Equation 2.1, 0.07 x P(1-P) per leg, one contract per leg, before rounding):")
+    for name, sel in (("all baskets", np.ones(len(b), bool)), ("six-leg baskets", nl == 6)):
+        if sel.any():
+            print(f"     {name:<15} (n={int(sel.sum()):,}): selling at the bids median {np.median(fs[sel]):.2f}c, "
+                  f"5th-95th percentile {np.percentile(fs[sel], 5):.2f}-{np.percentile(fs[sel], 95):.2f}c, "
+                  f"max {fs[sel].max():.2f}c | buying at the asks median {np.median(fb[sel]):.2f}c")
+    print(f"     edge above the fee: sell-at-bids in {np.mean(sell > fs):.1%} of snapshots, "
+          f"buy-at-asks in {np.mean(buy > fb):.1%}")
+    net = np.concatenate([(sell - fs)[sell > fs], (buy - fb)[buy > fb]])
+    if len(net):
+        print(f"     those snapshots: {len(net)} of {len(b):,}, profit after the fee median {np.median(net):.2f}c, "
+              f"max {net.max():.2f}c per basket")
     print("\nexit: 0")
     return 0
 

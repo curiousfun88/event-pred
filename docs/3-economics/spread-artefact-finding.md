@@ -93,6 +93,12 @@ slightly more often than not. Against Kalshi's taker fee on a six-leg basket:
 | peaked, near resolution | 1.31¢ |
 
 Fees are 1.3× to 5.8× the gross edge, and selling at the bid means *taking*.
+
+**Measured fees (2026-11-03).** The three profiles above are illustrations; only the flat one's prices were recorded.
+The report uses measured fees instead: Equation 2.1 applied to every leg's quoted bid and ask in the 7,532 test
+snapshots (`stg_infra/diagnose_quote_candles.py --split test`, section 6 of `logs/v2_forecast/quote_validation_test.log`).
+Six-leg baskets sold at the bids: median 3.75c, 5th-95th percentile 0.07-4.98c, max 5.70c (n = 1,924). The edge beats
+the fee in 0.1% of snapshots when selling at the bids and 0.0% when buying at the asks.
 No configuration survives.
 
 **Caveat.** Test 3's gate is a crude `|dev_last| > 10¢` threshold, not the
