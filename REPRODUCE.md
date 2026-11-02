@@ -35,7 +35,7 @@ bash scripts/run_self_tests.sh            # every script with a --self-test; pri
 ```
 
 Scripts written after the project adopted the convention carry a `--self-test` that checks planted cases with known
-answers before touching real data (69 scripts, about 2-3 minutes in all). Older exploratory scripts from the detection phase do not.
+answers before touching real data (72 scripts, about 2-3 minutes in all). Older exploratory scripts from the detection phase do not.
 
 ## Level 3: data
 
