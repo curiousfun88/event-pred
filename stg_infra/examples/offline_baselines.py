@@ -97,7 +97,7 @@ def main_run():
     feats, cats = list(D["feats"]), list(D["cats"])
     res = {}
     for i, tm in enumerate(tg.TEST_MONTHS):
-        te, tr = D["month"] == tm, D["month"] < tm
+        tr, te = tg.fold(D["month"], tm, D["event"])
         net, cap, qty = D["net_c"][te], D["capital_c"][te], D["qty"][te]
         w3 = l9["folds"]["W3"][i]
         row = {"W3": {"ret": w3["ret"], "kept": w3["kept"]}, "quote_all": {"ret": w3["ret_all"]}}
@@ -149,7 +149,7 @@ def main_dollars():
         ds = [dollars(np.where(np.random.default_rng(s_).random(n) < share, 2.0, -np.inf), net, cap, qty) for s_ in range(SEEDS)]
         return {k: float(np.mean([d[k] for d in ds])) for k in ds[0]}
     for i, tm in enumerate(tg.TEST_MONTHS):
-        te, tr = D["month"] == tm, D["month"] < tm
+        tr, te = tg.fold(D["month"], tm, D["event"])
         net, cap, qty = D["net_c"][te], D["capital_c"][te], D["qty"][te]
         p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
         pl = tb.predict(tb.fit_lin2(rows_from_X(D["X"][tr], feats, cats), D["y"][tr]), rows_from_X(D["X"][te], feats, cats))
@@ -251,7 +251,7 @@ def main_curve():
         keep = pred > 1.0
         acc[model]["own_1c"][0] += net[keep].sum(); acc[model]["own_1c"][1] += cap[keep].sum()
     for tm in tg.TEST_MONTHS:
-        te, tr = D["month"] == tm, D["month"] < tm
+        tr, te = tg.fold(D["month"], tm, D["event"])
         net, cap = D["net_c"][te], D["capital_c"][te]
         p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
         pl = tb.predict(tb.fit_lin2(rows_from_X(D["X"][tr], feats, cats), D["y"][tr]), rows_from_X(D["X"][te], feats, cats))
@@ -294,7 +294,7 @@ def main_mlp_sensitivity():
                 tr = np.ones(len(D["month"]), bool)
                 R_te, (net, cap, qty) = sep[0], sep[1:]
             else:
-                tr, te = D["month"] < tm, D["month"] == tm
+                tr, te = tg.fold(D["month"], tm, D["event"])
                 R_te, net, cap, qty = rows_from_X(D["X"][te], feats, cats), D["net_c"][te], D["capital_c"][te], D["qty"][te]
             blob = tb.fit_mlp2(rows_from_X(D["X"][tr], feats, cats, D["month"][tr]), D["y"][tr], log=lambda *a: None, hp=hp)
             sc = tg.score(tb.predict(blob, R_te), net, cap, qty)
@@ -354,7 +354,7 @@ def main_lin_sensitivity():
             tr = np.ones(len(D["month"]), bool)
             R_te, net, cap, qty = september_rows()
         else:
-            tr, te = D["month"] < tm, D["month"] == tm
+            tr, te = tg.fold(D["month"], tm, D["event"])
             R_te, net, cap, qty = rows_from_X(D["X"][te], feats, cats), D["net_c"][te], D["capital_c"][te], D["qty"][te]
         R_tr, y = rows_from_X(D["X"][tr], feats, cats), D["y"][tr]
         sc = tb._scaled(R_tr)
@@ -427,7 +427,7 @@ def main_curves_full(overlap_only=False):
     cat_col = feats.index("cat_i")
     acc = {}
     for tm in tg.TEST_MONTHS:
-        te, tr = D["month"] == tm, D["month"] < tm
+        tr, te = tg.fold(D["month"], tm, D["event"])
         net, cap = D["net_c"][te], D["capital_c"][te]
         R_tr, R_te = rows_from_X(D["X"][tr], feats, cats, D["month"][tr]), rows_from_X(D["X"][te], feats, cats)
         p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
@@ -502,7 +502,7 @@ def main_weather_split():
     wi = cats.index(WEATHER_CAT)
     res = {"weather": [], "non_weather": []}
     for tm in tg.TEST_MONTHS:
-        te, tr = D["month"] == tm, D["month"] < tm
+        tr, te = tg.fold(D["month"], tm, D["event"])
         p3, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col, D["X"][te], D["month"][tr])
         w = D["X"][te][:, cat_col] == wi
         for name, m in (("weather", w), ("non_weather", ~w)):

@@ -37,7 +37,7 @@ _REPO = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(_REPO / "stg_infra"), str(_REPO / "stg_infra/examples")]
 
 OUT = _REPO / "results/live/wf_risk_2026.json"
-RECORDED = {"2026-04": 1.95, "2026-05": 2.30, "2026-06": 3.26, "2026-07": 3.46, "2026-08": 2.59}   # A15 hgb_a12
+RECORDED = {"2026-04": 1.92, "2026-05": 1.93, "2026-06": 3.09, "2026-07": 2.43, "2026-08": 1.20}   # A15 hgb_a12, purged folds (A17)
 SEEDS = 5
 DAY_NS = 86_400 * 10**9
 
@@ -114,7 +114,7 @@ def run(out_path: Path):
     assert g["name"] == "hgb_a12"
     picks, rnd, folds = [], {k: [] for k in range(SEEDS)}, {}
     for tm in t.TEST_MONTHS:
-        tr, te = t.fold(D["month"], tm)
+        tr, te = t.fold(D["month"], tm, D["event"])
         mine = mon == tm
         check_alignment(tm, int(mine.sum()), int(te.sum()), X[mine], D["X"][te], net[mine], D["net_c"][te])
         pred, _ = t.fit_predict(g, D["X"][tr], D["y"][tr], np.ones(tr.sum()), cat_col, D["X"][te], D["month"][tr])
@@ -188,8 +188,8 @@ def self_test() -> bool:
     check("gate 1 stops on a different row count", stops(lambda: check_alignment("m", 3, 4, Xa, Xa, np.ones(3), np.ones(3))))
     check("gate 1 stops on a changed feature", stops(lambda: check_alignment("m", 3, 3, Xa, Xa + 0.5, np.ones(3), np.ones(3))))
     check("gate 1 stops on a changed net", stops(lambda: check_alignment("m", 3, 3, Xa, Xa, np.ones(3), np.zeros(3))))
-    check("gate 2 passes the recorded return", not stops(lambda: check_return("2026-06", 3.2617)))
-    check("gate 2 stops on a different return", stops(lambda: check_return("2026-06", 3.20)))
+    check("gate 2 passes the recorded return", not stops(lambda: check_return("2026-06", 3.0912)))
+    check("gate 2 stops on a different return", stops(lambda: check_return("2026-06", 3.26)))
     print("SELF-TEST PASSED" if ok else "SELF-TEST FAILED")
     return ok
 

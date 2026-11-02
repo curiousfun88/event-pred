@@ -89,7 +89,7 @@ def main_run():
             if f"{w}|{tm}" in done:
                 folds[w].append(done[f"{w}|{tm}"]); print(json.dumps({"recipe": w, "resumed": True, **done[f"{w}|{tm}"]}), flush=True)
                 continue
-            tr = window_mask(D["month"], tm, k)
+            tr = window_mask(D["month"], tm, k) & tg.fold(D["month"], tm, D["event"])[0]   # A17: purged
             pred, _ = tg.fit_predict(tg.GRID[0], D["X"][tr], D["y"][tr], np.ones(int(tr.sum())), cat_col,
                                      D["X"][te], D["month"][tr])
             sc = {"fold": tm, "n_train": int(tr.sum()), **tg.score(pred, D["net_c"][te], D["capital_c"][te], D["qty"][te])}

@@ -1,0 +1,6 @@
+{"2026-04": {"weather": 2.894, "non_weather": 0.606}}
+{"2026-05": {"weather": 1.411, "non_weather": 2.879}}
+{"2026-06": {"weather": 2.926, "non_weather": 3.475}}
+{"2026-07": {"weather": 2.202, "non_weather": 2.859}}
+{"2026-08": {"weather": -0.279, "non_weather": 3.565}}
+{"mean_ret": {"weather": 1.2988171517634226, "non_weather": 4.151542541472774}, "months_positive": {"weather": 4, "non_weather": 6}, "DECISION": "re-include weather"}

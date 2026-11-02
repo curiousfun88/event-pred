@@ -1,0 +1,87 @@
+{"alpha": 0.01, "fold": "2026-04", "n_train": 478808, "kept": 3436, "share": 0.07659043288306362, "ret": 3.5231880848296937, "ret_all": -0.7299026110664525, "net_c_per_contract": 2.042760452906572, "net_usd": 322.94, "capital_usd": 9166.13, "coef_shift": 2.515419582480563e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-04", "n_train": 478808, "kept": 3436, "share": 0.07659043288306362, "ret": 3.5231880848296937, "ret_all": -0.7299026110664525, "net_c_per_contract": 2.042760452906572, "net_usd": 322.94, "capital_usd": 9166.13, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-04", "n_train": 478808, "kept": 3436, "share": 0.07659043288306362, "ret": 3.5231880848296937, "ret_all": -0.7299026110664525, "net_c_per_contract": 2.042760452906572, "net_usd": 322.94, "capital_usd": 9166.13, "coef_shift": 0.00025147245186329606, "pick_overlap": 1.0}
+{"alpha": 10000.0, "fold": "2026-04", "n_train": 478808, "kept": 3349, "share": 0.07465115242298605, "ret": 3.4294758268807417, "ret_all": -0.7299026110664525, "net_c_per_contract": 1.988948839628161, "net_usd": 305.96, "capital_usd": 8921.48, "coef_shift": 0.024716531300264414, "pick_overlap": 0.9718105201976169}
+{"alpha": 100000.0, "fold": "2026-04", "n_train": 478808, "kept": 2787, "share": 0.062123846462484957, "ret": 3.8325948309062206, "ret_all": -0.7299026110664525, "net_c_per_contract": 2.1604771371769385, "net_usd": 271.68, "capital_usd": 7088.67, "coef_shift": 0.19845783438602993, "pick_overlap": 0.7985549132947977}
+{"alpha": 0.01, "fold": "2026-05", "n_train": 523559, "kept": 3511, "share": 0.07943259202280491, "ret": 5.352581108672696, "ret_all": -0.793853071793604, "net_c_per_contract": 3.103896103896104, "net_usd": 511.46, "capital_usd": 9555.39, "coef_shift": 2.5736525007394154e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-05", "n_train": 523559, "kept": 3511, "share": 0.07943259202280491, "ret": 5.352581108672696, "ret_all": -0.793853071793604, "net_c_per_contract": 3.103896103896104, "net_usd": 511.46, "capital_usd": 9555.39, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-05", "n_train": 523559, "kept": 3511, "share": 0.07943259202280491, "ret": 5.352581108672696, "ret_all": -0.793853071793604, "net_c_per_contract": 3.103896103896104, "net_usd": 511.46, "capital_usd": 9555.39, "coef_shift": 0.00025727978697969215, "pick_overlap": 1.0}
+{"alpha": 10000.0, "fold": "2026-05", "n_train": 523559, "kept": 3441, "share": 0.07784891744530667, "ret": 5.529006731411541, "ret_all": -0.793853071793604, "net_c_per_contract": 3.2089468779123953, "net_usd": 516.48, "capital_usd": 9341.28, "coef_shift": 0.02516522317438926, "pick_overlap": 0.9800626602107662}
+{"alpha": 100000.0, "fold": "2026-05", "n_train": 523559, "kept": 2813, "share": 0.06364109409289383, "ret": 6.340625398297524, "ret_all": -0.793853071793604, "net_c_per_contract": 3.6107636475947804, "net_usd": 467.63, "capital_usd": 7375.14, "coef_shift": 0.19829669882523987, "pick_overlap": 0.8001707941929974}
+{"alpha": 0.01, "fold": "2026-06", "n_train": 568088, "kept": 2171, "share": 0.0554562174312864, "ret": 3.8124317207764924, "ret_all": -0.2573445805846584, "net_c_per_contract": 2.2125284491167228, "net_usd": 204.15, "capital_usd": 5354.85, "coef_shift": 2.421878115004105e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-06", "n_train": 568088, "kept": 2171, "share": 0.0554562174312864, "ret": 3.8124317207764924, "ret_all": -0.2573445805846584, "net_c_per_contract": 2.2125284491167228, "net_usd": 204.15, "capital_usd": 5354.85, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-06", "n_train": 568088, "kept": 2171, "share": 0.0554562174312864, "ret": 3.8124317207764924, "ret_all": -0.2573445805846584, "net_c_per_contract": 2.2125284491167228, "net_usd": 204.15, "capital_usd": 5354.85, "coef_shift": 0.00024210742111066555, "pick_overlap": 1.0}
+{"alpha": 10000.0, "fold": "2026-06", "n_train": 568088, "kept": 2132, "share": 0.05445999795647287, "ret": 3.6934398719073793, "ret_all": -0.2573445805846584, "net_c_per_contract": 2.1244188620765994, "net_usd": 191.92, "capital_usd": 5196.24, "coef_shift": 0.023685988425535546, "pick_overlap": 0.9783908045977011}
+{"alpha": 100000.0, "fold": "2026-06", "n_train": 568088, "kept": 1677, "share": 0.04283743741698171, "ret": 4.457046594108657, "ret_all": -0.2573445805846584, "net_c_per_contract": 2.481126511353583, "net_usd": 168.27, "capital_usd": 3775.37, "coef_shift": 0.18790513855648114, "pick_overlap": 0.7627118644067796}
+{"alpha": 0.01, "fold": "2026-07", "n_train": 607138, "kept": 1273, "share": 0.03225561242588557, "ret": 2.6102978252515037, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.6917505741035153, "net_usd": 95.77, "capital_usd": 3668.93, "coef_shift": 2.40089469995709e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-07", "n_train": 607138, "kept": 1273, "share": 0.03225561242588557, "ret": 2.6102978252515037, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.6917505741035153, "net_usd": 95.77, "capital_usd": 3668.93, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-07", "n_train": 607138, "kept": 1273, "share": 0.03225561242588557, "ret": 2.6102978252515037, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.6917505741035153, "net_usd": 95.77, "capital_usd": 3668.93, "coef_shift": 0.00024000643010752874, "pick_overlap": 1.0}
+{"alpha": 10000.0, "fold": "2026-07", "n_train": 607138, "kept": 1247, "share": 0.031596817513809355, "ret": 2.2929616724738677, "ret_all": -1.0680263710475613, "net_c_per_contract": 1.4867160672329658, "net_usd": 82.26, "capital_usd": 3587.5, "coef_shift": 0.023452199710388658, "pick_overlap": 0.9795758051846033}
+{"alpha": 100000.0, "fold": "2026-07", "n_train": 607138, "kept": 940, "share": 0.02381796989814017, "ret": 3.130734814590127, "ret_all": -1.0680263710475613, "net_c_per_contract": 2.0198140900195694, "net_usd": 82.57, "capital_usd": 2637.4, "coef_shift": 0.18533156726995173, "pick_overlap": 0.7384131971720346}
+{"alpha": 0.01, "fold": "2026-08", "n_train": 646784, "kept": 1805, "share": 0.05573568009881118, "ret": 3.630120046420486, "ret_all": -1.666181061822914, "net_c_per_contract": 2.2015691704165223, "net_usd": 190.81, "capital_usd": 5256.3, "coef_shift": 2.258409324265674e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-08", "n_train": 646784, "kept": 1805, "share": 0.05573568009881118, "ret": 3.630120046420486, "ret_all": -1.666181061822914, "net_c_per_contract": 2.2015691704165223, "net_usd": 190.81, "capital_usd": 5256.3, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-08", "n_train": 646784, "kept": 1802, "share": 0.05564304461942257, "ret": 3.653783943217065, "ret_all": -1.666181061822914, "net_c_per_contract": 2.217973893958646, "net_usd": 192.01, "capital_usd": 5255.1, "coef_shift": 0.0002257667566042791, "pick_overlap": 0.9983379501385041}
+{"alpha": 10000.0, "fold": "2026-08", "n_train": 646784, "kept": 1781, "share": 0.05499459626370233, "ret": 3.8149465365396567, "ret_all": -1.666181061822914, "net_c_per_contract": 2.317689955304634, "net_usd": 197.05, "capital_usd": 5165.21, "coef_shift": 0.022097262548937287, "pick_overlap": 0.982310668877833}
+{"alpha": 100000.0, "fold": "2026-08", "n_train": 646784, "kept": 1495, "share": 0.04616334722865524, "ret": 5.0147570549289044, "ret_all": -1.666181061822914, "net_c_per_contract": 2.9632467716758906, "net_usd": 208.82, "capital_usd": 4164.11, "coef_shift": 0.17651288109704716, "pick_overlap": 0.8201875344732488}
+{"alpha": 0.01, "fold": "2026-09-07..10-05", "n_train": 679400, "kept": 1724, "share": 0.0585359228575309, "ret": 3.4930991331879877, "ret_all": -1.449462652470798, "net_c_per_contract": 2.102009911894273, "net_usd": 152.69, "capital_usd": 4371.19, "coef_shift": 2.1290161889609476e-06, "pick_overlap": 1.0}
+{"alpha": 1.0, "fold": "2026-09-07..10-05", "n_train": 679400, "kept": 1724, "share": 0.0585359228575309, "ret": 3.4930991331879877, "ret_all": -1.449462652470798, "net_c_per_contract": 2.102009911894273, "net_usd": 152.69, "capital_usd": 4371.19, "coef_shift": 0.0, "pick_overlap": 1.0}
+{"alpha": 100.0, "fold": "2026-09-07..10-05", "n_train": 679400, "kept": 1724, "share": 0.0585359228575309, "ret": 3.4930991331879877, "ret_all": -1.449462652470798, "net_c_per_contract": 2.102009911894273, "net_usd": 152.69, "capital_usd": 4371.19, "coef_shift": 0.00021283634932125486, "pick_overlap": 1.0}
+{"alpha": 10000.0, "fold": "2026-09-07..10-05", "n_train": 679400, "kept": 1694, "share": 0.05751731631128616, "ret": 3.3920190005843436, "ret_all": -1.449462652470798, "net_c_per_contract": 2.033046179918091, "net_usd": 143.96, "capital_usd": 4244.08, "coef_shift": 0.02087416460912363, "pick_overlap": 0.9825986078886311}
+{"alpha": 100000.0, "fold": "2026-09-07..10-05", "n_train": 679400, "kept": 1378, "share": 0.046787994024174925, "ret": 3.4574665446360107, "ret_all": -1.449462652470798, "net_c_per_contract": 1.9978559942826515, "net_usd": 111.82, "capital_usd": 3234.16, "coef_shift": 0.168764760834665, "pick_overlap": 0.7993039443155452}
+{
+ "alpha_0.01": {
+  "mean_ret": 3.736952986523143,
+  "worst_ret": 2.6102978252515037,
+  "months_positive": 6,
+  "mean_share": 0.05966774295323043,
+  "max_coef_shift": 2.5736525007394154e-06,
+  "min_pick_overlap": 1.0,
+  "net_usd_total": 1477.82,
+  "g2_net_usd_total": 2790.83,
+  "g2_more_net_months": 4
+ },
+ "alpha_1": {
+  "mean_ret": 3.736952986523143,
+  "worst_ret": 2.6102978252515037,
+  "months_positive": 6,
+  "mean_share": 0.05966774295323043,
+  "max_coef_shift": 0.0,
+  "min_pick_overlap": 1.0,
+  "net_usd_total": 1477.82,
+  "g2_net_usd_total": 2790.83,
+  "g2_more_net_months": 4
+ },
+ "alpha_100": {
+  "mean_ret": 3.7408969693225735,
+  "worst_ret": 2.6102978252515037,
+  "months_positive": 6,
+  "mean_share": 0.05965230370666566,
+  "max_coef_shift": 0.00025727978697969215,
+  "min_pick_overlap": 0.9983379501385041,
+  "net_usd_total": 1479.02,
+  "g2_net_usd_total": 2790.83,
+  "g2_more_net_months": 4
+ },
+ "alpha_10000": {
+  "mean_ret": 3.6919749399662556,
+  "worst_ret": 2.2929616724738677,
+  "months_positive": 6,
+  "mean_share": 0.05851146631892724,
+  "max_coef_shift": 0.02516522317438926,
+  "min_pick_overlap": 0.9718105201976169,
+  "net_usd_total": 1437.63,
+  "g2_net_usd_total": 2790.83,
+  "g2_more_net_months": 4
+ },
+ "alpha_100000": {
+  "mean_ret": 4.372204206244573,
+  "worst_ret": 3.130734814590127,
+  "months_positive": 6,
+  "mean_share": 0.04756194818722181,
+  "max_coef_shift": 0.19845783438602993,
+  "min_pick_overlap": 0.7384131971720346,
+  "net_usd_total": 1310.79,
+  "g2_net_usd_total": 2790.83,
+  "g2_more_net_months": 5
+ }
+}

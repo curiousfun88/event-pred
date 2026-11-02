@@ -655,3 +655,45 @@ calibration of predicted vs realised net c/contract by prediction bucket and the
 (model arms); spread capture at the fill, markouts at 1 h, 24 h and settlement; results by fill-price band (1-15,
 15-50, 50-85, 85-99c); holding period (fill to market close); profit factor, average win and loss, hit rate,
 share of profitable days and the longest losing streak. The A12 reproduction gate applies unchanged.
+
+## Amendment A17 (2026-11-02, AFTER every walk-forward result, found in an independent check): purged walk-forward folds
+
+**What was wrong.** The 2026 walk-forward folds (A15, L9 and every analysis on `runs/tune_gbm/features.npz`) trained on
+the rows quoted before the test month (`tune_gbm.fold`: `month < test_month`). A row's month is its quote month, so an
+event quoted at the end of one month and still open in the next had rows on both sides of the split. Its training
+rows are labelled with the event's outcome, which was not known when the test month began. Example:
+KXAPRPOTUS-26AUG07, 26 rows quoted in July (training) and 121 in August (test). Shared events per fold: 54, 35, 16,
+15, 13, i.e. 4.7, 4.5, 4.3, 3.8 and 2.5% of the test rows. This is label overlap across the split, the case purging
+exists for (Lopez de Prado 2018, Advances in Financial Machine Learning, 7.4.1).
+
+**Change.** `tune_gbm.fold(month, test_month, event)` now also drops from training every row whose event has rows in
+the test month. Every walk-forward script routes through it (`select_g2_window`, `offline_baselines`, `ablate_g2`,
+`wf_risk_2026`, `tune_gbm`), with a self-test of the purge. Every walk-forward result is regenerated.
+
+**Not affected.** G's 2025 test (A12: training to 2025-05, test from 2025-08, audit A shows 0 shared events), the
+September 2026 validation window (0 of 386 events in training) and so A13's selection of W3, and the live test
+(models frozen before it). `weather_edge_by_month.py` (note 6) and the L11 weather decision are left as recorded:
+they are dated decisions, not reported results.
+
+**This changes reported numbers after they were known, in the direction that lowers G2's results.** First measured
+(scratch refit, before the scripts were changed): G2-W3 Apr-Aug mean +2.71% unpurged, +2.11% purged, every month
+positive.
+
+**A17 placebo (2026-11-02).** Removing the same number of random training rows from the month before (5 seeds), instead
+of the shared-event rows, moves G2's fold returns by -1.3 to +1.3 points (mean change about -0.3; purging: -0.6).
+G2 uses scikit-learn's early_stopping="auto", which holds out a random 10% of training rows, so removing any rows
+changes which are held out. The purge is the correct design, but its own effect is within this noise. Every
+variant stays positive in every month. **Regenerated results (purged):** G2-W3 six-fold mean +2.16% (worst +1.20%),
+W1 +1.50%, W2 +1.61%, so W3 is still selected. Linear +3.74%, neural +1.61%. The L11 weather decision on purged folds
+is unchanged (re-include weather), and its recorded file is kept as it was.
+
+**A17 scope (2026-11-02).** The purge removes training rows of events that also have rows in the test month. Strict
+purging would also drop training rows of events decided during the test month that have no test rows: by the dates in
+the event tickers, 102 rows in 10 events over all folds (at most 0.018% of a fold's training set: 95 in May, 6 in June,
+1 in July), e.g. KXEPLGAME-26MAY01LEEBUR. These events are not in the test set. They are left in, because removing any
+rows reshuffles the random validation holdout and moves fold returns by noise.
+
+**A17 and L11.** The L11 weather rule (re-include weather iff its mean walk-forward return is > 0) rerun on the purged
+folds: weather +1.30% (4 of 6 months positive), non-weather +4.15% (6 of 6), so weather is re-included, as on
+15 October. Saved as `results/live/l11_weather_split_purged.json` (log `l11_weather_split_purged.log`). The 15 October
+record, `results/live/l11_weather_split.json`, is unchanged. The report's Table C.2 shows the purged run.

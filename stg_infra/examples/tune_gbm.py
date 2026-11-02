@@ -79,9 +79,14 @@ def months_index(m):
 
 # ---------------------------------------------------------------- folds, weights, scoring
 
-def fold(month, test_month):
-    """Strictly forward: train on months before the test month, score the test month."""
-    return month < test_month, month == test_month
+def fold(month, test_month, event):
+    """Strictly forward and purged: train on months before the test month, score the test month.
+    A row's month is its quote month, so an event quoted before the test month and still open in it has rows on
+    both sides. Its outcome labels the training rows but was not known when the test month began, so those
+    training rows are dropped (purging, Lopez de Prado 2018, 7.4.1). Amendment A17, 2026-11-02."""
+    month, event = np.asarray(month), np.asarray(event)
+    te = month == test_month
+    return (month < test_month) & ~np.isin(event, np.unique(event[te])), te
 
 
 def recency_weights(month, test_month, half_life_m):
@@ -214,7 +219,7 @@ def fit(task, device, threads):
     gi, fi = tasks()[task]
     g, tm = GRID[gi], TEST_MONTHS[fi]
     D = load()
-    tr, te = fold(D["month"], tm)
+    tr, te = fold(D["month"], tm, D["event"])
     cat_col = list(D["feats"]).index("cat_i")
     w = recency_weights(D["month"][tr], tm, g.get("half_life_m"))
     t0 = time.time()
@@ -273,9 +278,12 @@ def self_test() -> bool:
         ok &= bool(c)
         print(f"  [{'PASS' if c else 'FAIL'}] {msg}")
     print("SELF-TEST")
-    tr, te = fold(np.array(["2026-03", "2026-04", "2026-05"]), "2026-04")
+    tr, te = fold(np.array(["2026-03", "2026-04", "2026-05"]), "2026-04", np.array(["A", "B", "C"]))
     check("fold is strictly forward: train 2026-03 only, test 2026-04 only", list(tr) == [True, False, False]
           and list(te) == [False, True, False])
+    tr, te = fold(np.array(["2026-03", "2026-03", "2026-04"]), "2026-04", np.array(["A", "B", "B"]))
+    check("fold is purged: event B is still open in the test month, so its March row leaves training",
+          list(tr) == [True, False, False] and list(te) == [False, False, True])
     check("no test month is in or after the validation window", max(TEST_MONTHS) < "2026-09")
     w = recency_weights(np.array(["2026-03", "2026-02", "2025-12"]), "2026-04", 3)
     check(f"recency: last month weight 1, 3 months older 0.5 ({w.round(3)})", abs(w[0] - 1) < 1e-12 and abs(w[2] - 0.5) < 1e-12)

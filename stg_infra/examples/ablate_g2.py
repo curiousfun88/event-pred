@@ -76,7 +76,7 @@ def paired_boot(folds, n_boot=N_BOOT, seed=0):
 
 
 def fit_fold(D, cols, tm):
-    tr, te = tg.fold(D["month"], tm)
+    tr, te = tg.fold(D["month"], tm, D["event"])
     feats = list(D["feats"])
     X = D["X"][:, cols]
     cat_col = cols.index(feats.index("cat_i")) if feats.index("cat_i") in cols else -1
@@ -169,7 +169,7 @@ def self_test() -> bool:
     X = rng.normal(size=(n, 3)).astype(np.float32); X[:, 2] = rng.integers(0, 4, n)
     y = np.where(X[:, 0] > 0, 20.0, -20.0)
     month = np.array(["2026-03"] * 15_000 + ["2026-04"] * 5_000)
-    D = {"X": X, "y": y, "month": month, "feats": np.array(["price", "spread", "cat_i"])}
+    D = {"X": X, "y": y, "month": month, "event": np.arange(n).astype(str), "feats": np.array(["price", "spread", "cat_i"])}
     for cols, want, msg in (([0, 1, 2], True, "all features"), ([1, 2], False, "signal column dropped"),
                             ([0, 1], True, "categorical dropped (cat_col -> -1)")):
         pred, te = fit_fold(D, cols, "2026-04")
