@@ -112,7 +112,22 @@ python stg_infra/cut_report.py --cut 2026-10-28T00 --settle-by 2026-10-30T00 --o
 python stg_infra/report_numbers.py --cut-json results/live/cut_interim.json --out ../fyp-report/generated/numbers.tex
 ```
 
-`cut_report.py` needs a full copy of `runs/live` (ledger, settlement cache, logged scores); see its docstring.
+`cut_report.py` needs a full copy of `runs/live` (ledger, settlement cache, logged scores); see its docstring. The
+public repository has all three, with the settlement cache stored as text (`runs/live/paper/markets.jsonl`). To
+recompute the cut from it:
+
+```bash
+git clone --depth 1 https://github.com/curiousfun88/event-pred-live.git live-full      # about 300 MB
+python -c "import sys, pickle; sys.path.insert(0, 'stg_infra'); import live_backup as lb; from pathlib import Path; \
+p = Path('live-full/runs/live/paper'); (p / 'markets.pkl').write_bytes(pickle.dumps(lb.import_markets(p / 'markets.jsonl')))"
+LIVE_DIR=live-full/runs/live python stg_infra/cut_report.py --cut 2026-10-28T00 --settle-by 2026-10-30T00 --out /tmp/cut.json
+python stg_infra/report_numbers.py --cut-json /tmp/cut.json --out /tmp/numbers.tex
+```
+
+Checked on 2026-11-04 from a fresh clone: every macro matches `fyp-report/generated/numbers.tex` except the
+descriptive arm "liquid traded" (`liq_traded`). The live system recomputes that arm for every event only when
+`paper_trader.py --run` is run on the copy before the cut (L17). Without that step its main-result one-sided bound
+reads -5.8% against the report's -5.7%. G2, random and every hypothesis test match exactly.
 Third-party timestamps are checked with the OpenTimestamps client (`ots verify` on any file in `runs/live/stamps/`).
 
 ### STGAT and ladders (not in the report)
