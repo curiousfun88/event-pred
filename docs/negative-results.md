@@ -1,7 +1,7 @@
 # Negative results
 
 Work that was done, measured and reported in earlier drafts of the report, but left out of the final report
-(*The Law of One Dollar: Machine Learning for Market Making in Kalshi Prediction Markets*, submitted 3 November 2026),
+(*The Law of One Dollar: Machine Learning for Market Making in Kalshi Prediction Markets*, submitted 4 November 2026),
 which reports only the results that carry its argument. This file keeps them on record for accountability. Every
 figure is the one recorded at the time, in earlier report drafts or the research log, with the evidence behind it.
 
