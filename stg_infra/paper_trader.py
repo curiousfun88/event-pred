@@ -284,13 +284,25 @@ DAY = lambda f: int(f[9]) // (24 * H_NS)
 EVENT = lambda f: f[0]
 
 
-def boot_ret(cl, n=2000, seed=0):
+# Final cut (changed 2026-11-12, before it was computed): 200,000 draws instead of the plan's 2,000, for precision.
+# At the interim cut, 2,000 draws put G2's one-sided bound at +0.85% against about +0.55% with many more draws.
+BOOT_N = 200_000
+BOOT_CHUNK = 20_000          # draws per block, so the index array stays small in RAM
+
+
+def boot_idx(rng, n, k):
+    """Resampling indices in blocks of BOOT_CHUNK draws; for n <= BOOT_CHUNK the same draws as one call."""
+    for s in range(0, n, BOOT_CHUNK):
+        yield rng.integers(0, k, (min(BOOT_CHUNK, n - s), k))
+
+
+def boot_ret(cl, n=BOOT_N, seed=0):
     """Bootstrap draws of net return (%) over clusters; the cluster_ci resampling of simulate_maker."""
     v = np.array(list(cl.values()), float).reshape(-1, 2)
     if len(v) < 2 or v[:, 1].sum() <= 0:
         return None
-    idx = np.random.default_rng(seed).integers(0, len(v), (n, len(v)))
-    return v[idx, 0].sum(1) / np.maximum(v[idx, 1].sum(1), 1e-9) * 100
+    rng = np.random.default_rng(seed)
+    return np.concatenate([v[i, 0].sum(1) / np.maximum(v[i, 1].sum(1), 1e-9) * 100 for i in boot_idx(rng, n, len(v))])
 
 
 def verdict_stats(fills):
@@ -308,7 +320,7 @@ def verdict_stats(fills):
     return out
 
 
-def paired_stats(fa, fb, n=2000, seed=0):
+def paired_stats(fa, fb, n=BOOT_N, seed=0):
     """ret(A) - ret(B) over the union of clusters (same draw for both), by event and by day; adds the L8
     one-sided 95% lower bound. Mirrors simulate_maker.paired_diff_ci."""
     out = {}
@@ -320,8 +332,8 @@ def paired_stats(fa, fb, n=2000, seed=0):
             continue
         a = np.array([A.get(k, (0.0, 0.0)) for k in ks]); b = np.array([B.get(k, (0.0, 0.0)) for k in ks])
         r = lambda x: x[..., 0].sum(-1) / np.maximum(x[..., 1].sum(-1), 1e-9) * 100
-        idx = np.random.default_rng(seed).integers(0, len(ks), (n, len(ks)))
-        d = r(a[idx]) - r(b[idx])
+        rng = np.random.default_rng(seed)
+        d = np.concatenate([r(a[i]) - r(b[i]) for i in boot_idx(rng, n, len(ks))])
         out[name] = {"diff": float(r(a) - r(b)), "lo95": float(np.percentile(d, 2.5)),
                      "hi95": float(np.percentile(d, 97.5)), "lo_one_sided": float(np.percentile(d, 5.0))}
     return out
